@@ -1,0 +1,57 @@
+{
+  "slug": "getting-started",
+  "title": "Getting Started with Aerial Shots Media",
+  "description": "Everything you need to know to start working with ASM",
+  "category": "onboarding",
+  "order": 1,
+  "content": {
+    "en": {
+      "sections": [
+        {
+          "title": "Welcome to Aerial Shots Media",
+          "content": "Welcome to ASM! We're Central Florida's premier real estate media company, specializing in professional photography, video, drone aerials, 3D tours, and more. This guide will help you get the most out of working with us."
+        },
+        {
+          "title": "Creating Your Account",
+          "content": "Your ASM Portal account is automatically created when you book your first shoot. You'll receive a magic link to your email that lets you sign in securely without a password. Simply click the link in your email to access your dashboard."
+        },
+        {
+          "title": "Your Dashboard",
+          "content": "Your dashboard is your home base for everything ASM. From here you can:\n\n- View all your current and past listings\n- Download photos, videos, and other media\n- Manage your profile and branding\n- Track leads from your lifestyle pages\n- Access AI marketing tools\n- Earn and redeem referral credits"
+        },
+        {
+          "title": "Booking a Shoot",
+          "content": "To book a new photo shoot:\n\n1. Contact us at (407) 555-0100 or book online\n2. Provide the property address and size\n3. Select your package or individual services\n4. Choose a convenient time slot\n5. Receive confirmation via email\n\nWe'll take care of the rest!"
+        },
+        {
+          "title": "What to Expect",
+          "content": "After your shoot:\n\n1. Same-day delivery for most packages\n2. Access photos through your portal\n3. Download by category (MLS, Social, Print)\n4. Share the lifestyle page with buyers\n5. Receive a follow-up call to ensure satisfaction"
+        }
+      ]
+    },
+    "es": {
+      "sections": [
+        {
+          "title": "Bienvenido a Aerial Shots Media",
+          "content": "¡Bienvenido a ASM! Somos la compañía de medios inmobiliarios premier de Florida Central, especializándonos en fotografía profesional, video, tomas aéreas con drones, tours 3D y más. Esta guía te ayudará a aprovechar al máximo nuestros servicios."
+        },
+        {
+          "title": "Creando Tu Cuenta",
+          "content": "Tu cuenta del Portal ASM se crea automáticamente cuando reservas tu primera sesión. Recibirás un enlace mágico en tu correo electrónico que te permite iniciar sesión de forma segura sin contraseña. Simplemente haz clic en el enlace para acceder a tu panel."
+        },
+        {
+          "title": "Tu Panel de Control",
+          "content": "Tu panel es tu base para todo lo relacionado con ASM. Desde aquí puedes:\n\n- Ver todas tus propiedades actuales y anteriores\n- Descargar fotos, videos y otros medios\n- Administrar tu perfil y marca\n- Rastrear leads de tus páginas de estilo de vida\n- Acceder a herramientas de marketing con IA\n- Ganar y canjear créditos de referidos"
+        },
+        {
+          "title": "Reservar una Sesión",
+          "content": "Para reservar una nueva sesión de fotos:\n\n1. Contáctanos al (407) 555-0100 o reserva en línea\n2. Proporciona la dirección y tamaño de la propiedad\n3. Selecciona tu paquete o servicios individuales\n4. Elige un horario conveniente\n5. Recibe confirmación por correo\n\n¡Nosotros nos encargamos del resto!"
+        },
+        {
+          "title": "Qué Esperar",
+          "content": "Después de tu sesión:\n\n1. Entrega el mismo día para la mayoría de los paquetes\n2. Accede a las fotos a través de tu portal\n3. Descarga por categoría (MLS, Redes Sociales, Impresión)\n4. Comparte la página de estilo de vida con compradores\n5. Recibe una llamada de seguimiento para asegurar tu satisfacción"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,114 @@
+import { notFound } from 'next/navigation'
+import { getListingById, organizeMediaByCategory, getCategoryInfo } from '@/lib/queries/listings'
+import { DeliveryHeader, MediaSection, DownloadAllButton } from '@/components/delivery'
+import type { Metadata } from 'next'
+
+interface PageProps {
+  params: Promise<{ listingId: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { listingId } = await params
+  const listing = await getListingById(listingId)
+
+  if (!listing) {
+    return {
+      title: 'Listing Not Found | Aerial Shots Media',
+    }
+  }
+
+  return {
+    title: `${listing.address} | Media Delivery | Aerial Shots Media`,
+    description: `Download your professional real estate media for ${listing.address}`,
+    robots: {
+      index: false,
+      follow: false,
+    },
+  }
+}
+
+export default async function DeliveryPage({ params }: PageProps) {
+  const { listingId } = await params
+  const listing = await getListingById(listingId)
+
+  if (!listing) {
+    notFound()
+  }
+
+  const mediaByCategory = organizeMediaByCategory(listing.media_assets)
+  const brandColor = listing.agent?.brand_color ?? '#ff4533'
+
+  // Order categories for display
+  const categoryOrder = [
+    'mls',
+    'social_feed',
+    'social_stories',
+    'video',
+    'floorplan',
+    'matterport',
+    'interactive',
+    'print',
+  ]
+
+  return (
+    <div className="min-h-screen bg-black">
+      <DeliveryHeader listing={listing} agent={listing.agent} />
+
+      {/* Actions Bar */}
+      <div className="border-b border-neutral-800 bg-neutral-950">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <div>
+            <p className="text-sm text-neutral-400">
+              Your media is ready for download
+            </p>
+          </div>
+          <DownloadAllButton assets={listing.media_assets} listingAddress={listing.address} />
+        </div>
+      </div>
+
+      {/* Media Sections */}
+      <main className="mx-auto max-w-7xl">
+        {categoryOrder.map((category) => {
+          const assets = mediaByCategory[category]
+          if (!assets || assets.length === 0) return null
+
+          const info = getCategoryInfo(category)
+
+          return (
+            <MediaSection
+              key={category}
+              title={info.title}
+              description={info.description}
+              tip={info.tip}
+              assets={assets}
+              brandColor={brandColor}
+            />
+          )
+        })}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-800 bg-neutral-950">
+        <div className="mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 lg:px-8">
+          <p className="text-sm text-neutral-500">
+            Delivered by{' '}
+            <a
+              href="https://www.aerialshots.media"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#ff4533] hover:underline"
+            >
+              Aerial Shots Media
+            </a>
+          </p>
+          <p className="mt-2 text-xs text-neutral-600">
+            Need help? Contact us at{' '}
+            <a href="mailto:hello@aerialshots.media" className="hover:text-neutral-400">
+              hello@aerialshots.media
+            </a>
+          </p>
+        </div>
+      </footer>
+    </div>
+  )
+}

@@ -1,0 +1,65 @@
+{
+  "slug": "using-your-media",
+  "title": "Using Your Media",
+  "description": "Best practices for using your photos and videos",
+  "category": "education",
+  "order": 3,
+  "content": {
+    "en": {
+      "sections": [
+        {
+          "title": "Understanding Your Media Categories",
+          "content": "Your media is organized into categories to help you use the right images for each platform:\n\n**MLS Ready** - High-resolution photos optimized for MLS uploads\n**Social Feed** - Square and 4:5 ratio images for Instagram and Facebook\n**Social Stories** - 9:16 vertical images for Stories and Reels\n**Print** - Extra high-resolution for flyers and postcards\n**Video** - Property walkthrough and highlight videos"
+        },
+        {
+          "title": "MLS Best Practices",
+          "content": "When uploading to MLS:\n\n1. Lead with your best exterior shot\n2. Follow with living areas (living room, kitchen, dining)\n3. Show bedrooms in order of size\n4. Include all bathrooms\n5. End with additional exterior and aerials\n\nMost MLSs limit to 25-50 photos. Choose quality over quantity."
+        },
+        {
+          "title": "Social Media Strategy",
+          "content": "**Instagram Feed:**\n- Use the best 3-6 photos for a carousel post\n- Lead with the hero shot\n- Mix interior and exterior\n\n**Stories/Reels:**\n- Use vertical format photos\n- Add text overlays for key features\n- Include a call-to-action\n\n**Facebook:**\n- Create a photo album with all images\n- Pin listing posts to your page\n- Share the lifestyle page link"
+        },
+        {
+          "title": "Video Tips",
+          "content": "Your listing video can be used for:\n\n- YouTube uploads\n- Instagram Reels (first 90 seconds)\n- Facebook video posts\n- Zillow 3D Home tour\n- Email marketing\n- Virtual showings\n\nAlways include your branding overlay when sharing."
+        },
+        {
+          "title": "Print Materials",
+          "content": "Use Print category images for:\n\n- Property flyers\n- Postcards\n- Magazine ads\n- Billboard designs\n- Window displays\n\nThese are exported at the highest resolution for crisp printing."
+        },
+        {
+          "title": "Sharing the Lifestyle Page",
+          "content": "Your listing's lifestyle page is designed for buyers. Share the link:\n\n- In your MLS public remarks\n- On property websites\n- In email signatures\n- Via text to interested buyers\n- On social media bios\n\nThe page includes neighborhood info that helps buyers fall in love with the location, not just the property."
+        }
+      ]
+    },
+    "es": {
+      "sections": [
+        {
+          "title": "Entendiendo las Categorías de Medios",
+          "content": "Tu contenido está organizado en categorías para ayudarte a usar las imágenes correctas para cada plataforma:\n\n**MLS Listo** - Fotos de alta resolución optimizadas para subir al MLS\n**Feed Social** - Imágenes cuadradas y 4:5 para Instagram y Facebook\n**Stories Social** - Imágenes verticales 9:16 para Stories y Reels\n**Impresión** - Extra alta resolución para volantes y postales\n**Video** - Recorridos y videos destacados de la propiedad"
+        },
+        {
+          "title": "Mejores Prácticas para MLS",
+          "content": "Al subir al MLS:\n\n1. Comienza con tu mejor foto exterior\n2. Sigue con áreas comunes (sala, cocina, comedor)\n3. Muestra las recámaras en orden de tamaño\n4. Incluye todos los baños\n5. Termina con exterior adicional y aéreas\n\nLa mayoría de los MLS limitan a 25-50 fotos. Elige calidad sobre cantidad."
+        },
+        {
+          "title": "Estrategia para Redes Sociales",
+          "content": "**Feed de Instagram:**\n- Usa las mejores 3-6 fotos para un carrusel\n- Comienza con la foto principal\n- Mezcla interior y exterior\n\n**Stories/Reels:**\n- Usa fotos en formato vertical\n- Agrega texto con características clave\n- Incluye llamado a la acción\n\n**Facebook:**\n- Crea un álbum con todas las imágenes\n- Fija las publicaciones de propiedades\n- Comparte el enlace de la página de estilo de vida"
+        },
+        {
+          "title": "Consejos para Video",
+          "content": "Tu video de la propiedad puede usarse para:\n\n- Subidas a YouTube\n- Instagram Reels (primeros 90 segundos)\n- Posts de video en Facebook\n- Tour 3D de Zillow\n- Email marketing\n- Visitas virtuales\n\nSiempre incluye tu marca cuando compartas."
+        },
+        {
+          "title": "Materiales Impresos",
+          "content": "Usa imágenes de la categoría Impresión para:\n\n- Volantes de propiedades\n- Postales\n- Anuncios en revistas\n- Diseños de vallas\n- Exhibiciones en ventanas\n\nEstas se exportan en la más alta resolución para impresión nítida."
+        },
+        {
+          "title": "Compartiendo la Página de Estilo de Vida",
+          "content": "La página de estilo de vida de tu propiedad está diseñada para compradores. Comparte el enlace:\n\n- En tus comentarios públicos del MLS\n- En sitios web de propiedades\n- En firmas de email\n- Por mensaje a compradores interesados\n- En biografías de redes sociales\n\nLa página incluye información del vecindario que ayuda a los compradores a enamorarse de la ubicación, no solo de la propiedad."
+        }
+      ]
+    }
+  }
+}

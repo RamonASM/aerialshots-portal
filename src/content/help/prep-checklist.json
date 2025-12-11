@@ -1,0 +1,73 @@
+{
+  "slug": "prep-checklist",
+  "title": "Property Prep Checklist",
+  "description": "How to prepare a property for the best photos",
+  "category": "onboarding",
+  "order": 2,
+  "content": {
+    "en": {
+      "sections": [
+        {
+          "title": "Before the Shoot",
+          "content": "Great photos start with great preparation. Follow this checklist to ensure your listing looks its best."
+        },
+        {
+          "title": "Exterior",
+          "content": "- Mow the lawn and trim edges\n- Remove trash cans, hoses, and garden tools\n- Clean the driveway and walkways\n- Power wash if needed\n- Add potted plants or flowers at entrance\n- Clean windows (exterior)\n- Remove cars from driveway\n- Turn on landscape lighting (for twilight shoots)"
+        },
+        {
+          "title": "Interior - General",
+          "content": "- Declutter all surfaces (counters, tables, shelves)\n- Remove personal items (family photos, kids' artwork)\n- Hide trash cans, cleaning supplies, toilet brushes\n- Replace burned-out light bulbs\n- Turn on all lights\n- Open blinds and curtains\n- Remove floor mats and area rugs if worn\n- Put away pet items (bowls, beds, toys)"
+        },
+        {
+          "title": "Kitchen",
+          "content": "- Clear all countertops (small appliances OK)\n- Remove magnets and papers from fridge\n- Hide dish soap and sponges\n- Clean sink and faucet\n- Put away dish rack\n- Wipe down cabinet fronts\n- Stage with fruit bowl or flowers"
+        },
+        {
+          "title": "Bathrooms",
+          "content": "- Remove all personal items from counters\n- Hide shampoo bottles from shower\n- Put down toilet lids\n- Hang fresh, matching towels\n- Remove bath mats\n- Clean mirrors"
+        },
+        {
+          "title": "Bedrooms",
+          "content": "- Make beds with crisp linens\n- Fluff and arrange pillows\n- Clear nightstands\n- Hide laundry baskets\n- Open closet doors only if very organized\n- Remove under-bed storage"
+        },
+        {
+          "title": "Day of Shoot",
+          "content": "- Turn on ALL lights (including closets)\n- Turn off TVs\n- Turn off ceiling fans\n- Close toilet lids\n- Remove vehicles from driveway\n- Secure pets\n- Give photographer access (lockbox code, etc.)"
+        }
+      ]
+    },
+    "es": {
+      "sections": [
+        {
+          "title": "Antes de la Sesión",
+          "content": "Las grandes fotos comienzan con una gran preparación. Sigue esta lista para asegurar que tu propiedad se vea lo mejor posible."
+        },
+        {
+          "title": "Exterior",
+          "content": "- Corta el césped y recorta los bordes\n- Retira basureros, mangueras y herramientas de jardín\n- Limpia la entrada y los caminos\n- Lava a presión si es necesario\n- Agrega plantas o flores en la entrada\n- Limpia las ventanas (exterior)\n- Retira los autos de la entrada\n- Enciende las luces del paisaje (para sesiones al atardecer)"
+        },
+        {
+          "title": "Interior - General",
+          "content": "- Despeja todas las superficies (mostradores, mesas, estantes)\n- Retira artículos personales (fotos familiares, dibujos de niños)\n- Esconde basureros, productos de limpieza, escobillas\n- Reemplaza bombillas quemadas\n- Enciende todas las luces\n- Abre persianas y cortinas\n- Retira tapetes si están desgastados\n- Guarda artículos de mascotas (platos, camas, juguetes)"
+        },
+        {
+          "title": "Cocina",
+          "content": "- Despeja todos los mostradores (electrodomésticos pequeños OK)\n- Retira imanes y papeles del refrigerador\n- Esconde jabón y esponjas\n- Limpia el fregadero y la llave\n- Guarda el escurridor\n- Limpia los frentes de los gabinetes\n- Decora con frutero o flores"
+        },
+        {
+          "title": "Baños",
+          "content": "- Retira todos los artículos personales de los mostradores\n- Esconde botellas de shampoo de la ducha\n- Baja las tapas del inodoro\n- Cuelga toallas frescas y combinadas\n- Retira los tapetes de baño\n- Limpia los espejos"
+        },
+        {
+          "title": "Recámaras",
+          "content": "- Tiende las camas con sábanas limpias\n- Acomoda y esponja las almohadas\n- Despeja las mesas de noche\n- Esconde cestos de ropa\n- Abre puertas de closet solo si están muy organizados\n- Retira almacenamiento debajo de la cama"
+        },
+        {
+          "title": "Día de la Sesión",
+          "content": "- Enciende TODAS las luces (incluyendo closets)\n- Apaga televisores\n- Apaga ventiladores de techo\n- Cierra tapas del inodoro\n- Retira vehículos de la entrada\n- Asegura las mascotas\n- Da acceso al fotógrafo (código de caja, etc.)"
+        }
+      ]
+    }
+  }
+}

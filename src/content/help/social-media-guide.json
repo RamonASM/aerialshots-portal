@@ -1,0 +1,65 @@
+{
+  "slug": "social-media-guide",
+  "title": "Social Media Marketing Guide",
+  "description": "How to market your listings on social media",
+  "category": "education",
+  "order": 4,
+  "content": {
+    "en": {
+      "sections": [
+        {
+          "title": "Why Social Media Matters",
+          "content": "93% of home buyers start their search online. Social media is where they spend their time. A strong social presence:\n\n- Builds your personal brand\n- Generates leads organically\n- Positions you as the local expert\n- Creates shareable content buyers love"
+        },
+        {
+          "title": "Instagram Strategy",
+          "content": "**Posting Schedule:**\n- Feed posts: 4-5 per week\n- Stories: Daily\n- Reels: 2-3 per week\n\n**Content Mix:**\n- 50% listings (new, under contract, sold)\n- 30% local content (restaurants, events, tips)\n- 20% personal (behind-the-scenes, wins)\n\n**Hashtag Strategy:**\n- Use 20-30 hashtags\n- Mix popular + niche tags\n- Include location hashtags\n- Save hashtag sets for reuse"
+        },
+        {
+          "title": "Writing Captions That Convert",
+          "content": "**The Hook:** First line grabs attention\n- Ask a question\n- Make a bold statement\n- Share a surprising fact\n\n**The Value:** Middle provides information\n- Property highlights\n- Neighborhood benefits\n- Market insights\n\n**The CTA:** End with clear next step\n- \"DM me for details\"\n- \"Link in bio for more photos\"\n- \"Tag someone who needs this\""
+        },
+        {
+          "title": "Video Content Ideas",
+          "content": "Short-form video performs best. Try:\n\n- **Property Reveals:** Dramatic before/after of walking in\n- **Neighborhood Tours:** \"5 things I love about [area]\"\n- **Market Updates:** Quick stats and what they mean\n- **Day in the Life:** Show your personality\n- **Home Tips:** Staging, maintenance, buying process\n- **Client Celebrations:** Closing day moments"
+        },
+        {
+          "title": "Using Our AI Tools",
+          "content": "Our AI marketing tools can help you create:\n\n- **Listing Descriptions:** 3 variations for MLS\n- **Social Captions:** Platform-specific posts\n- **Buyer Personas:** Know your target market\n- **Neighborhood Guides:** Local expertise content\n\nAccess these tools from your dashboard. They're included with your referral credits!"
+        },
+        {
+          "title": "Measuring Success",
+          "content": "Track these metrics monthly:\n\n- **Follower Growth:** Aim for 5-10% monthly\n- **Engagement Rate:** 3-6% is good for real estate\n- **Reach:** How many unique people see your content\n- **Website Clicks:** Traffic from profile link\n- **DMs:** Direct inquiries from social\n\nThe best content is content you actually post. Start simple and improve over time."
+        }
+      ]
+    },
+    "es": {
+      "sections": [
+        {
+          "title": "Por Qué Importan las Redes Sociales",
+          "content": "El 93% de los compradores de casas comienzan su búsqueda en línea. Las redes sociales son donde pasan su tiempo. Una presencia social fuerte:\n\n- Construye tu marca personal\n- Genera leads orgánicamente\n- Te posiciona como el experto local\n- Crea contenido compartible que los compradores aman"
+        },
+        {
+          "title": "Estrategia de Instagram",
+          "content": "**Calendario de Publicaciones:**\n- Posts del feed: 4-5 por semana\n- Stories: Diario\n- Reels: 2-3 por semana\n\n**Mezcla de Contenido:**\n- 50% propiedades (nuevas, bajo contrato, vendidas)\n- 30% contenido local (restaurantes, eventos, tips)\n- 20% personal (detrás de escenas, logros)\n\n**Estrategia de Hashtags:**\n- Usa 20-30 hashtags\n- Mezcla tags populares + nicho\n- Incluye hashtags de ubicación\n- Guarda conjuntos de hashtags para reusar"
+        },
+        {
+          "title": "Escribiendo Captions que Convierten",
+          "content": "**El Gancho:** Primera línea capta atención\n- Haz una pregunta\n- Haz una declaración audaz\n- Comparte un hecho sorprendente\n\n**El Valor:** El medio proporciona información\n- Destacados de la propiedad\n- Beneficios del vecindario\n- Perspectivas del mercado\n\n**El CTA:** Termina con un paso claro\n- \"Escríbeme para detalles\"\n- \"Link en bio para más fotos\"\n- \"Etiqueta a alguien que necesite esto\""
+        },
+        {
+          "title": "Ideas de Contenido en Video",
+          "content": "El video corto tiene mejor rendimiento. Intenta:\n\n- **Revelaciones de Propiedad:** Dramático antes/después al entrar\n- **Tours del Vecindario:** \"5 cosas que amo de [área]\"\n- **Actualizaciones del Mercado:** Estadísticas rápidas y qué significan\n- **Un Día en mi Vida:** Muestra tu personalidad\n- **Tips para Casa:** Staging, mantenimiento, proceso de compra\n- **Celebraciones con Clientes:** Momentos del día del cierre"
+        },
+        {
+          "title": "Usando Nuestras Herramientas de IA",
+          "content": "Nuestras herramientas de marketing con IA pueden ayudarte a crear:\n\n- **Descripciones de Propiedades:** 3 variaciones para MLS\n- **Captions Sociales:** Posts específicos por plataforma\n- **Perfiles de Compradores:** Conoce tu mercado objetivo\n- **Guías del Vecindario:** Contenido de experiencia local\n\n¡Accede a estas herramientas desde tu panel. Están incluidas con tus créditos de referidos!"
+        },
+        {
+          "title": "Midiendo el Éxito",
+          "content": "Rastrea estas métricas mensualmente:\n\n- **Crecimiento de Seguidores:** Apunta al 5-10% mensual\n- **Tasa de Engagement:** 3-6% es bueno para bienes raíces\n- **Alcance:** Cuántas personas únicas ven tu contenido\n- **Clics al Sitio:** Tráfico desde el link del perfil\n- **DMs:** Consultas directas desde social\n\nEl mejor contenido es el contenido que realmente publicas. Comienza simple y mejora con el tiempo."
+        }
+      ]
+    }
+  }
+}
