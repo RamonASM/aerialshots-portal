@@ -17,17 +17,22 @@ function verifyWebhookSignature(
   signature: string | null,
   secret: string
 ): boolean {
-  if (!signature || !secret) return true // Skip if not configured
+  // If secret is configured, signature MUST be valid
+  if (secret && signature) {
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex')
 
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex')
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    )
+  }
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  )
+  // If using Zapier (no signature), verify via x-aryeo-secret header instead
+  // This is handled separately in the POST handler
+  return !secret // Only allow if no secret configured (Zapier flow)
 }
 
 // Process webhook event idempotently
