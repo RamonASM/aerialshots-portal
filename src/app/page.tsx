@@ -27,9 +27,6 @@ export default function HomePage() {
             <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
               Dashboard
             </Link>
-            <Link href="/admin" className="text-sm text-slate-400 hover:text-white transition-colors">
-              Admin
-            </Link>
           </nav>
         </div>
       </header>
@@ -242,6 +239,7 @@ export default function HomePage() {
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <Link href="/help" className="hover:text-slate-300 transition-colors">Help Center</Link>
               <a href="https://aerialshots.media" className="hover:text-slate-300 transition-colors">Main Site</a>
+              <Link href="/admin" className="hover:text-slate-300 transition-colors">Team</Link>
               <span>Central Florida</span>
             </div>
           </div>

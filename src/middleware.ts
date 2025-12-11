@@ -50,8 +50,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Admin routes require staff role (checked via RLS in queries)
-  // Additional role checks can be added here if needed
+  // Admin routes - whitelist specific emails only
+  const ADMIN_EMAILS = [
+    'ramon@aerialshots.media',
+    'alex@aerialshots.media',
+    'keesha@aerialshots.media',
+  ]
+
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+
+  if (isAdminRoute && user) {
+    const userEmail = user.email?.toLowerCase()
+    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+      // Not an admin - redirect to dashboard
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
