@@ -9,7 +9,7 @@ export default function Home() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl font-bold">
-              Aerial Shots <span className="text-[#ff4533]">Media</span>
+              Aerial Shots <span className="text-[#3b82f6]">Media</span>
             </span>
           </Link>
           <nav className="flex items-center gap-6">
@@ -29,14 +29,14 @@ export default function Home() {
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
             Real Estate Media
             <br />
-            <span className="text-[#ff4533]">Delivered Different</span>
+            <span className="text-[#3b82f6]">Delivered Different</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-neutral-400">
             Professional photography, video, drone, and virtual staging for Central Florida real estate agents.
             Your media, organized by use case.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <Button size="lg" className="bg-[#ff4533] hover:bg-[#e63d2e]" asChild>
+            <Button size="lg" className="bg-[#3b82f6] hover:bg-[#2563eb]" asChild>
               <Link href="/dashboard">Agent Dashboard</Link>
             </Button>
             <Button size="lg" variant="outline" className="border-neutral-700 text-white hover:bg-neutral-800" asChild>
@@ -53,19 +53,19 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="rounded-lg border border-neutral-800 p-6">
-              <h3 className="text-lg font-semibold text-[#ff4533]">Delivery Pages</h3>
+              <h3 className="text-lg font-semibold text-[#3b82f6]">Delivery Pages</h3>
               <p className="mt-2 text-neutral-400">
                 Media organized by use case: MLS Ready, Social Feed, Stories, Print, and Video.
               </p>
             </div>
             <div className="rounded-lg border border-neutral-800 p-6">
-              <h3 className="text-lg font-semibold text-[#ff4533]">Lifestyle Pages</h3>
+              <h3 className="text-lg font-semibold text-[#3b82f6]">Lifestyle Pages</h3>
               <p className="mt-2 text-neutral-400">
                 Beautiful buyer-facing pages with neighborhood info, events, and Walk Scores.
               </p>
             </div>
             <div className="rounded-lg border border-neutral-800 p-6">
-              <h3 className="text-lg font-semibold text-[#ff4533]">Agent Portfolio</h3>
+              <h3 className="text-lg font-semibold text-[#3b82f6]">Agent Portfolio</h3>
               <p className="mt-2 text-neutral-400">
                 Public profile with your listings, stats, and lead capture.
               </p>
