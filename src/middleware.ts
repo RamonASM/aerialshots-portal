@@ -50,19 +50,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Admin routes - whitelist specific emails only
-  const ADMIN_EMAILS = [
-    'ramon@aerialshots.media',
-    'alex@aerialshots.media',
-    'keesha@aerialshots.media',
-  ]
+  // Admin routes - allow @aerialshots.media domain
+  // The admin layout also checks the staff table for role-based access
+  const STAFF_DOMAIN = '@aerialshots.media'
 
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
 
   if (isAdminRoute && user) {
     const userEmail = user.email?.toLowerCase()
-    if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
-      // Not an admin - redirect to dashboard
+    // Allow anyone with @aerialshots.media email domain
+    if (!userEmail || !userEmail.endsWith(STAFF_DOMAIN)) {
+      // Not a staff member - redirect to dashboard
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)

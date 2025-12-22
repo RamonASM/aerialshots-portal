@@ -3,10 +3,12 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/supabase/types'
 
+const STAFF_DOMAIN = '@aerialshots.media'
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  const requestedNext = searchParams.get('next')
 
   if (code) {
     const cookieStore = await cookies()
@@ -41,26 +43,59 @@ export async function GET(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user?.email) {
+        const userEmail = user.email.toLowerCase()
+        const isStaffEmail = userEmail.endsWith(STAFF_DOMAIN)
+
+        // For staff members with @aerialshots.media domain
+        if (isStaffEmail) {
+          // Check if staff record exists
+          const { data: existingStaff } = await supabase
+            .from('staff')
+            .select('id, is_active')
+            .eq('email', userEmail)
+            .single()
+
+          // Auto-create staff record if it doesn't exist
+          if (!existingStaff) {
+            const name = user.user_metadata?.full_name ||
+              userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
+            await supabase.from('staff').insert({
+              email: userEmail,
+              name,
+              role: 'photographer', // Default role for new staff
+              is_active: true,
+            })
+          }
+
+          // Redirect staff to admin (unless they requested a specific page)
+          const redirectTo = requestedNext || '/admin'
+          return NextResponse.redirect(`${origin}${redirectTo}`)
+        }
+
+        // For regular users (clients/agents)
         // Check if agent exists
         const { data: agent } = await supabase
           .from('agents')
           .select('id')
-          .eq('email', user.email)
+          .eq('email', userEmail)
           .single()
 
         // Create agent record if it doesn't exist
         if (!agent) {
-          const slug = user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+          const slug = userEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
 
           await supabase.from('agents').insert({
-            email: user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: userEmail,
+            name: user.user_metadata?.full_name || userEmail.split('@')[0],
             slug: `${slug}-${Date.now().toString(36)}`,
           })
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`)
+      // Redirect to requested page or dashboard
+      const redirectTo = requestedNext || '/dashboard'
+      return NextResponse.redirect(`${origin}${redirectTo}`)
     }
   }
 
