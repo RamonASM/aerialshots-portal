@@ -3,12 +3,10 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { createBrowserClient } from '@supabase/ssr'
 import { Mail, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { Database } from '@/lib/supabase/types'
 
 interface LoginFormData {
   email: string
@@ -36,26 +34,25 @@ function LoginForm() {
     try {
       setError(null)
 
-      const supabase = createBrowserClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      // Use our custom magic link API that sends via Resend
+      const response = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ email: data.email }),
       })
 
-      if (authError) {
-        throw authError
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send magic link')
       }
 
       setSent(true)
     } catch (err) {
       console.error('Login error:', err)
-      setError('Failed to send magic link. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to send magic link. Please try again.')
     }
   }
 
