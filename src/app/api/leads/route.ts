@@ -1,32 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { requireAgent, requireStaffOrOwner } from '@/lib/middleware/auth'
+import {
+  handleApiError,
+  badRequest,
+  databaseError,
+} from '@/lib/utils/errors'
+import { z } from 'zod'
 
-interface LeadRequest {
-  listing_id: string
-  agent_id: string | null
-  name: string
-  email: string
-  phone?: string
-  message?: string
-}
+/**
+ * Lead creation schema
+ */
+const createLeadSchema = z.object({
+  listing_id: z.string().uuid().optional(),
+  agent_id: z.string().uuid().optional().nullable(),
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email format'),
+  phone: z.string().optional(),
+  message: z.string().optional(),
+})
 
+/**
+ * Create a new lead
+ * POST /api/leads
+ *
+ * Public endpoint - no authentication required
+ * Used by property pages for visitor inquiries
+ */
 export async function POST(request: NextRequest) {
-  try {
-    const body: LeadRequest = await request.json()
+  return handleApiError(async () => {
+    const body = await request.json()
 
-    // Validate required fields
-    if (!body.name || !body.email) {
-      return NextResponse.json(
-        { error: 'Name and email are required' },
-        { status: 400 }
-      )
+    // Validate request body
+    const result = createLeadSchema.safeParse(body)
+    if (!result.success) {
+      const firstError = result.error.issues[0]
+      throw badRequest(firstError.message)
     }
 
-    // Validate email format
-    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
-    if (!emailRegex.test(body.email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
-    }
+    const { listing_id, agent_id, name, email, phone, message } = result.data
 
     const supabase = createAdminClient()
 
@@ -34,64 +47,65 @@ export async function POST(request: NextRequest) {
     const { data: lead, error } = await supabase
       .from('leads')
       .insert({
-        listing_id: body.listing_id || null,
-        agent_id: body.agent_id || null,
-        name: body.name,
-        email: body.email,
-        phone: body.phone || null,
-        message: body.message || null,
+        listing_id: listing_id || null,
+        agent_id: agent_id || null,
+        name,
+        email,
+        phone: phone || null,
+        message: message || null,
         status: 'new',
       })
       .select('id')
       .single()
 
     if (error) {
-      console.error('Failed to create lead:', error)
-      return NextResponse.json(
-        { error: 'Failed to submit inquiry' },
-        { status: 500 }
-      )
+      throw databaseError(error, 'creating lead')
     }
-
-    // TODO: Send notification email to agent
-    // TODO: Add lead to follow-up queue
 
     return NextResponse.json({
       success: true,
       lead_id: lead.id,
     })
-  } catch (error) {
-    console.error('Lead submission error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })
 }
 
-// GET endpoint to fetch leads (for dashboard)
+/**
+ * Get leads for dashboard
+ * GET /api/leads
+ *
+ * Requires authentication
+ * - Agents can only view their own leads
+ * - Staff can view any agent's leads
+ */
 export async function GET(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
+    const supabase = await createClient()
+
     const { searchParams } = new URL(request.url)
     const agentId = searchParams.get('agent_id')
     const status = searchParams.get('status')
 
-    if (!agentId) {
-      return NextResponse.json(
-        { error: 'agent_id is required' },
-        { status: 400 }
-      )
+    let targetAgentId: string
+
+    if (agentId) {
+      // Validate ownership or staff access
+      const { agent } = await requireStaffOrOwner(supabase, agentId)
+      targetAgentId = agent.id
+    } else {
+      // Default to current user's agent
+      const { agent } = await requireAgent(supabase)
+      targetAgentId = agent.id
     }
 
-    const supabase = createAdminClient()
+    const adminClient = createAdminClient()
 
-    let query = supabase
+    let query = adminClient
       .from('leads')
       .select(`
         *,
         listing:listings(address, city, state)
       `)
-      .eq('agent_id', agentId)
+      .eq('agent_id', targetAgentId)
       .order('created_at', { ascending: false })
 
     if (status) {
@@ -101,19 +115,9 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Failed to fetch leads:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch leads' },
-        { status: 500 }
-      )
+      throw databaseError(error, 'fetching leads')
     }
 
     return NextResponse.json({ leads: data })
-  } catch (error) {
-    console.error('Lead fetch error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })
 }

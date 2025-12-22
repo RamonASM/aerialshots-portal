@@ -1,50 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateWithAI, aiPrompts } from '@/lib/ai/client'
+import { requireAgent } from '@/lib/middleware/auth'
+import {
+  handleApiError,
+  badRequest,
+  insufficientCredits,
+  serverError,
+} from '@/lib/utils/errors'
+import { z } from 'zod'
 
 const CREDIT_COST = 25
 
+/**
+ * Listing description request schema
+ */
+const listingDescriptionSchema = z.object({
+  listing_id: z.string().uuid().optional(),
+  address: z.string().min(1, 'Address is required'),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  beds: z.number().min(0, 'Beds is required'),
+  baths: z.number().min(0, 'Baths is required'),
+  sqft: z.number().min(1, 'Square footage is required'),
+  features: z.array(z.string()).optional(),
+  neighborhood: z.string().optional(),
+})
+
+/**
+ * Generate AI listing description
+ * POST /api/ai/listing-description
+ *
+ * Requires agent authentication
+ * Costs 25 credits per generation
+ */
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const supabase = await createClient()
 
-    // Get authenticated user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get agent
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('id, credit_balance')
-      .eq('email', user.email!)
-      .single()
-
-    if (!agent) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
-    }
+    // Require agent authentication
+    const { agent } = await requireAgent(supabase)
 
     // Check credits
-    if ((agent.credit_balance || 0) < CREDIT_COST) {
-      return NextResponse.json(
-        { error: 'Insufficient credits', required: CREDIT_COST, balance: agent.credit_balance },
-        { status: 402 }
-      )
+    const balance = agent.credit_balance || 0
+    if (balance < CREDIT_COST) {
+      throw insufficientCredits(CREDIT_COST, balance, 'Listing Description Generator')
     }
 
     const body = await request.json()
-    const { listing_id, address, city, state, beds, baths, sqft, features, neighborhood } = body
 
-    if (!address || !beds || !baths || !sqft) {
-      return NextResponse.json(
-        { error: 'Missing required property details' },
-        { status: 400 }
-      )
+    // Validate request body
+    const result = listingDescriptionSchema.safeParse(body)
+    if (!result.success) {
+      const firstError = result.error.issues[0]
+      throw badRequest(firstError.message)
     }
+
+    const { listing_id, address, city, state, beds, baths, sqft, features, neighborhood } =
+      result.data
 
     // Generate content
     const prompt = aiPrompts.listingDescription({
@@ -58,22 +71,35 @@ export async function POST(request: NextRequest) {
       neighborhood,
     })
 
-    const result = await generateWithAI({ prompt, maxTokens: 2000 })
+    const aiResult = await generateWithAI({ prompt, maxTokens: 2000 })
 
     // Parse the JSON response
     let descriptions: string[]
     try {
-      descriptions = JSON.parse(result.content)
+      descriptions = JSON.parse(aiResult.content)
     } catch {
       // If not valid JSON, try to extract from text
-      const match = result.content.match(/\[[\s\S]*\]/)
-      descriptions = match ? JSON.parse(match[0]) : [result.content]
+      const match = aiResult.content.match(/\[[\s\S]*\]/)
+      if (match) {
+        try {
+          descriptions = JSON.parse(match[0])
+        } catch {
+          descriptions = [aiResult.content]
+        }
+      } else {
+        descriptions = [aiResult.content]
+      }
+    }
+
+    if (!descriptions || descriptions.length === 0) {
+      throw serverError('Failed to generate descriptions')
     }
 
     // Deduct credits
+    const newBalance = balance - CREDIT_COST
     await supabase
       .from('agents')
-      .update({ credit_balance: (agent.credit_balance || 0) - CREDIT_COST })
+      .update({ credit_balance: newBalance })
       .eq('id', agent.id)
 
     // Log credit transaction
@@ -89,18 +115,15 @@ export async function POST(request: NextRequest) {
       agent_id: agent.id,
       listing_id: listing_id || null,
       tool_type: 'listing_description',
-      input: JSON.parse(JSON.stringify({ address, beds, baths, sqft })),
-      output: JSON.parse(JSON.stringify({ descriptions })),
-      tokens_used: result.tokensUsed,
+      input: { address, beds, baths, sqft },
+      output: { descriptions },
+      tokens_used: aiResult.tokensUsed,
     })
 
     return NextResponse.json({
       descriptions,
       creditsUsed: CREDIT_COST,
-      newBalance: (agent.credit_balance || 0) - CREDIT_COST,
+      newBalance,
     })
-  } catch (error) {
-    console.error('AI listing description error:', error)
-    return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
-  }
+  })
 }

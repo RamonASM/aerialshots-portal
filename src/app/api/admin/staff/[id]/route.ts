@@ -1,106 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireStaff } from '@/lib/middleware/auth'
+import {
+  handleApiError,
+  badRequest,
+  resourceNotFound,
+  databaseError,
+} from '@/lib/utils/errors'
+import { z } from 'zod'
 
-// GET /api/admin/staff/[id] - Get a single staff member
+/**
+ * Valid staff roles
+ */
+const VALID_ROLES = ['admin', 'photographer', 'qc', 'va', 'editor'] as const
+
+/**
+ * Staff update schema
+ */
+const updateStaffSchema = z.object({
+  name: z.string().min(1).optional(),
+  role: z.enum(VALID_ROLES).optional(),
+  phone: z.string().optional().nullable(),
+  is_active: z.boolean().optional(),
+})
+
+/**
+ * Get a single staff member
+ * GET /api/admin/staff/[id]
+ *
+ * Requires staff authentication
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createClient()
+  return handleApiError(async () => {
+    const { id } = await params
+    const supabase = await createClient()
 
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    // Require staff authentication
+    await requireStaff(supabase)
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    // Fetch staff member
+    const { data: staff, error } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-  // Verify user is staff
-  const { data: currentStaff } = await supabase
-    .from('staff')
-    .select('role')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
+    if (error || !staff) {
+      throw resourceNotFound('Staff member', id)
+    }
 
-  if (!currentStaff) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  // Fetch staff member
-  const { data: staff, error } = await supabase
-    .from('staff')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error || !staff) {
-    return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
-  }
-
-  return NextResponse.json({ staff })
+    return NextResponse.json({ staff })
+  })
 }
 
-// PUT /api/admin/staff/[id] - Update a staff member
+/**
+ * Update a staff member
+ * PUT /api/admin/staff/[id]
+ *
+ * Requires admin role
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createClient()
+  return handleApiError(async () => {
+    const { id } = await params
+    const supabase = await createClient()
 
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    // Require admin role
+    await requireStaff(supabase, 'admin')
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Verify user is staff with admin role
-  const { data: currentStaff } = await supabase
-    .from('staff')
-    .select('role')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
-
-  if (!currentStaff || currentStaff.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  try {
     const body = await request.json()
-    const { name, role, phone, is_active } = body
 
-    // Build update object with only provided fields
-    const updateData: Record<string, unknown> = {}
-
-    if (name !== undefined) updateData.name = name
-    if (phone !== undefined) updateData.phone = phone
-    if (is_active !== undefined) updateData.is_active = is_active
-
-    // Validate role if provided
-    if (role !== undefined) {
-      const validRoles = ['admin', 'photographer', 'qc', 'va', 'editor']
-      if (!validRoles.includes(role)) {
-        return NextResponse.json(
-          { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
-          { status: 400 }
-        )
-      }
-      updateData.role = role
+    // Validate request body
+    const result = updateStaffSchema.safeParse(body)
+    if (!result.success) {
+      const firstError = result.error.issues[0]
+      throw badRequest(firstError.message)
     }
 
+    const updateData = result.data
+
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      )
+      throw badRequest('No valid fields to update')
     }
 
     // Update staff member
@@ -112,79 +97,46 @@ export async function PUT(
       .single()
 
     if (error) {
-      console.error('Error updating staff:', error)
-      return NextResponse.json(
-        { error: 'Failed to update staff member' },
-        { status: 500 }
-      )
+      throw databaseError(error, 'updating staff member')
     }
 
     if (!updatedStaff) {
-      return NextResponse.json(
-        { error: 'Staff member not found' },
-        { status: 404 }
-      )
+      throw resourceNotFound('Staff member', id)
     }
 
     return NextResponse.json({ staff: updatedStaff })
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body' },
-      { status: 400 }
-    )
-  }
+  })
 }
 
-// DELETE /api/admin/staff/[id] - Delete a staff member
+/**
+ * Delete a staff member
+ * DELETE /api/admin/staff/[id]
+ *
+ * Requires admin role
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const supabase = await createClient()
+  return handleApiError(async () => {
+    const { id } = await params
+    const supabase = await createClient()
 
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    // Require admin role and get staff record
+    const { staff: currentStaff } = await requireStaff(supabase, 'admin')
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    // Prevent self-deletion
+    if (currentStaff.id === id) {
+      throw badRequest('You cannot delete your own account')
+    }
 
-  // Verify user is staff with admin role
-  const { data: currentStaff } = await supabase
-    .from('staff')
-    .select('id, role')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
+    // Delete staff member
+    const { error } = await supabase.from('staff').delete().eq('id', id)
 
-  if (!currentStaff || currentStaff.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+    if (error) {
+      throw databaseError(error, 'deleting staff member')
+    }
 
-  // Prevent self-deletion
-  if (currentStaff.id === id) {
-    return NextResponse.json(
-      { error: 'You cannot delete your own account' },
-      { status: 400 }
-    )
-  }
-
-  // Delete staff member
-  const { error } = await supabase
-    .from('staff')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('Error deleting staff:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete staff member' },
-      { status: 500 }
-    )
-  }
-
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  })
 }

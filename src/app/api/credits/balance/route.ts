@@ -1,61 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { serverCreditService } from '@/lib/credits/service'
+import { requireAgent, requireStaff, getAgentByEmail, getAgentById } from '@/lib/middleware/auth'
+import {
+  handleApiError,
+  resourceNotFound,
+} from '@/lib/utils/errors'
 
-// Get credit balance for authenticated user or by agent_id (for cross-platform)
+/**
+ * Get credit balance
+ * GET /api/credits/balance
+ *
+ * Security:
+ * - Authenticated users can only view their OWN balance
+ * - Staff members can view any agent's balance (for admin operations)
+ *
+ * Query params:
+ * - agent_id: string (optional, staff only)
+ * - email: string (optional, staff only)
+ */
 export async function GET(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const supabase = await createClient()
 
     const { searchParams } = new URL(request.url)
     const agentId = searchParams.get('agent_id')
     const email = searchParams.get('email')
 
-    // If agent_id provided directly (for cross-platform calls)
-    if (agentId) {
-      const balance = await serverCreditService.getBalance(agentId)
-      return NextResponse.json(balance)
-    }
+    let resolvedAgentId: string
 
-    // If email provided (for linking accounts)
-    if (email) {
-      const { data: agent } = await supabase
-        .from('agents')
-        .select('id')
-        .eq('email', email)
-        .single()
+    // If agent_id or email is provided, this is an admin lookup
+    if (agentId || email) {
+      // Require staff authentication for viewing other users' balances
+      await requireStaff(supabase)
 
-      if (!agent) {
-        return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
+      if (agentId) {
+        // Verify agent exists
+        const agent = await getAgentById(supabase, agentId)
+        if (!agent) {
+          throw resourceNotFound('Agent', agentId)
+        }
+        resolvedAgentId = agent.id
+      } else {
+        // Resolve by email
+        const agent = await getAgentByEmail(supabase, email!)
+        if (!agent) {
+          throw resourceNotFound('Agent', email!)
+        }
+        resolvedAgentId = agent.id
       }
-
-      const balance = await serverCreditService.getBalance(agent.id)
-      return NextResponse.json(balance)
+    } else {
+      // User is checking their own balance
+      const { agent } = await requireAgent(supabase)
+      resolvedAgentId = agent.id
     }
 
-    // Otherwise use authenticated user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('id')
-      .eq('email', user.email!)
-      .single()
-
-    if (!agent) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
-    }
-
-    const balance = await serverCreditService.getBalance(agent.id)
+    const balance = await serverCreditService.getBalance(resolvedAgentId)
     return NextResponse.json(balance)
-  } catch (error) {
-    console.error('Credits balance error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  })
 }

@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireStaff } from '@/lib/middleware/auth'
+import {
+  handleApiError,
+  badRequest,
+  databaseError,
+} from '@/lib/utils/errors'
 
-// Create a new care task
+/**
+ * Create a new care task
+ * POST /api/care/tasks
+ *
+ * Requires staff authentication - only ASM team can create care tasks
+ */
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const supabase = await createClient()
+
+    // Require staff authentication
+    await requireStaff(supabase)
 
     const body = await request.json()
     const {
@@ -16,29 +30,27 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!task_type) {
-      return NextResponse.json(
-        { error: 'Task type is required' },
-        { status: 400 }
-      )
+      throw badRequest('Task type is required')
     }
 
     if (!agent_id && !listing_id) {
-      return NextResponse.json(
-        { error: 'Agent ID or Listing ID is required' },
-        { status: 400 }
-      )
+      throw badRequest('Agent ID or Listing ID is required')
     }
 
     // If only listing_id provided, get the agent_id
     let finalAgentId = agent_id
     if (!finalAgentId && listing_id) {
-      const { data: listing } = await supabase
+      const { data: listing, error: listingError } = await supabase
         .from('listings')
         .select('agent_id')
         .eq('id', listing_id)
         .single()
 
-      finalAgentId = listing?.agent_id
+      if (listingError || !listing) {
+        throw badRequest('Invalid listing ID')
+      }
+
+      finalAgentId = listing.agent_id
     }
 
     // Create the task
@@ -56,21 +68,25 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating care task:', error)
-      return NextResponse.json({ error: 'Failed to create task' }, { status: 500 })
+      throw databaseError(error, 'creating care task')
     }
 
     return NextResponse.json({ task })
-  } catch (error) {
-    console.error('Care task API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  })
 }
 
-// Get care tasks with filters
+/**
+ * Get care tasks with filters
+ * GET /api/care/tasks
+ *
+ * Requires staff authentication - only ASM team can view all care tasks
+ */
 export async function GET(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const supabase = await createClient()
+
+    // Require staff authentication
+    await requireStaff(supabase)
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -96,13 +112,9 @@ export async function GET(request: NextRequest) {
     const { data: tasks, error } = await query
 
     if (error) {
-      console.error('Error fetching care tasks:', error)
-      return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 })
+      throw databaseError(error, 'fetching care tasks')
     }
 
     return NextResponse.json({ tasks })
-  } catch (error) {
-    console.error('Care task API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  })
 }

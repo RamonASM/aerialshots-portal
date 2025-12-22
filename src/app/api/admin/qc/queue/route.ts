@@ -1,30 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireStaff } from '@/lib/middleware/auth'
+import { handleApiError, databaseError } from '@/lib/utils/errors'
 
-export async function GET(request: Request) {
-  try {
+/**
+ * Get QC queue
+ * GET /api/admin/qc/queue
+ *
+ * Returns listings that are ready for QC or in QC,
+ * sorted by priority (rush + wait time)
+ *
+ * Requires staff authentication
+ */
+export async function GET(request: NextRequest) {
+  return handleApiError(async () => {
     const supabase = await createClient()
 
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Require staff authentication
+    await requireStaff(supabase)
 
     // Get filter parameters
     const { searchParams } = new URL(request.url)
@@ -60,56 +53,59 @@ export async function GET(request: Request) {
     const { data: listings, error: listingsError } = await query
 
     if (listingsError) {
-      throw listingsError
+      throw databaseError(listingsError, 'fetching QC queue')
     }
 
     // Get unique photographer IDs
-    const photographerIds = [...new Set(listings?.map(l => l.photographer_id).filter(Boolean) as string[])]
+    const photographerIds = [
+      ...new Set(listings?.map((l) => l.photographer_id).filter(Boolean) as string[]),
+    ]
 
     // Get photographer/staff details
-    const { data: photographers } = photographerIds.length > 0
-      ? await supabase
-          .from('staff')
-          .select('id, name')
-          .in('id', photographerIds)
-      : { data: [] }
+    const { data: photographers } =
+      photographerIds.length > 0
+        ? await supabase.from('staff').select('id, name').in('id', photographerIds)
+        : { data: [] }
 
     // Calculate priority score and time metrics for each listing
-    const priorityQueue = listings?.map(listing => {
-      const now = new Date()
-      const updatedAt = new Date(listing.updated_at)
-      const hoursWaiting = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60))
+    const priorityQueue =
+      listings?.map((listing) => {
+        const now = new Date()
+        const updatedAt = new Date(listing.updated_at)
+        const hoursWaiting = Math.floor(
+          (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60)
+        )
 
-      // Calculate priority score
-      // Rush jobs get +100, hours waiting adds points
-      let priorityScore = hoursWaiting
-      if (listing.is_rush) {
-        priorityScore += 100
-      }
-      if (listing.ops_status === 'in_qc') {
-        priorityScore += 50 // Boost in-progress items
-      }
+        // Calculate priority score
+        // Rush jobs get +100, hours waiting adds points
+        let priorityScore = hoursWaiting
+        if (listing.is_rush) {
+          priorityScore += 100
+        }
+        if (listing.ops_status === 'in_qc') {
+          priorityScore += 50 // Boost in-progress items
+        }
 
-      // Determine priority level
-      let priorityLevel: 'high' | 'medium' | 'low'
-      if (listing.is_rush && hoursWaiting > 2) {
-        priorityLevel = 'high'
-      } else if (hoursWaiting > 4) {
-        priorityLevel = 'medium'
-      } else {
-        priorityLevel = 'low'
-      }
+        // Determine priority level
+        let priorityLevel: 'high' | 'medium' | 'low'
+        if (listing.is_rush && hoursWaiting > 2) {
+          priorityLevel = 'high'
+        } else if (hoursWaiting > 4) {
+          priorityLevel = 'medium'
+        } else {
+          priorityLevel = 'low'
+        }
 
-      const photographer = photographers?.find(p => p.id === listing.photographer_id)
+        const photographer = photographers?.find((p) => p.id === listing.photographer_id)
 
-      return {
-        ...listing,
-        photographer,
-        priorityScore,
-        priorityLevel,
-        hoursWaiting,
-      }
-    }) || []
+        return {
+          ...listing,
+          photographer,
+          priorityScore,
+          priorityLevel,
+          hoursWaiting,
+        }
+      }) || []
 
     // Sort by priority score (highest first)
     priorityQueue.sort((a, b) => b.priorityScore - a.priorityScore)
@@ -118,11 +114,5 @@ export async function GET(request: Request) {
       queue: priorityQueue,
       total: priorityQueue.length,
     })
-  } catch (error) {
-    console.error('Error fetching QC queue:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch queue' },
-      { status: 500 }
-    )
-  }
+  })
 }
