@@ -54,7 +54,7 @@ async function generateWithAnthropic(
   const data = await response.json()
   return {
     content: data.content[0].text,
-    tokensUsed: data.usage?.input_tokens + data.usage?.output_tokens || 0,
+    tokensUsed: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
   }
 }
 

@@ -1,6 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { unstable_cache } from 'next/cache'
 import type { Database } from '@/lib/supabase/types'
+import {
+  CACHE_REVALIDATION,
+  CACHE_TAGS,
+  getListingCacheKey,
+  getListingByAryeoCacheKey,
+  getAgentListingsCacheKey,
+} from '@/lib/utils/cache'
 
 type Listing = Database['public']['Tables']['listings']['Row']
 type MediaAsset = Database['public']['Tables']['media_assets']['Row']
@@ -11,10 +19,29 @@ export interface ListingWithDetails extends Listing {
   media_assets: MediaAsset[]
 }
 
-// Get listing by ID with all media assets
-export async function getListingById(
-  listingId: string
-): Promise<ListingWithDetails | null> {
+// Helper type for Supabase query results with joins
+type SupabaseListingWithJoins = Listing & {
+  agent: Agent | Agent[] | null
+  media_assets: MediaAsset | MediaAsset[] | null
+}
+
+// Type guard to normalize Supabase query result into our expected type
+function normalizeListingWithDetails(
+  data: SupabaseListingWithJoins
+): ListingWithDetails {
+  return {
+    ...data,
+    agent: Array.isArray(data.agent) ? data.agent[0] ?? null : data.agent,
+    media_assets: data.media_assets
+      ? Array.isArray(data.media_assets)
+        ? data.media_assets
+        : [data.media_assets]
+      : [],
+  }
+}
+
+// Internal function to fetch listing (for caching)
+async function fetchListingById(listingId: string): Promise<ListingWithDetails | null> {
   const supabase = await createClient()
 
   const { data: listing, error } = await supabase
@@ -32,13 +59,22 @@ export async function getListingById(
     return null
   }
 
-  return listing as unknown as ListingWithDetails
+  return normalizeListingWithDetails(listing as SupabaseListingWithJoins)
 }
 
-// Get listing by Aryeo listing ID
-export async function getListingByAryeoId(
-  aryeoListingId: string
-): Promise<ListingWithDetails | null> {
+// Get listing by ID with all media assets (cached)
+// Cache for 60 seconds as listings are frequently viewed
+export const getListingById = unstable_cache(
+  fetchListingById,
+  ['listing-by-id'],
+  {
+    revalidate: CACHE_REVALIDATION.LISTING,
+    tags: [CACHE_TAGS.LISTINGS, CACHE_TAGS.MEDIA_ASSETS],
+  }
+)
+
+// Internal function to fetch listing by Aryeo ID (for caching)
+async function fetchListingByAryeoId(aryeoListingId: string): Promise<ListingWithDetails | null> {
   const supabase = await createClient()
 
   const { data: listing, error } = await supabase
@@ -56,13 +92,21 @@ export async function getListingByAryeoId(
     return null
   }
 
-  return listing as unknown as ListingWithDetails
+  return normalizeListingWithDetails(listing as SupabaseListingWithJoins)
 }
 
-// Get all listings for an agent
-export async function getAgentListings(
-  agentId: string
-): Promise<ListingWithDetails[]> {
+// Get listing by Aryeo listing ID (cached)
+export const getListingByAryeoId = unstable_cache(
+  fetchListingByAryeoId,
+  ['listing-by-aryeo-id'],
+  {
+    revalidate: CACHE_REVALIDATION.LISTING,
+    tags: [CACHE_TAGS.LISTINGS, CACHE_TAGS.MEDIA_ASSETS],
+  }
+)
+
+// Internal function to fetch agent listings (for caching)
+async function fetchAgentListings(agentId: string): Promise<ListingWithDetails[]> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -80,8 +124,19 @@ export async function getAgentListings(
     return []
   }
 
-  return data as unknown as ListingWithDetails[]
+  return (data as SupabaseListingWithJoins[]).map(normalizeListingWithDetails)
 }
+
+// Get all listings for an agent (cached)
+// Cache for 60 seconds as agent portfolios are frequently viewed
+export const getAgentListings = unstable_cache(
+  fetchAgentListings,
+  ['agent-listings'],
+  {
+    revalidate: CACHE_REVALIDATION.LISTING,
+    tags: [CACHE_TAGS.LISTINGS, CACHE_TAGS.MEDIA_ASSETS],
+  }
+)
 
 // Organize media assets by category for delivery page
 export function organizeMediaByCategory(

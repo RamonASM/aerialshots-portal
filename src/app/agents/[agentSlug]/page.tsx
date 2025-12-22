@@ -1,9 +1,27 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { unstable_cache } from 'next/cache'
 import { Building, Calendar, TrendingUp, Phone, Mail, Instagram, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { InstagramFeed, InstagramFeedPlaceholder } from '@/components/instagram'
 import type { Metadata } from 'next'
+import type { Database } from '@/lib/supabase/types'
+import { CACHE_REVALIDATION, CACHE_TAGS } from '@/lib/utils/cache'
+
+type Listing = Database['public']['Tables']['listings']['Row']
+
+// Partial media asset for displaying on agent pages
+interface PartialMediaAsset {
+  id: string
+  listing_id: string
+  aryeo_url: string
+  type: string
+}
+
+interface ListingWithMedia extends Listing {
+  media_assets: PartialMediaAsset[]
+}
 
 interface PageProps {
   params: Promise<{ agentSlug: string }>
@@ -29,45 +47,88 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+// Cached function to get agent portfolio data
+// This prevents N+1 queries by batching all data fetches
+const getAgentPortfolioData = unstable_cache(
+  async (agentSlug: string) => {
+    const supabase = createAdminClient()
+
+    // Get agent - select all columns needed for display
+    const { data: agent, error } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('slug', agentSlug)
+      .maybeSingle() // Use maybeSingle instead of single to avoid errors
+
+    if (error || !agent) {
+      return null
+    }
+
+    // Batch fetch listings and Instagram posts in parallel
+    const [listingsResult, instagramResult] = await Promise.all([
+      // Get listings - select all columns to match ListingWithMedia type
+      supabase
+        .from('listings')
+        .select('*')
+        .eq('agent_id', agent.id)
+        .order('created_at', { ascending: false }),
+      // Get published Instagram posts
+      supabase
+        .from('instagram_scheduled_posts')
+        .select('instagram_permalink')
+        .eq('agent_id', agent.id)
+        .eq('status', 'published')
+        .not('instagram_permalink', 'is', null)
+        .order('published_at', { ascending: false })
+        .limit(6),
+    ])
+
+    const listingsData = listingsResult.data || []
+    const listingIds = listingsData.map((l) => l.id)
+
+    // Get media assets for all listings in a single query
+    const { data: mediaData } = listingIds.length > 0
+      ? await supabase
+          .from('media_assets')
+          .select('id, listing_id, aryeo_url, type')
+          .in('listing_id', listingIds)
+      : { data: [] }
+
+    // Combine listings with their media
+    const listings: ListingWithMedia[] = listingsData.map((listing) => ({
+      ...listing,
+      media_assets: mediaData?.filter((m) => m.listing_id === listing.id) || [],
+    }))
+
+    const publishedPostUrls = instagramResult.data
+      ?.map((p) => p.instagram_permalink)
+      .filter((url): url is string => !!url) || []
+
+    return {
+      agent,
+      listings,
+      publishedPostUrls,
+    }
+  },
+  ['agent-portfolio'],
+  {
+    revalidate: CACHE_REVALIDATION.AGENT,
+    tags: [CACHE_TAGS.AGENTS, CACHE_TAGS.LISTINGS, CACHE_TAGS.MEDIA_ASSETS],
+  }
+)
+
 export default async function AgentPortfolioPage({ params }: PageProps) {
   const { agentSlug } = await params
-  const supabase = createAdminClient()
+  const portfolioData = await getAgentPortfolioData(agentSlug)
 
-  // Get agent
-  const { data: agent, error } = await supabase
-    .from('agents')
-    .select('*')
-    .eq('slug', agentSlug)
-    .single()
-
-  if (error || !agent) {
+  if (!portfolioData) {
     notFound()
   }
 
-  // Get listings
-  const { data: listingsData } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('agent_id', agent.id)
-    .order('created_at', { ascending: false })
+  const { agent, listings, publishedPostUrls } = portfolioData
 
-  // Get media assets for all listings
-  const listingIds = listingsData?.map((l) => l.id) || []
-  const { data: mediaData } = listingIds.length > 0
-    ? await supabase
-        .from('media_assets')
-        .select('id, listing_id, aryeo_url, type')
-        .in('listing_id', listingIds)
-    : { data: [] }
-
-  // Combine listings with their media
-  const listings = listingsData?.map((listing) => ({
-    ...listing,
-    media_assets: mediaData?.filter((m) => m.listing_id === listing.id) || [],
-  }))
-
-  const activeListings = listings?.filter((l) => l.status === 'active') || []
-  const soldListings = listings?.filter((l) => l.status === 'sold') || []
+  const activeListings = listings.filter((l) => l.status === 'active')
+  const soldListings = listings.filter((l) => l.status === 'sold')
 
   // Calculate stats
   const totalSoldVolume = soldListings.reduce(
@@ -161,7 +222,7 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <div className="text-center">
               <p className="text-3xl font-bold text-neutral-900">
-                {(listings?.length || 0)}
+                {listings.length}
               </p>
               <p className="text-sm text-neutral-600">Total Listings</p>
             </div>
@@ -227,11 +288,27 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
         )}
 
         {/* No Listings */}
-        {listings?.length === 0 && (
+        {listings.length === 0 && (
           <div className="py-12 text-center">
             <Building className="mx-auto h-12 w-12 text-neutral-300" />
             <p className="mt-4 text-neutral-600">No listings yet</p>
           </div>
+        )}
+
+        {/* Instagram Section */}
+        {(agent.instagram_url || publishedPostUrls.length > 0) && (
+          <section className="mt-12 pt-12 border-t border-neutral-200">
+            {publishedPostUrls.length > 0 ? (
+              <InstagramFeed
+                agentId={agent.id}
+                instagramUrl={agent.instagram_url ?? undefined}
+                postUrls={publishedPostUrls}
+                maxPosts={6}
+              />
+            ) : (
+              <InstagramFeedPlaceholder instagramUrl={agent.instagram_url ?? undefined} />
+            )}
+          </section>
         )}
       </div>
 
@@ -260,12 +337,12 @@ function ListingCard({
   brandColor,
   showSold = false,
 }: {
-  listing: any
+  listing: ListingWithMedia
   brandColor: string
   showSold?: boolean
 }) {
   const heroImage = listing.media_assets?.find(
-    (m: { type: string }) => m.type === 'photo'
+    (m) => m.type === 'photo'
   )
 
   return (

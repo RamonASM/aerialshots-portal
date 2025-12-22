@@ -7,13 +7,17 @@ import {
   HeartHandshake,
   Settings,
   LogOut,
+  Bot,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navigation = [
   { name: 'Curation', href: '/admin/curation', icon: Layers },
   { name: 'Operations', href: '/admin/ops', icon: Camera },
+  { name: 'QC Live', href: '/admin/qc/live', icon: ClipboardCheck },
   { name: 'Customer Care', href: '/admin/care', icon: HeartHandshake },
+  { name: 'AI Agents', href: '/admin/agents', icon: Bot },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getListingById, organizeMediaByCategory, getCategoryInfo } from '@/lib/queries/listings'
 import { DeliveryHeader, MediaSection, DownloadAllButton } from '@/components/delivery'
+import { LaunchCampaignButton } from '@/components/campaigns'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -62,7 +63,16 @@ export default async function DeliveryPage({ params }: PageProps) {
               Your media is ready for download
             </p>
           </div>
-          <DownloadAllButton assets={listing.media_assets} listingAddress={listing.address} />
+          <div className="flex items-center gap-3">
+            {listing.agent && (
+              <LaunchCampaignButton
+                listingId={listing.id}
+                agentId={listing.agent.id}
+                listingAddress={listing.address}
+              />
+            )}
+            <DownloadAllButton assets={listing.media_assets} listingAddress={listing.address} />
+          </div>
         </div>
       </div>
 

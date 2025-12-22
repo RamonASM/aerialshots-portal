@@ -13,6 +13,7 @@ import {
   BookOpen,
   LogOut,
   Menu,
+  Settings,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Storywork', href: '/dashboard/storywork', icon: BookOpen },
   { name: 'Referrals', href: '/dashboard/referrals', icon: Gift },
   { name: 'Rewards', href: '/dashboard/rewards', icon: Award },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 export default async function DashboardLayout({

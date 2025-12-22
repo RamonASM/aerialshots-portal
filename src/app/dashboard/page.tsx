@@ -134,7 +134,7 @@ export default async function DashboardPage() {
           <div className="mt-4 rounded-lg bg-neutral-50 p-4">
             <p className="text-sm text-neutral-600">Your referral link:</p>
             <code className="mt-1 block overflow-x-auto rounded bg-neutral-100 p-2 text-sm">
-              {`${process.env.NEXT_PUBLIC_APP_URL || 'https://portal.aerialshots.media'}/ref/${agent.referral_code || agent.id.slice(0, 8)}`}
+              {`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.aerialshots.media'}/ref/${agent.referral_code || agent.id.slice(0, 8)}`}
             </code>
           </div>
 
