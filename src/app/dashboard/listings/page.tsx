@@ -42,10 +42,18 @@ export default async function ListingsPage() {
         .in('listing_id', listingIds)
     : { data: [] }
 
-  // Combine listings with their media
+  // Build media lookup map for O(1) access instead of O(n²) filter
+  const mediaByListing = new Map<string, typeof mediaData>()
+  mediaData?.forEach((m) => {
+    const existing = mediaByListing.get(m.listing_id) || []
+    existing.push(m)
+    mediaByListing.set(m.listing_id, existing)
+  })
+
+  // Combine listings with their media using map lookup
   const listings = listingsData?.map((listing) => ({
     ...listing,
-    media_assets: mediaData?.filter((m) => m.listing_id === listing.id) || [],
+    media_assets: mediaByListing.get(listing.id) || [],
   }))
 
   const activeListings = listings?.filter((l) => l.status === 'active') || []

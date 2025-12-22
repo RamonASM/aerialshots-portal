@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffOrOwner, validateListingOwnership } from '@/lib/middleware/auth'
+import { handleApiError, badRequest } from '@/lib/utils/errors'
 
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const body = await request.json()
     const { listingId, agentId } = body
 
     if (!listingId || !agentId) {
-      return NextResponse.json(
-        { error: 'listingId and agentId are required' },
-        { status: 400 }
-      )
+      throw badRequest('listingId and agentId are required')
     }
+
+    // Security: Verify caller owns this listing or is staff
+    const supabaseAuth = await createClient()
+    await validateListingOwnership(supabaseAuth, listingId)
 
     const supabase = createAdminClient()
 
@@ -67,11 +71,5 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ campaignId: campaign.id })
-  } catch (error) {
-    console.error('Campaign creation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })
 }

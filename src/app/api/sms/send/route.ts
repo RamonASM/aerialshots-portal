@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendSMS, formatPhoneForTwilio, smsTemplates } from '@/lib/integrations/twilio/client'
+import { requireStaffOrOwner } from '@/lib/middleware/auth'
+import { handleApiError, badRequest } from '@/lib/utils/errors'
 
 export async function POST(request: NextRequest) {
-  try {
+  return handleApiError(async () => {
     const supabase = await createClient()
 
     const body = await request.json()
@@ -15,11 +17,11 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!agent_id || !template) {
-      return NextResponse.json(
-        { error: 'Agent ID and template are required' },
-        { status: 400 }
-      )
+      throw badRequest('Agent ID and template are required')
     }
+
+    // Security: Verify caller is staff or the agent themselves
+    await requireStaffOrOwner(supabase, agent_id)
 
     // Validate template
     if (!smsTemplates[template as keyof typeof smsTemplates]) {
@@ -110,8 +112,5 @@ export async function POST(request: NextRequest) {
       success: true,
       messageId: result.messageId,
     })
-  } catch (error) {
-    console.error('SMS API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  })
 }

@@ -4,6 +4,41 @@ All notable changes to the ASM Portal are documented in this file.
 
 ## [Unreleased]
 
+## [2024-12-22] - Security Hardening & UX Improvements
+
+### Security Fixes (Critical)
+- **Token encryption bypass** - Removed plaintext fallback in Instagram OAuth callback
+  - `src/app/api/instagram/callback/route.ts` - Now fails securely instead of storing unencrypted tokens
+  - `src/lib/integrations/instagram/encryption.ts` - Requires encryption key in production
+
+- **Webhook verification bypass** - Fixed Aryeo webhook signature validation
+  - `src/app/api/webhooks/aryeo/route.ts` - Now rejects requests without valid signature in production
+
+- **Unauthenticated SMS endpoint** - Added authentication to SMS send API
+  - `src/app/api/sms/send/route.ts` - Added `requireStaffOrOwner` middleware
+
+- **Campaign creation authorization** - Added ownership validation
+  - `src/app/api/campaigns/create/route.ts` - Added `validateListingOwnership` check
+
+### Added
+- **Error Boundaries** - Graceful error handling for dynamic pages
+  - `src/app/agents/[agentSlug]/error.tsx` - Agent portfolio error page
+  - `src/app/delivery/[listingId]/error.tsx` - Media delivery error page
+
+- **Loading States** - Skeleton loaders for better perceived performance
+  - `src/app/property/[listingId]/loading.tsx` - Property page loading skeleton
+  - `src/app/agents/[agentSlug]/loading.tsx` - Agent portfolio loading skeleton
+  - `src/app/delivery/[listingId]/loading.tsx` - Media delivery loading skeleton
+
+- **Toast Notifications** - Added Sonner Toaster to root layout
+  - `src/app/layout.tsx` - Global toast notifications with rich colors
+
+### Performance
+- **O(n²) to O(n) optimization** - Fixed media lookup in dashboard listings
+  - `src/app/dashboard/listings/page.tsx` - Converted filter-based lookup to Map-based O(n+m)
+
+---
+
 ## [2024-12-22] - Community Pages & Post-Delivery Hub Foundation
 
 ### Added

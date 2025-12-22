@@ -84,26 +84,26 @@ export function isTokenEncrypted(token: string): boolean {
 }
 
 /**
- * Safely get a usable token - decrypts if encrypted, returns as-is if not
- * This allows backward compatibility with existing unencrypted tokens
+ * Safely get a usable token - decrypts if encrypted
+ * Throws if encryption key is missing or decryption fails
  */
 export function getUsableToken(token: string): string {
-  // Check if encryption key is configured
+  // Security: Require encryption key in production
   if (!process.env.INSTAGRAM_TOKEN_ENCRYPTION_KEY) {
-    console.warn('Token encryption not configured - using token as-is')
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('INSTAGRAM_TOKEN_ENCRYPTION_KEY must be configured in production')
+    }
+    console.warn('Token encryption not configured - development mode only')
     return token
   }
 
   // If it looks like an encrypted token, decrypt it
   if (isTokenEncrypted(token)) {
-    try {
-      return decryptToken(token)
-    } catch (error) {
-      console.error('Failed to decrypt token, using as-is:', error)
-      return token
-    }
+    return decryptToken(token) // Let decryption errors propagate
   }
 
+  // Unencrypted token in database - this is a legacy issue
+  console.warn('Found unencrypted token - should be re-encrypted')
   return token
 }
 

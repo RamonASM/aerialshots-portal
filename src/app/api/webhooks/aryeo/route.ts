@@ -15,24 +15,37 @@ import type { WebhookPayload, WebhookEventType } from '@/lib/integrations/aryeo/
 function verifyWebhookSignature(
   payload: string,
   signature: string | null,
-  secret: string
+  secret: string | undefined
 ): boolean {
-  // If secret is configured, signature MUST be valid
-  if (secret && signature) {
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payload)
-      .digest('hex')
+  // Security: In production, require webhook secret
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('ARYEO_WEBHOOK_SECRET not configured in production - rejecting request')
+      return false
+    }
+    console.warn('Webhook secret not configured - development mode only')
+    return true
+  }
 
+  // Secret is configured, signature MUST be valid
+  if (!signature) {
+    console.error('Webhook signature missing')
+    return false
+  }
+
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+
+  try {
     return crypto.timingSafeEqual(
       Buffer.from(signature),
       Buffer.from(expectedSignature)
     )
+  } catch {
+    return false
   }
-
-  // If using Zapier (no signature), verify via x-aryeo-secret header instead
-  // This is handled separately in the POST handler
-  return !secret // Only allow if no secret configured (Zapier flow)
 }
 
 // Process webhook event idempotently

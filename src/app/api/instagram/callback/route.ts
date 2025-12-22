@@ -92,15 +92,16 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient()
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
 
-    // Encrypt the token before storing
+    // Encrypt the token before storing - NEVER store plaintext tokens
     let encryptedToken: string
     try {
       encryptedToken = encryptToken(accessToken)
     } catch (encryptError) {
       console.error('Failed to encrypt token:', encryptError)
-      // Fall back to storing unencrypted if encryption key not configured
-      // In production, this should fail instead
-      encryptedToken = accessToken
+      // Security: Never fall back to plaintext storage
+      return NextResponse.redirect(
+        `${baseUrl}/settings/instagram?error=Token encryption failed. Please contact support.`
+      )
     }
 
     const { error: insertError } = await supabase
