@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getListingById, organizeMediaByCategory, getCategoryInfo } from '@/lib/queries/listings'
 import { DeliveryHeader, MediaSection, DownloadAllButton } from '@/components/delivery'
 import { LaunchCampaignButton } from '@/components/campaigns'
+import { ShareButton } from '@/components/ui/share-button'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -64,6 +65,12 @@ export default async function DeliveryPage({ params }: PageProps) {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <ShareButton
+              title={`Media for ${listing.address}`}
+              text="View your professional real estate media"
+              variant="outline"
+              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+            />
             {listing.agent && (
               <LaunchCampaignButton
                 listingId={listing.id}

@@ -75,6 +75,72 @@ export interface CuratedItemResult {
   category: string
 }
 
+// Community Page Types
+export interface CommunityOverviewContent {
+  blocks?: Array<{
+    type: 'paragraph' | 'heading' | 'list'
+    content: string
+    items?: string[]
+  }>
+  highlights?: string[]
+}
+
+export interface CommunityLifestyleContent {
+  description?: string
+  amenities?: string[]
+  nearbyAttractions?: Array<{
+    name: string
+    distance: string
+    description?: string
+  }>
+}
+
+export interface CommunityMarketSnapshot {
+  median_price?: number
+  avg_dom?: number
+  yoy_change?: number
+  active_listings?: number
+  sold_last_30?: number
+  price_per_sqft?: number
+  updated_at?: string
+}
+
+export interface CommunitySchoolInfo {
+  name: string
+  type: 'elementary' | 'middle' | 'high' | 'private' | 'charter'
+  rating?: number
+  distance?: string
+  enrollment?: number
+  grades?: string
+}
+
+export interface CommunitySchoolsInfo {
+  elementary?: CommunitySchoolInfo[]
+  middle?: CommunitySchoolInfo[]
+  high?: CommunitySchoolInfo[]
+  private?: CommunitySchoolInfo[]
+}
+
+export interface CommunitySubdivision {
+  name: string
+  description?: string
+  price_range?: string
+  homes_count?: number
+  year_built?: string
+  home_styles?: string[]
+  image_url?: string
+}
+
+export interface CommunityQuickFacts {
+  population?: number
+  founded?: number
+  avg_commute?: number
+  median_income?: number
+  area_sqmi?: number
+  zip_codes?: string[]
+  nearby_cities?: string[]
+}
+
 export interface GeneratedQuestion {
   id: string
   question: string
@@ -1403,6 +1469,96 @@ export interface Database {
           created_at?: string
           updated_at?: string
           completed_at?: string | null
+        }
+        Relationships: []
+      }
+      communities: {
+        Row: {
+          id: string
+          slug: string
+          name: string
+          tagline: string | null
+          description: string | null
+          hero_image_url: string | null
+          gallery_urls: string[]
+          lat: number
+          lng: number
+          city: string | null
+          state: string
+          zip: string | null
+          meta_title: string | null
+          meta_description: string | null
+          focus_keyword: string | null
+          secondary_keywords: string[]
+          overview_content: CommunityOverviewContent | null
+          lifestyle_content: CommunityLifestyleContent | null
+          market_snapshot: CommunityMarketSnapshot | null
+          schools_info: CommunitySchoolsInfo | null
+          subdivisions: CommunitySubdivision[]
+          quick_facts: CommunityQuickFacts | null
+          featured_agent_ids: string[]
+          is_published: boolean
+          published_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          name: string
+          tagline?: string | null
+          description?: string | null
+          hero_image_url?: string | null
+          gallery_urls?: string[]
+          lat: number
+          lng: number
+          city?: string | null
+          state?: string
+          zip?: string | null
+          meta_title?: string | null
+          meta_description?: string | null
+          focus_keyword?: string | null
+          secondary_keywords?: string[]
+          overview_content?: CommunityOverviewContent | null
+          lifestyle_content?: CommunityLifestyleContent | null
+          market_snapshot?: CommunityMarketSnapshot | null
+          schools_info?: CommunitySchoolsInfo | null
+          subdivisions?: CommunitySubdivision[]
+          quick_facts?: CommunityQuickFacts | null
+          featured_agent_ids?: string[]
+          is_published?: boolean
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          name?: string
+          tagline?: string | null
+          description?: string | null
+          hero_image_url?: string | null
+          gallery_urls?: string[]
+          lat?: number
+          lng?: number
+          city?: string | null
+          state?: string
+          zip?: string | null
+          meta_title?: string | null
+          meta_description?: string | null
+          focus_keyword?: string | null
+          secondary_keywords?: string[]
+          overview_content?: CommunityOverviewContent | null
+          lifestyle_content?: CommunityLifestyleContent | null
+          market_snapshot?: CommunityMarketSnapshot | null
+          schools_info?: CommunitySchoolsInfo | null
+          subdivisions?: CommunitySubdivision[]
+          quick_facts?: CommunityQuickFacts | null
+          featured_agent_ids?: string[]
+          is_published?: boolean
+          published_at?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

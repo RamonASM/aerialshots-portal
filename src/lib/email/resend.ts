@@ -4,7 +4,20 @@ import { Resend } from 'resend'
  * Resend email client singleton
  * Used for sending transactional emails (magic links, notifications, etc.)
  */
-export const resend = new Resend(process.env.RESEND_API_KEY)
+
+function createResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    console.error('RESEND_API_KEY environment variable is not set')
+    // Return a client that will fail gracefully on send
+    // This allows the app to start but email operations will fail with clear errors
+  }
+
+  return new Resend(apiKey)
+}
+
+export const resend = createResendClient()
 
 /**
  * Send a magic link email for authentication

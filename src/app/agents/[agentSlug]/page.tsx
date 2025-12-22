@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { unstable_cache } from 'next/cache'
 import { Building, Calendar, TrendingUp, Phone, Mail, Instagram, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ShareButton } from '@/components/ui/share-button'
 import { InstagramFeed, InstagramFeedPlaceholder } from '@/components/instagram'
 import type { Metadata } from 'next'
 import type { Database } from '@/lib/supabase/types'
@@ -201,6 +202,12 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
                     </a>
                   </Button>
                 )}
+                <ShareButton
+                  title={`${agent.name} - Real Estate Agent`}
+                  text={`View ${agent.name}'s portfolio and listings`}
+                  variant="outline"
+                  size="sm"
+                />
               </div>
             </div>
 

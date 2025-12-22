@@ -14,6 +14,7 @@ import {
   LeadCaptureForm,
   AgentContactCard,
 } from '@/components/property'
+import { ShareButton } from '@/components/ui/share-button'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -174,6 +175,13 @@ export default async function PropertyPage({ params }: PageProps) {
           {/* Right Column - Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-6">
+              {/* Share Button */}
+              <ShareButton
+                title={listing.address}
+                text={`Check out this property at ${listing.address}`}
+                className="w-full"
+              />
+
               {/* Agent Card */}
               {listing.agent && (
                 <AgentContactCard agent={listing.agent} brandColor={brandColor} />
