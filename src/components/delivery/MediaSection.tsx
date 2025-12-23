@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Download, ChevronDown, ChevronUp, Lightbulb, Play, Maximize2 } from 'lucide-react'
+import { Download, ChevronDown, ChevronUp, Lightbulb, Play, Maximize2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Database } from '@/lib/supabase/types'
 
@@ -21,7 +21,7 @@ export function MediaSection({
   description,
   tip,
   assets,
-  brandColor = '#ff4533',
+  brandColor = '#0077ff',
 }: MediaSectionProps) {
   const [expanded, setExpanded] = useState(true)
   const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null)
@@ -63,48 +63,50 @@ export function MediaSection({
   }
 
   return (
-    <section className="border-b border-neutral-800">
+    <section className="border-b border-white/[0.08]">
       {/* Section Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-4 py-4 text-left hover:bg-neutral-900/50 sm:px-6"
+        className="group flex w-full items-center justify-between px-4 py-5 text-left transition-colors hover:bg-white/[0.02] sm:px-6 lg:px-8"
       >
         <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <p className="text-sm text-neutral-400">{description}</p>
+          <h2 className="text-[17px] font-semibold text-white">{title}</h2>
+          <p className="text-[13px] text-[#636366]">{description}</p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="rounded-full bg-neutral-800 px-3 py-1 text-sm text-neutral-300">
+          <span className="rounded-full bg-[#1c1c1e] border border-white/[0.08] px-3 py-1 text-[13px] text-[#a1a1a6]">
             {assets.length} {assets.length === 1 ? 'file' : 'files'}
           </span>
           {expanded ? (
-            <ChevronUp className="h-5 w-5 text-neutral-400" />
+            <ChevronUp className="h-5 w-5 text-[#636366] transition-colors group-hover:text-white" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-neutral-400" />
+            <ChevronDown className="h-5 w-5 text-[#636366] transition-colors group-hover:text-white" />
           )}
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-6 sm:px-6">
+        <div className="px-4 pb-8 sm:px-6 lg:px-8">
           {/* Tip */}
           {tip && (
             <div
-              className="mb-4 flex items-start gap-3 rounded-lg p-4"
-              style={{ backgroundColor: brandColor + '10' }}
+              className="mb-6 flex items-start gap-3 rounded-xl p-4 border"
+              style={{
+                backgroundColor: brandColor + '10',
+                borderColor: brandColor + '25'
+              }}
             >
               <Lightbulb className="mt-0.5 h-5 w-5 flex-shrink-0" style={{ color: brandColor }} />
-              <p className="text-sm text-neutral-300">{tip}</p>
+              <p className="text-[13px] text-[#a1a1a6] leading-relaxed">{tip}</p>
             </div>
           )}
 
           {/* Download All Button */}
           {!isInteractive && assets.length > 1 && (
-            <div className="mb-4">
+            <div className="mb-6">
               <Button
                 onClick={handleDownloadAll}
                 variant="outline"
-                className="border-neutral-700 bg-neutral-900 hover:bg-neutral-800"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download All ({assets.length})
@@ -116,14 +118,14 @@ export function MediaSection({
           {isInteractive && (
             <div className="space-y-4">
               {assets.map((asset) => (
-                <div key={asset.id} className="overflow-hidden rounded-lg">
+                <div key={asset.id} className="overflow-hidden rounded-xl border border-white/[0.08]">
                   <iframe
                     src={asset.aryeo_url}
-                    className="h-[400px] w-full sm:h-[500px]"
+                    className="h-[400px] w-full sm:h-[500px] lg:h-[600px]"
                     allowFullScreen
                     title={title}
                   />
-                  <div className="mt-2 flex justify-end">
+                  <div className="flex justify-end bg-[#0a0a0a] p-3 border-t border-white/[0.08]">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -144,7 +146,7 @@ export function MediaSection({
               {assets.map((asset) => (
                 <div
                   key={asset.id}
-                  className="group relative overflow-hidden rounded-lg bg-neutral-900"
+                  className="group relative overflow-hidden rounded-xl bg-[#0a0a0a] border border-white/[0.08]"
                 >
                   <video
                     src={asset.aryeo_url}
@@ -154,7 +156,7 @@ export function MediaSection({
                   />
                   <button
                     onClick={() => handleDownload(asset)}
-                    className="absolute right-2 top-2 rounded-full bg-black/70 p-2 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-3 top-3 rounded-full bg-black/70 backdrop-blur-sm p-2.5 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-black/90"
                     title="Download"
                   >
                     <Download className="h-4 w-4 text-white" />
@@ -170,26 +172,26 @@ export function MediaSection({
               {assets.map((asset) => (
                 <div
                   key={asset.id}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-900"
+                  className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#0a0a0a] border border-white/[0.08]"
                 >
                   <Image
                     src={asset.aryeo_url}
                     alt=""
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                   />
-                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/30" />
+                  <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/30" />
                   <button
                     onClick={() => handleDownload(asset)}
-                    className="absolute right-2 top-2 rounded-full bg-black/70 p-2 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-2 top-2 rounded-full bg-black/70 backdrop-blur-sm p-2 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-black/90"
                     title="Download"
                   >
                     <Download className="h-4 w-4 text-white" />
                   </button>
                   <button
                     onClick={() => setSelectedAsset(asset)}
-                    className="absolute bottom-2 right-2 rounded-full bg-black/70 p-2 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute bottom-2 right-2 rounded-full bg-black/70 backdrop-blur-sm p-2 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-black/90"
                     title="View Full Size"
                   >
                     <Maximize2 className="h-4 w-4 text-white" />
@@ -204,14 +206,14 @@ export function MediaSection({
       {/* Lightbox */}
       {selectedAsset && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
           onClick={() => setSelectedAsset(null)}
         >
           <button
-            className="absolute right-4 top-4 rounded-full bg-neutral-800 p-2 text-white hover:bg-neutral-700"
+            className="absolute right-4 top-4 rounded-full bg-[#1c1c1e] border border-white/[0.08] p-2.5 text-white transition-colors hover:bg-[#2c2c2e]"
             onClick={() => setSelectedAsset(null)}
           >
-            <ChevronUp className="h-6 w-6 rotate-45" />
+            <X className="h-5 w-5" />
           </button>
           <Image
             src={selectedAsset.aryeo_url}
@@ -220,8 +222,8 @@ export function MediaSection({
             className="object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-          <div className="absolute bottom-4 flex gap-2">
-            <Button onClick={() => handleDownload(selectedAsset)} variant="secondary">
+          <div className="absolute bottom-6 flex gap-3">
+            <Button onClick={() => handleDownload(selectedAsset)}>
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>

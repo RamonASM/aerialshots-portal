@@ -1,5 +1,102 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import type { User } from '@supabase/supabase-js'
+
+// Helper function to extract subdomain from hostname
+function getSubdomain(hostname: string): string | null {
+  const host = hostname.split(':')[0] // Remove port
+
+  // Handle localhost
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return null // Treat as app subdomain
+  }
+
+  // Extract subdomain (asm.aerialshots.media -> "asm")
+  const parts = host.split('.')
+  return parts.length >= 3 ? parts[0] : null
+}
+
+// Handler for admin subdomain (asm.aerialshots.media)
+async function handleAdminSubdomain(
+  request: NextRequest,
+  user: User | null,
+  supabaseResponse: NextResponse
+): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname
+
+  // Allow static files and API routes
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+    return supabaseResponse
+  }
+
+  // Allow staff login at /staff-login and /login
+  if (pathname === '/staff-login' || pathname === '/login') {
+    if (user?.email?.toLowerCase().endsWith('@aerialshots.media')) {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+    return supabaseResponse
+  }
+
+  // Block non-admin routes - redirect to /admin
+  if (!pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
+  // Require auth for admin routes
+  if (pathname.startsWith('/admin')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/staff-login', request.url))
+    }
+
+    // Check staff email - redirect non-staff to app subdomain
+    if (!user.email?.toLowerCase().endsWith('@aerialshots.media')) {
+      return NextResponse.redirect(
+        `https://${process.env.NEXT_PUBLIC_APP_DOMAIN}/dashboard`
+      )
+    }
+  }
+
+  return supabaseResponse
+}
+
+// Handler for app subdomain (app.aerialshots.media or localhost)
+function handleAppSubdomain(
+  request: NextRequest,
+  user: User | null,
+  supabaseResponse: NextResponse
+): NextResponse {
+  const pathname = request.nextUrl.pathname
+
+  // Allow static files and API routes
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+    return supabaseResponse
+  }
+
+  // Redirect admin routes to admin subdomain
+  if (pathname.startsWith('/admin') || pathname === '/staff-login') {
+    return NextResponse.redirect(
+      `https://${process.env.NEXT_PUBLIC_ADMIN_DOMAIN}${pathname}`
+    )
+  }
+
+  // Handle agent login
+  if (pathname === '/login') {
+    if (user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return supabaseResponse
+  }
+
+  // Require auth for dashboard
+  if (pathname.startsWith('/dashboard') && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
+}
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -36,50 +133,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/admin']
-  const isProtectedRoute = protectedRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
+  // Get subdomain from hostname
+  const hostname = request.headers.get('host') || ''
+  const subdomain = getSubdomain(hostname)
 
-  // Redirect to login if accessing protected route without auth
-  if (isProtectedRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+  // Route based on subdomain
+  if (subdomain === 'asm') {
+    return handleAdminSubdomain(request, user, supabaseResponse)
+  } else if (subdomain === 'app' || subdomain === null) {
+    return handleAppSubdomain(request, user, supabaseResponse)
   }
 
-  // Admin routes - allow @aerialshots.media domain
-  // The admin layout also checks the staff table for role-based access
-  const STAFF_DOMAIN = '@aerialshots.media'
-
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-
-  if (isAdminRoute && user) {
-    const userEmail = user.email?.toLowerCase()
-    // Allow anyone with @aerialshots.media email domain
-    if (!userEmail || !userEmail.endsWith(STAFF_DOMAIN)) {
-      // Not a staff member - redirect to dashboard
-      const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
-    }
+  // Unknown subdomain or root domain -> redirect to marketing
+  if (process.env.NEXT_PUBLIC_MARKETING_SITE) {
+    return NextResponse.redirect(process.env.NEXT_PUBLIC_MARKETING_SITE)
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
+  // Fallback if marketing site not configured
   return supabaseResponse
 }
 

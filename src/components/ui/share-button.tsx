@@ -92,7 +92,7 @@ export function ShareButton({
       disabled={isSharing}
       className={cn(
         'gap-2 transition-all',
-        copied && 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100',
+        copied && 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20',
         className
       )}
     >

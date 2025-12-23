@@ -13,6 +13,7 @@ import {
   WhatsComingSection,
   LeadCaptureForm,
   AgentContactCard,
+  MobileContactCTA,
 } from '@/components/property'
 import { ShareButton } from '@/components/ui/share-button'
 import type { Metadata } from 'next'
@@ -56,12 +57,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 // Loading components for suspense
 function LoadingSection() {
   return (
-    <div className="animate-pulse bg-neutral-100 p-8">
+    <div className="animate-pulse bg-[#0a0a0a] p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="h-6 w-32 rounded bg-neutral-200" />
+        <div className="h-6 w-32 rounded bg-[#1c1c1e]" />
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-lg bg-neutral-200" />
+            <div key={i} className="h-24 rounded-xl bg-[#1c1c1e]" />
           ))}
         </div>
       </div>
@@ -78,7 +79,7 @@ export default async function PropertyPage({ params }: PageProps) {
   }
 
   const mediaByCategory = organizeMediaByCategory(listing.media_assets)
-  const brandColor = listing.agent?.brand_color ?? '#ff4533'
+  const brandColor = listing.agent?.brand_color ?? '#0077ff'
 
   // Get images and video for hero
   const heroImages = mediaByCategory.mls || []
@@ -113,7 +114,7 @@ export default async function PropertyPage({ params }: PageProps) {
     .join(', ')
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Hero */}
       <PropertyHero
         images={heroImages}
@@ -138,13 +139,13 @@ export default async function PropertyPage({ params }: PageProps) {
             {/* Interactive Content (Matterport, etc.) */}
             {mediaByCategory.matterport?.length > 0 && (
               <section className="py-8">
-                <h2 className="mb-4 text-2xl font-bold text-neutral-900">
+                <h2 className="mb-4 text-[22px] font-semibold text-white">
                   3D Virtual Tour
                 </h2>
-                <div className="overflow-hidden rounded-lg">
+                <div className="overflow-hidden rounded-xl border border-white/[0.08]">
                   <iframe
                     src={mediaByCategory.matterport[0].aryeo_url}
-                    className="h-[400px] w-full sm:h-[500px]"
+                    className="h-[400px] w-full sm:h-[500px] lg:h-[600px]"
                     allowFullScreen
                     title="3D Virtual Tour"
                   />
@@ -155,7 +156,7 @@ export default async function PropertyPage({ params }: PageProps) {
             {/* Floor Plans */}
             {mediaByCategory.floorplan?.length > 0 && (
               <section className="py-8">
-                <h2 className="mb-4 text-2xl font-bold text-neutral-900">
+                <h2 className="mb-4 text-[22px] font-semibold text-white">
                   Floor Plans
                 </h2>
                 <div className="space-y-4">
@@ -164,7 +165,7 @@ export default async function PropertyPage({ params }: PageProps) {
                       key={fp.id}
                       src={fp.aryeo_url}
                       alt="Floor Plan"
-                      className="w-full rounded-lg"
+                      className="w-full rounded-xl border border-white/[0.08]"
                     />
                   ))}
                 </div>
@@ -188,8 +189,8 @@ export default async function PropertyPage({ params }: PageProps) {
               )}
 
               {/* Lead Form */}
-              <div className="rounded-lg border border-neutral-200 bg-white p-6">
-                <h3 className="mb-4 text-lg font-semibold text-neutral-900">
+              <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e]/72 backdrop-blur-xl p-6">
+                <h3 className="mb-4 text-[17px] font-semibold text-white">
                   Interested in this property?
                 </h3>
                 <LeadCaptureForm
@@ -231,21 +232,27 @@ export default async function PropertyPage({ params }: PageProps) {
       </Suspense>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-neutral-50">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-neutral-500">
+      <footer className="border-t border-white/[0.08] bg-[#0a0a0a] pb-20 lg:pb-0">
+        <div className="mx-auto max-w-7xl px-4 py-10 text-center sm:px-6 lg:px-8">
+          <p className="text-[13px] text-[#636366]">
             Property website powered by{' '}
             <a
               href="https://www.aerialshots.media"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ff4533] hover:underline"
+              className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
             >
               Aerial Shots Media
             </a>
           </p>
         </div>
       </footer>
+
+      {/* Mobile Floating CTA */}
+      <MobileContactCTA
+        agentName={listing.agent?.name}
+        brandColor={brandColor}
+      />
     </div>
   )
 }

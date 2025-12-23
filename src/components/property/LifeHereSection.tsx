@@ -22,18 +22,18 @@ export function LifeHereSection({ places, walkScoreAddress, lat, lng }: LifeHere
   if (!hasPlaces && !walkScoreAddress) return null
 
   return (
-    <section className="bg-white py-12">
+    <section className="bg-[#0a0a0a] py-12 border-t border-white/[0.08]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-neutral-900">Life Here</h2>
-        <p className="mt-2 text-neutral-600">
+        <h2 className="text-[22px] font-semibold text-white">Life Here</h2>
+        <p className="mt-2 text-[15px] text-[#a1a1a6]">
           Discover what makes this neighborhood special
         </p>
 
         {/* Walk Score Widget */}
         {walkScoreAddress && (
           <div className="mt-8">
-            <h3 className="mb-4 text-lg font-semibold text-neutral-900">Walkability</h3>
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
+            <h3 className="mb-4 text-[17px] font-semibold text-white">Walkability</h3>
+            <div className="overflow-hidden rounded-xl border border-white/[0.08]">
               <iframe
                 src={`https://www.walkscore.com/serve-walkscore-tile.php?wsid=&s=${encodeURIComponent(
                   walkScoreAddress
@@ -49,7 +49,7 @@ export function LifeHereSection({ places, walkScoreAddress, lat, lng }: LifeHere
         {/* Nearby Places */}
         {hasPlaces && (
           <div className="mt-8">
-            <h3 className="mb-4 text-lg font-semibold text-neutral-900">Nearby Places</h3>
+            <h3 className="mb-4 text-[17px] font-semibold text-white">Nearby Places</h3>
 
             <div className="space-y-2">
               {categories.map((category) => {
@@ -62,74 +62,74 @@ export function LifeHereSection({ places, walkScoreAddress, lat, lng }: LifeHere
                 return (
                   <div
                     key={category}
-                    className="overflow-hidden rounded-lg border border-neutral-200"
+                    className="overflow-hidden rounded-xl border border-white/[0.08]"
                   >
                     {/* Category Header */}
                     <button
                       onClick={() =>
                         setExpandedCategory(isExpanded ? null : category)
                       }
-                      className="flex w-full items-center justify-between bg-neutral-50 px-4 py-3 text-left hover:bg-neutral-100"
+                      className="flex w-full items-center justify-between bg-[#1c1c1e] px-4 py-3.5 text-left transition-colors hover:bg-[#2c2c2e]"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{info.icon}</span>
                         <div>
-                          <h4 className="font-medium text-neutral-900">
+                          <h4 className="font-medium text-white">
                             {info.title}
                           </h4>
-                          <p className="text-sm text-neutral-500">
+                          <p className="text-[13px] text-[#636366]">
                             {categoryPlaces.length} places nearby
                           </p>
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-neutral-400" />
+                        <ChevronUp className="h-5 w-5 text-[#636366]" />
                       ) : (
-                        <ChevronDown className="h-5 w-5 text-neutral-400" />
+                        <ChevronDown className="h-5 w-5 text-[#636366]" />
                       )}
                     </button>
 
                     {/* Places List */}
                     {isExpanded && (
-                      <div className="divide-y divide-neutral-100">
+                      <div className="divide-y divide-white/[0.08]">
                         {categoryPlaces.map((place) => (
                           <div
                             key={place.id}
-                            className="flex items-start gap-4 px-4 py-3"
+                            className="flex items-start gap-4 px-4 py-3 bg-[#0a0a0a]"
                           >
                             <div className="flex-1">
-                              <h5 className="font-medium text-neutral-900">
+                              <h5 className="font-medium text-white">
                                 {place.name}
                               </h5>
-                              <p className="mt-0.5 flex items-center gap-1 text-sm text-neutral-500">
+                              <p className="mt-0.5 flex items-center gap-1 text-[13px] text-[#636366]">
                                 <MapPin className="h-3 w-3" />
                                 {place.address}
                               </p>
-                              <div className="mt-1 flex items-center gap-3">
+                              <div className="mt-1.5 flex items-center gap-3">
                                 {place.rating && (
                                   <div className="flex items-center gap-1">
                                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                    <span className="text-sm font-medium text-neutral-700">
+                                    <span className="text-[13px] font-medium text-white">
                                       {place.rating.toFixed(1)}
                                     </span>
                                     {place.reviewCount > 0 && (
-                                      <span className="text-sm text-neutral-400">
+                                      <span className="text-[13px] text-[#636366]">
                                         ({place.reviewCount})
                                       </span>
                                     )}
                                   </div>
                                 )}
                                 {place.distance && (
-                                  <span className="text-sm text-neutral-500">
+                                  <span className="text-[13px] text-[#a1a1a6]">
                                     {place.distance.toFixed(1)} mi
                                   </span>
                                 )}
                                 {place.isOpen !== undefined && (
                                   <span
-                                    className={`text-sm ${
+                                    className={`text-[13px] ${
                                       place.isOpen
-                                        ? 'text-green-600'
-                                        : 'text-red-600'
+                                        ? 'text-green-400'
+                                        : 'text-red-400'
                                     }`}
                                   >
                                     {place.isOpen ? 'Open' : 'Closed'}
@@ -138,7 +138,7 @@ export function LifeHereSection({ places, walkScoreAddress, lat, lng }: LifeHere
                               </div>
                             </div>
                             {place.priceLevel && (
-                              <div className="text-sm text-neutral-500">
+                              <div className="text-[13px] text-[#636366]">
                                 {'$'.repeat(place.priceLevel)}
                               </div>
                             )}

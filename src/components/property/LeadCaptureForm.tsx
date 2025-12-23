@@ -26,7 +26,7 @@ export function LeadCaptureForm({
   listingId,
   agentId,
   address,
-  brandColor = '#ff4533',
+  brandColor = '#0077ff',
 }: LeadCaptureFormProps) {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -66,12 +66,12 @@ export function LeadCaptureForm({
 
   if (submitted) {
     return (
-      <div className="rounded-lg bg-green-50 p-8 text-center">
-        <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-        <h3 className="mt-4 text-xl font-semibold text-green-800">
+      <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-8 text-center">
+        <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
+        <h3 className="mt-4 text-[17px] font-semibold text-white">
           Thanks for your interest!
         </h3>
-        <p className="mt-2 text-green-600">
+        <p className="mt-2 text-[15px] text-[#a1a1a6]">
           We've received your inquiry and will be in touch soon.
         </p>
       </div>
@@ -81,20 +81,20 @@ export function LeadCaptureForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="name">Name *</Label>
+        <Label htmlFor="name" className="text-[13px] text-[#a1a1a6]">Name *</Label>
         <Input
           id="name"
           {...register('name', { required: 'Name is required' })}
           placeholder="Your full name"
-          className="mt-1"
+          className="mt-1.5"
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          <p className="mt-1.5 text-[13px] text-[#ff453a]">{errors.name.message}</p>
         )}
       </div>
 
       <div>
-        <Label htmlFor="email">Email *</Label>
+        <Label htmlFor="email" className="text-[13px] text-[#a1a1a6]">Email *</Label>
         <Input
           id="email"
           type="email"
@@ -106,36 +106,36 @@ export function LeadCaptureForm({
             },
           })}
           placeholder="your@email.com"
-          className="mt-1"
+          className="mt-1.5"
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+          <p className="mt-1.5 text-[13px] text-[#ff453a]">{errors.email.message}</p>
         )}
       </div>
 
       <div>
-        <Label htmlFor="phone">Phone</Label>
+        <Label htmlFor="phone" className="text-[13px] text-[#a1a1a6]">Phone</Label>
         <Input
           id="phone"
           type="tel"
           {...register('phone')}
           placeholder="(555) 123-4567"
-          className="mt-1"
+          className="mt-1.5"
         />
       </div>
 
       <div>
-        <Label htmlFor="message">Message</Label>
+        <Label htmlFor="message" className="text-[13px] text-[#a1a1a6]">Message</Label>
         <Textarea
           id="message"
           {...register('message')}
           placeholder={`I'm interested in ${address}. Please contact me with more information.`}
           rows={4}
-          className="mt-1"
+          className="mt-1.5"
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-[13px] text-[#ff453a]">{error}</p>}
 
       <Button
         type="submit"
@@ -156,7 +156,7 @@ export function LeadCaptureForm({
         )}
       </Button>
 
-      <p className="text-center text-xs text-neutral-500">
+      <p className="text-center text-[11px] text-[#636366]">
         By submitting, you agree to receive communications about this property.
       </p>
     </form>

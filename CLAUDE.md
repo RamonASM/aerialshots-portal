@@ -45,6 +45,7 @@ src/
 │   └── property/[listingId]  # Property websites
 ├── components/
 │   ├── community/         # Community page components
+│   ├── dashboard/         # Dashboard-specific components
 │   ├── delivery/          # Media delivery components
 │   ├── property/          # Property website components
 │   └── ui/                # shadcn/ui components
@@ -58,6 +59,36 @@ src/
 └── supabase/
     └── migrations/        # SQL migrations
 ```
+
+## Design System
+
+The portal uses an Apple-inspired dark theme (iPhone 12 era aesthetic):
+
+### Color Palette
+```css
+/* Backgrounds */
+--bg-primary: #000000;        /* Pure black - main */
+--bg-secondary: #0a0a0a;      /* Near black - cards */
+--bg-elevated: #1c1c1e;       /* iOS elevated surface */
+
+/* Blue Accent */
+--blue-500: #0077ff;          /* Primary accent */
+--blue-400: #3395ff;          /* Light accent */
+
+/* Text */
+--text-primary: #ffffff;
+--text-secondary: #a1a1a6;    /* iOS secondary */
+--text-tertiary: #8e8e93;     /* Muted (WCAG AA compliant) */
+
+/* Borders */
+--border-primary: rgba(255, 255, 255, 0.08);
+```
+
+### Component Patterns
+- Cards: `rounded-xl border border-white/[0.08] bg-[#1c1c1e]`
+- Glass: `bg-[#1c1c1e]/72 backdrop-blur-xl`
+- Buttons: Min height 44px for touch targets (WCAG compliance)
+- Transitions: CSS-only (no Framer Motion for performance)
 
 ## Important Patterns
 

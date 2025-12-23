@@ -41,7 +41,7 @@ export default function ProfilePage() {
     formState: { errors },
   } = useForm<ProfileFormData>()
 
-  const brandColor = watch('brand_color') || '#ff4533'
+  const brandColor = watch('brand_color') || '#0077ff'
 
   useEffect(() => {
     async function loadAgent() {
@@ -61,7 +61,7 @@ export default function ProfilePage() {
           phone: data.phone || '',
           bio: data.bio || '',
           instagram_url: data.instagram_url || '',
-          brand_color: data.brand_color || '#ff4533',
+          brand_color: data.brand_color || '#0077ff',
         })
       }
       setLoading(false)
@@ -137,7 +137,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#636366]" />
       </div>
     )
   }
@@ -145,26 +145,26 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Profile Settings</h1>
-        <p className="mt-1 text-neutral-600">
+        <h1 className="text-[22px] font-semibold text-white">Profile Settings</h1>
+        <p className="mt-1 text-[#a1a1a6]">
           Manage your profile and branding for property pages.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Images Section */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="font-semibold text-neutral-900">Photos</h2>
-          <p className="mt-1 text-sm text-neutral-600">
+        <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6">
+          <h2 className="font-semibold text-white">Photos</h2>
+          <p className="mt-1 text-[13px] text-[#636366]">
             Your headshot and logo appear on delivery and lifestyle pages.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-8">
             {/* Headshot */}
             <div>
-              <Label>Headshot</Label>
+              <Label className="text-[#a1a1a6]">Headshot</Label>
               <div className="mt-2 flex items-center gap-4">
-                <div className="relative h-24 w-24 overflow-hidden rounded-full bg-neutral-100">
+                <div className="relative h-24 w-24 overflow-hidden rounded-full bg-[#0a0a0a]">
                   {agent?.headshot_url ? (
                     <img
                       src={agent.headshot_url}
@@ -172,7 +172,7 @@ export default function ProfilePage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-neutral-400">
+                    <div className="flex h-full w-full items-center justify-center text-[28px] font-semibold text-[#636366]">
                       {agent?.name?.charAt(0) || '?'}
                     </div>
                   )}
@@ -204,17 +204,17 @@ export default function ProfilePage() {
 
             {/* Logo */}
             <div>
-              <Label>Logo</Label>
+              <Label className="text-[#a1a1a6]">Logo</Label>
               <div className="mt-2 flex items-center gap-4">
-                <div className="flex h-24 w-40 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
+                <div className="flex h-24 w-40 items-center justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-[#0a0a0a]">
                   {agent?.logo_url ? (
                     <img
                       src={agent.logo_url}
                       alt="Logo"
-                      className="max-h-20 max-w-36 object-contain"
+                      className="max-h-20 max-w-36 object-contain brightness-0 invert"
                     />
                   ) : (
-                    <span className="text-sm text-neutral-400">No logo</span>
+                    <span className="text-[13px] text-[#636366]">No logo</span>
                   )}
                   {uploadingLogo && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -245,24 +245,24 @@ export default function ProfilePage() {
         </div>
 
         {/* Basic Info Section */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="font-semibold text-neutral-900">Basic Information</h2>
+        <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6">
+          <h2 className="font-semibold text-white">Basic Information</h2>
 
           <div className="mt-6 grid gap-6 sm:grid-cols-2">
             <div>
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name" className="text-[#a1a1a6]">Full Name *</Label>
               <Input
                 id="name"
                 {...register('name', { required: 'Name is required' })}
                 className="mt-1"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                <p className="mt-1 text-[13px] text-red-400">{errors.name.message}</p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="text-[#a1a1a6]">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -273,7 +273,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="sm:col-span-2">
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio" className="text-[#a1a1a6]">Bio</Label>
               <Textarea
                 id="bio"
                 {...register('bio')}
@@ -281,13 +281,13 @@ export default function ProfilePage() {
                 rows={4}
                 className="mt-1"
               />
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-[13px] text-[#636366]">
                 Appears on your property pages and portfolio.
               </p>
             </div>
 
             <div>
-              <Label htmlFor="instagram_url">Instagram URL</Label>
+              <Label htmlFor="instagram_url" className="text-[#a1a1a6]">Instagram URL</Label>
               <Input
                 id="instagram_url"
                 {...register('instagram_url')}
@@ -297,16 +297,16 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <Label htmlFor="brand_color">Brand Color</Label>
+              <Label htmlFor="brand_color" className="text-[#a1a1a6]">Brand Color</Label>
               <div className="mt-1 flex items-center gap-3">
                 <input
                   type="color"
                   id="brand_color"
                   {...register('brand_color')}
-                  className="h-10 w-16 cursor-pointer rounded border border-neutral-200"
+                  className="h-10 w-16 cursor-pointer rounded-lg border border-white/[0.08] bg-[#0a0a0a]"
                 />
                 <div
-                  className="h-10 flex-1 rounded-lg px-4 py-2 text-white"
+                  className="h-10 flex-1 rounded-xl px-4 py-2 text-white text-[13px] flex items-center"
                   style={{ backgroundColor: brandColor }}
                 >
                   Preview
@@ -319,9 +319,9 @@ export default function ProfilePage() {
         {/* Save Button */}
         <div className="flex items-center justify-end gap-4">
           {saved && (
-            <div className="flex items-center gap-2 text-green-600">
+            <div className="flex items-center gap-2 text-green-400">
               <CheckCircle className="h-5 w-5" />
-              <span>Saved!</span>
+              <span className="text-[13px]">Saved!</span>
             </div>
           )}
           <Button type="submit" disabled={saving}>

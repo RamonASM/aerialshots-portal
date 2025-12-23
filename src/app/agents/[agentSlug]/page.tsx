@@ -142,14 +142,14 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
       )
     : 0
 
-  const brandColor = agent.brand_color || '#ff4533'
+  const brandColor = agent.brand_color || '#0077ff'
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Header */}
       <header
-        className="relative overflow-hidden py-16"
-        style={{ backgroundColor: brandColor + '10' }}
+        className="relative overflow-hidden py-16 border-b border-white/[0.08]"
+        style={{ background: `linear-gradient(to bottom, ${brandColor}10, transparent)` }}
       >
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
@@ -158,11 +158,11 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
               <img
                 src={agent.headshot_url}
                 alt={agent.name}
-                className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-lg"
+                className="h-32 w-32 rounded-full ring-4 ring-white/10 object-cover"
               />
             ) : (
               <div
-                className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white text-4xl font-bold text-white shadow-lg"
+                className="flex h-32 w-32 items-center justify-center rounded-full ring-4 ring-white/10 text-[34px] font-semibold text-white"
                 style={{ backgroundColor: brandColor }}
               >
                 {agent.name.charAt(0)}
@@ -171,9 +171,9 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
 
             {/* Agent Info */}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-neutral-900">{agent.name}</h1>
+              <h1 className="text-[28px] font-semibold tracking-tight text-white sm:text-[34px]">{agent.name}</h1>
               {agent.bio && (
-                <p className="mt-2 max-w-xl text-neutral-600">{agent.bio}</p>
+                <p className="mt-2 max-w-xl text-[15px] text-[#a1a1a6]">{agent.bio}</p>
               )}
 
               {/* Contact Buttons */}
@@ -216,7 +216,7 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
               <img
                 src={agent.logo_url}
                 alt={`${agent.name} logo`}
-                className="h-16 w-auto object-contain"
+                className="h-16 w-auto object-contain brightness-0 invert opacity-70"
               />
             )}
           </div>
@@ -224,32 +224,32 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
       </header>
 
       {/* Stats Bar */}
-      <div className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="border-b border-white/[0.08] bg-[#0a0a0a]">
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <div className="text-center">
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-[28px] font-semibold text-white">
                 {listings.length}
               </p>
-              <p className="text-sm text-neutral-600">Total Listings</p>
+              <p className="text-[13px] text-[#636366]">Total Listings</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-[28px] font-semibold text-white">
                 {soldListings.length}
               </p>
-              <p className="text-sm text-neutral-600">Sold</p>
+              <p className="text-[13px] text-[#636366]">Sold</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-[28px] font-semibold text-white">
                 {avgDOM || '-'}
               </p>
-              <p className="text-sm text-neutral-600">Avg Days on Market</p>
+              <p className="text-[13px] text-[#636366]">Avg Days on Market</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-[28px] font-semibold text-white">
                 ${(totalSoldVolume / 1000000).toFixed(1)}M
               </p>
-              <p className="text-sm text-neutral-600">Total Volume</p>
+              <p className="text-[13px] text-[#636366]">Total Volume</p>
             </div>
           </div>
         </div>
@@ -260,10 +260,10 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
         {/* Active Listings */}
         {activeListings.length > 0 && (
           <section className="mb-12">
-            <h2 className="mb-6 text-xl font-bold text-neutral-900">
+            <h2 className="mb-6 text-[22px] font-semibold text-white">
               Active Listings
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {activeListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
@@ -278,10 +278,10 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
         {/* Sold Listings */}
         {soldListings.length > 0 && (
           <section>
-            <h2 className="mb-6 text-xl font-bold text-neutral-900">
+            <h2 className="mb-6 text-[22px] font-semibold text-white">
               Recently Sold
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {soldListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
@@ -297,14 +297,14 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
         {/* No Listings */}
         {listings.length === 0 && (
           <div className="py-12 text-center">
-            <Building className="mx-auto h-12 w-12 text-neutral-300" />
-            <p className="mt-4 text-neutral-600">No listings yet</p>
+            <Building className="mx-auto h-12 w-12 text-[#636366]" />
+            <p className="mt-4 text-[#a1a1a6]">No listings yet</p>
           </div>
         )}
 
         {/* Instagram Section */}
         {(agent.instagram_url || publishedPostUrls.length > 0) && (
-          <section className="mt-12 pt-12 border-t border-neutral-200">
+          <section className="mt-12 pt-12 border-t border-white/[0.08]">
             {publishedPostUrls.length > 0 ? (
               <InstagramFeed
                 agentId={agent.id}
@@ -320,15 +320,15 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-neutral-50">
-        <div className="mx-auto max-w-5xl px-4 py-8 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-neutral-500">
+      <footer className="border-t border-white/[0.08] bg-[#0a0a0a]">
+        <div className="mx-auto max-w-5xl px-4 py-10 text-center sm:px-6 lg:px-8">
+          <p className="text-[13px] text-[#636366]">
             Professional media by{' '}
             <a
               href="https://www.aerialshots.media"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ff4533] hover:underline"
+              className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
             >
               Aerial Shots Media
             </a>
@@ -355,10 +355,10 @@ function ListingCard({
   return (
     <Link
       href={`/property/${listing.id}`}
-      className="group overflow-hidden rounded-lg border border-neutral-200 bg-white transition-shadow hover:shadow-lg"
+      className="group overflow-hidden rounded-xl border border-white/[0.08] bg-[#1c1c1e] transition-all duration-200 hover:border-white/[0.16] hover:bg-[#2c2c2e]"
     >
       {/* Image */}
-      <div className="relative h-48 bg-neutral-100">
+      <div className="relative h-48 bg-[#0a0a0a]">
         {heroImage ? (
           <img
             src={heroImage.aryeo_url}
@@ -367,11 +367,11 @@ function ListingCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <Building className="h-12 w-12 text-neutral-300" />
+            <Building className="h-12 w-12 text-[#636366]" />
           </div>
         )}
         {showSold && (
-          <div className="absolute left-2 top-2 rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white">
+          <div className="absolute left-2 top-2 rounded-full bg-green-500 px-3 py-1 text-[11px] font-medium text-white uppercase tracking-wider">
             SOLD
           </div>
         )}
@@ -380,17 +380,17 @@ function ListingCard({
       {/* Content */}
       <div className="p-4">
         <p
-          className="text-lg font-bold"
+          className="text-[17px] font-semibold"
           style={{ color: brandColor }}
         >
           ${(showSold && listing.sold_price ? listing.sold_price : listing.price)?.toLocaleString()}
         </p>
-        <h3 className="mt-1 font-medium text-neutral-900">{listing.address}</h3>
-        <p className="text-sm text-neutral-500">
+        <h3 className="mt-1 text-[15px] font-medium text-white">{listing.address}</h3>
+        <p className="text-[13px] text-[#636366]">
           {listing.city}, {listing.state} {listing.zip}
         </p>
 
-        <div className="mt-2 flex items-center gap-4 text-sm text-neutral-600">
+        <div className="mt-2 flex items-center gap-3 text-[13px] text-[#a1a1a6]">
           {listing.beds && <span>{listing.beds} bed</span>}
           {listing.baths && <span>{listing.baths} bath</span>}
           {listing.sqft && <span>{listing.sqft.toLocaleString()} sqft</span>}

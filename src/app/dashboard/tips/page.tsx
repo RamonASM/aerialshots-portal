@@ -124,7 +124,7 @@ export default function TipsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#636366]" />
       </div>
     )
   }
@@ -133,8 +133,8 @@ export default function TipsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Agent Tips</h1>
-          <p className="mt-1 text-neutral-600">
+          <h1 className="text-[22px] font-semibold text-white">Agent Tips</h1>
+          <p className="mt-1 text-[#a1a1a6]">
             Share insider knowledge that appears on your property pages.
           </p>
         </div>
@@ -146,11 +146,11 @@ export default function TipsPage() {
 
       {/* Add Tip Form */}
       {showForm && (
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="font-semibold text-neutral-900">New Tip</h2>
+        <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6">
+          <h2 className="font-semibold text-white">New Tip</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
             <div>
-              <Label htmlFor="tip_text">Tip Text *</Label>
+              <Label htmlFor="tip_text" className="text-[#a1a1a6]">Tip Text *</Label>
               <Textarea
                 id="tip_text"
                 {...register('tip_text', { required: 'Tip text is required' })}
@@ -159,17 +159,17 @@ export default function TipsPage() {
                 className="mt-1"
               />
               {errors.tip_text && (
-                <p className="mt-1 text-sm text-red-600">{errors.tip_text.message}</p>
+                <p className="mt-1 text-[13px] text-red-400">{errors.tip_text.message}</p>
               )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="listing_id">Apply to Listing</Label>
+                <Label htmlFor="listing_id" className="text-[#a1a1a6]">Apply to Listing</Label>
                 <select
                   id="listing_id"
                   {...register('listing_id')}
-                  className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0a0a0a] px-3 py-2 text-[15px] text-white focus:border-[#0077ff] focus:outline-none focus:ring-1 focus:ring-[#0077ff]"
                 >
                   <option value="">All Listings (General Tip)</option>
                   {listings.map((listing) => (
@@ -181,11 +181,11 @@ export default function TipsPage() {
               </div>
 
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category" className="text-[#a1a1a6]">Category</Label>
                 <select
                   id="category"
                   {...register('category')}
-                  className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0a0a0a] px-3 py-2 text-[15px] text-white focus:border-[#0077ff] focus:outline-none focus:ring-1 focus:ring-[#0077ff]"
                 >
                   <option value="">Select category</option>
                   <option value="neighborhood">Neighborhood</option>
@@ -223,17 +223,17 @@ export default function TipsPage() {
           {tips.map((tip) => (
             <div
               key={tip.id}
-              className="flex items-start gap-4 rounded-lg border border-neutral-200 bg-white p-4"
+              className="flex items-start gap-4 rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-4"
             >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100">
-                <Lightbulb className="h-5 w-5 text-amber-600" />
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30">
+                <Lightbulb className="h-5 w-5 text-amber-400" />
               </div>
               <div className="flex-1">
-                <p className="text-neutral-900">{tip.tip_text}</p>
-                <div className="mt-2 flex items-center gap-4 text-sm text-neutral-500">
+                <p className="text-white">{tip.tip_text}</p>
+                <div className="mt-2 flex items-center gap-4 text-[13px] text-[#636366]">
                   <span>{getListingAddress(tip.listing_id)}</span>
                   {tip.category && (
-                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-white/5 border border-white/[0.08] px-2 py-0.5 text-[11px] text-[#a1a1a6]">
                       {tip.category}
                     </span>
                   )}
@@ -243,7 +243,7 @@ export default function TipsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => deleteTip(tip.id)}
-                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="text-red-400 hover:bg-red-500/10 hover:text-red-400"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -251,10 +251,10 @@ export default function TipsPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-neutral-200 bg-white p-12 text-center">
-          <Lightbulb className="mx-auto h-12 w-12 text-neutral-300" />
-          <h3 className="mt-4 font-semibold text-neutral-900">No tips yet</h3>
-          <p className="mt-2 text-neutral-600">
+        <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-12 text-center">
+          <Lightbulb className="mx-auto h-12 w-12 text-[#636366]" />
+          <h3 className="mt-4 font-semibold text-white">No tips yet</h3>
+          <p className="mt-2 text-[#a1a1a6]">
             Add tips to share insider knowledge on your property pages.
           </p>
           <Button className="mt-4" onClick={() => setShowForm(true)}>

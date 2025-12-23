@@ -47,12 +47,12 @@ const categoryLabels: Record<string, string> = {
 }
 
 const curatedCategoryColors: Record<string, string> = {
-  development: 'bg-blue-100 text-blue-700 border-blue-200',
-  infrastructure: 'bg-purple-100 text-purple-700 border-purple-200',
-  business: 'bg-green-100 text-green-700 border-green-200',
-  event: 'bg-amber-100 text-amber-700 border-amber-200',
-  school: 'bg-red-100 text-red-700 border-red-200',
-  park: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  development: 'bg-[#0077ff]/20 text-[#3395ff] border-[#0077ff]/30',
+  infrastructure: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  business: 'bg-green-500/20 text-green-400 border-green-500/30',
+  event: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  school: 'bg-red-500/20 text-red-400 border-red-500/30',
+  park: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
 }
 
 function PlaceCategory({
@@ -68,26 +68,26 @@ function PlaceCategory({
   if (!places || places.length === 0) return null
 
   return (
-    <div className="border-b border-neutral-100 last:border-0">
+    <div className="border-b border-white/[0.08] last:border-0">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between py-4 text-left hover:bg-neutral-50 px-2 -mx-2 rounded-lg transition-colors"
+        className="flex w-full items-center justify-between py-4 text-left hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-            <Icon className="h-5 w-5 text-blue-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0077ff]/10">
+            <Icon className="h-5 w-5 text-[#0077ff]" />
           </div>
           <div>
-            <span className="font-medium text-neutral-900">
+            <span className="font-medium text-white">
               {categoryLabels[category]}
             </span>
-            <span className="ml-2 text-sm text-neutral-500">
+            <span className="ml-2 text-[13px] text-[#636366]">
               {places.length} nearby
             </span>
           </div>
         </div>
         <ChevronDown
-          className={`h-5 w-5 text-neutral-400 transition-transform ${
+          className={`h-5 w-5 text-[#636366] transition-transform ${
             isExpanded ? 'rotate-180' : ''
           }`}
         />
@@ -98,19 +98,19 @@ function PlaceCategory({
           {places.slice(0, 5).map((place) => (
             <div
               key={place.id}
-              className="flex items-start gap-3 rounded-lg bg-neutral-50 p-3"
+              className="flex items-start gap-3 rounded-xl bg-[#0a0a0a] border border-white/[0.08] p-3"
             >
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-neutral-900 truncate">
+                <div className="font-medium text-white truncate">
                   {place.name}
                 </div>
-                <div className="mt-1 flex flex-wrap gap-2 text-sm text-neutral-500">
+                <div className="mt-1 flex flex-wrap gap-2 text-[13px] text-[#636366]">
                   {place.rating && (
                     <span className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                       {place.rating}
                       {place.reviewCount > 0 && (
-                        <span className="text-neutral-400">
+                        <span className="text-[#636366]">
                           ({place.reviewCount})
                         </span>
                       )}
@@ -126,8 +126,8 @@ function PlaceCategory({
                     <span
                       className={`flex items-center gap-1 ${
                         place.isOpen
-                          ? 'text-green-600'
-                          : 'text-red-500'
+                          ? 'text-green-400'
+                          : 'text-red-400'
                       }`}
                     >
                       <Clock className="h-3.5 w-3.5" />
@@ -156,14 +156,14 @@ export function CommunityLifestyle({
       {/* Nearby Places */}
       {nearbyPlaces && (
         <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
+          <h2 className="text-[22px] font-semibold text-white">
             Life Here
           </h2>
-          <p className="mt-2 text-neutral-600">
+          <p className="mt-2 text-[#a1a1a6]">
             Explore what&apos;s nearby
           </p>
 
-          <div className="mt-6 rounded-xl border border-neutral-200 bg-white divide-y divide-neutral-100">
+          <div className="mt-6 rounded-xl border border-white/[0.08] bg-[#1c1c1e] divide-y divide-white/[0.08] px-4">
             {categories.map((category) => (
               <PlaceCategory
                 key={category}
@@ -178,10 +178,10 @@ export function CommunityLifestyle({
       {/* Local Events */}
       {events && events.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
+          <h2 className="text-[22px] font-semibold text-white">
             Upcoming Events
           </h2>
-          <p className="mt-2 text-neutral-600">
+          <p className="mt-2 text-[#a1a1a6]">
             Things happening nearby
           </p>
 
@@ -192,7 +192,7 @@ export function CommunityLifestyle({
                 href={event.url || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-shadow hover:shadow-md"
+                className="group flex gap-4 rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-4 transition-all duration-200 hover:border-white/[0.16]"
               >
                 {event.imageUrl && (
                   <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg">
@@ -205,19 +205,19 @@ export function CommunityLifestyle({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-neutral-900 line-clamp-2 group-hover:text-blue-600">
+                  <h4 className="font-medium text-white line-clamp-2 group-hover:text-[#0077ff] transition-colors">
                     {event.name}
                   </h4>
-                  <div className="mt-1 flex items-center gap-2 text-sm text-neutral-500">
+                  <div className="mt-1 flex items-center gap-2 text-[13px] text-[#636366]">
                     <Calendar className="h-3.5 w-3.5" />
                     {event.date}
                     {event.time && ` at ${event.time}`}
                   </div>
-                  <div className="mt-1 text-sm text-neutral-500 truncate">
+                  <div className="mt-1 text-[13px] text-[#636366] truncate">
                     {event.venue}
                   </div>
                 </div>
-                <ExternalLink className="h-4 w-4 flex-shrink-0 text-neutral-300 group-hover:text-blue-500" />
+                <ExternalLink className="h-4 w-4 flex-shrink-0 text-[#636366] group-hover:text-[#0077ff] transition-colors" />
               </a>
             ))}
           </div>
@@ -228,12 +228,12 @@ export function CommunityLifestyle({
       {curatedItems && curatedItems.length > 0 && (
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-amber-500" />
-            <h2 className="text-2xl font-bold text-neutral-900">
+            <Sparkles className="h-6 w-6 text-amber-400" />
+            <h2 className="text-[22px] font-semibold text-white">
               What&apos;s Coming
             </h2>
           </div>
-          <p className="mt-2 text-neutral-600">
+          <p className="mt-2 text-[#a1a1a6]">
             New developments and upcoming changes
           </p>
 
@@ -242,22 +242,22 @@ export function CommunityLifestyle({
               <div
                 key={item.id}
                 className={`rounded-xl border p-4 ${
-                  curatedCategoryColors[item.category] || 'bg-neutral-50 border-neutral-200'
+                  curatedCategoryColors[item.category] || 'bg-white/5 border-white/[0.08] text-[#a1a1a6]'
                 }`}
               >
-                <span className="text-xs font-medium uppercase tracking-wide">
+                <span className="text-[11px] font-medium uppercase tracking-wide">
                   {item.category}
                 </span>
-                <h4 className="mt-1 font-semibold">{item.title}</h4>
+                <h4 className="mt-1 font-semibold text-white">{item.title}</h4>
                 {item.description && (
-                  <p className="mt-1 text-sm opacity-80">{item.description}</p>
+                  <p className="mt-1 text-[13px] opacity-80">{item.description}</p>
                 )}
                 {item.source_url && (
                   <a
                     href={item.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-sm hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-[13px] text-[#0077ff] hover:text-[#3395ff] transition-colors"
                   >
                     Learn more
                     <ExternalLink className="h-3 w-3" />

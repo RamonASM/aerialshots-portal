@@ -1,111 +1,108 @@
 # Changelog
 
-All notable changes to the ASM Portal are documented in this file.
+All notable changes to the ASM Portal are documented here.
 
 ## [Unreleased]
 
-## [2024-12-22] - Security Hardening & UX Improvements
+### Added - Subdomain Routing (2024-12-22)
 
-### Security Fixes (Critical)
-- **Token encryption bypass** - Removed plaintext fallback in Instagram OAuth callback
-  - `src/app/api/instagram/callback/route.ts` - Now fails securely instead of storing unencrypted tokens
-  - `src/lib/integrations/instagram/encryption.ts` - Requires encryption key in production
+#### Infrastructure
+- Subdomain-based routing to separate admin and agent portals
+  - `asm.aerialshots.media` → Admin portal (staff only)
+  - `app.aerialshots.media` → Agent portal
+  - `aerialshots.media` → Marketing site (external)
+- Middleware-first architecture for subdomain detection
+- Environment variables for domain configuration
+- Cross-subdomain authentication and redirects
+- SSL certificates for both subdomains
 
-- **Webhook verification bypass** - Fixed Aryeo webhook signature validation
-  - `src/app/api/webhooks/aryeo/route.ts` - Now rejects requests without valid signature in production
+#### Security
+- Complete isolation of admin portal on separate subdomain
+- Non-staff users blocked from admin subdomain (redirect to app)
+- Staff login accessible at `asm.aerialshots.media/login` and `/staff-login`
+- Automatic redirect to appropriate subdomain based on user role
 
-- **Unauthenticated SMS endpoint** - Added authentication to SMS send API
-  - `src/app/api/sms/send/route.ts` - Added `requireStaffOrOwner` middleware
+### Added - UX Improvements (Sprint 2-5)
 
-- **Campaign creation authorization** - Added ownership validation
-  - `src/app/api/campaigns/create/route.ts` - Added `validateListingOwnership` check
+#### Lead Management
+- Lead filtering tabs (All/New/Contacted/Closed) with counts
+- Bulk selection and actions (Mark Contacted, Close All)
+- "Hot" badge for leads less than 24 hours old
+- Lead count badges in sidebar navigation
 
-### Added
-- **Error Boundaries** - Graceful error handling for dynamic pages
-  - `src/app/agents/[agentSlug]/error.tsx` - Agent portfolio error page
-  - `src/app/delivery/[listingId]/error.tsx` - Media delivery error page
+#### Dashboard Analytics
+- Trend indicators showing % change vs last month
+- Lead counts per listing with "Popular" badge for high-engagement properties
+- Total leads stat card on listings page
 
-- **Loading States** - Skeleton loaders for better perceived performance
-  - `src/app/property/[listingId]/loading.tsx` - Property page loading skeleton
-  - `src/app/agents/[agentSlug]/loading.tsx` - Agent portfolio loading skeleton
-  - `src/app/delivery/[listingId]/loading.tsx` - Media delivery loading skeleton
+#### Referral & Rewards
+- Social sharing buttons on referrals page (Email, SMS, WhatsApp, native share)
+- Tier progress bars on both referrals and rewards pages
+- Visual tier progression (Bronze → Silver → Gold → Platinum)
 
-- **Toast Notifications** - Added Sonner Toaster to root layout
-  - `src/app/layout.tsx` - Global toast notifications with rich colors
+#### Media Delivery
+- Visual download progress bar with file count
+- "Download Complete" success state with green indicator
 
-### Performance
-- **O(n²) to O(n) optimization** - Fixed media lookup in dashboard listings
-  - `src/app/dashboard/listings/page.tsx` - Converted filter-based lookup to Map-based O(n+m)
+#### Navigation
+- Active states in sidebar (highlights current page with blue accent)
+- Consistent hover/focus states across navigation
+
+### Changed
+
+#### Design System Updates
+- Updated text-tertiary color to #8e8e93 for WCAG AA compliance (4.5:1 contrast)
+- Button touch targets increased to 44px minimum height
+- Added image optimization config for Supabase and CDN domains
+
+#### Dark Theme Fixes
+- Converted admin pages to dark theme (admin/page.tsx, admin/curation/page.tsx)
+- Fixed agent loading skeleton to use dark theme
+- Fixed referral page to use dark theme
+
+### Components Created
+- `DashboardNav` - Client component for sidebar with active states and badges
+- `MobileContactCTA` - Floating mobile CTA for property/community pages
 
 ---
 
-## [2024-12-22] - Community Pages & Post-Delivery Hub Foundation
+## [2024-12-21] - UI/UX Redesign (Sprint 1)
 
 ### Added
-- **Community Pages** (`/community/[slug]`) - SEO-optimized neighborhood/area guides
-  - CommunityHero with parallax effect, quick facts, gallery
-  - OverviewSection with rich text content blocks
-  - MarketSnapshot for seller-focused market stats
-  - SubdivisionsGrid showing neighborhood cards
-  - SchoolsSection with school ratings by level
-  - FeaturedAgents showcase
-  - ActiveListings grid for nearby properties
-  - CommunityLifestyle integrating Places, Events, Curated Items
-  - CommunityLeadForm for buyer/seller lead capture
-  - CommunityJsonLd for structured data SEO
-
-- **ShareButton Component** (`src/components/ui/share-button.tsx`)
-  - Native Web Share API on mobile
-  - Clipboard fallback on desktop
-  - Visual feedback on copy
-  - Added to: delivery, property, and agent pages
-
-- **Rate Limiting** (`src/lib/utils/rate-limit.ts`)
-  - In-memory rate limiter for API routes
-  - Applied to magic-link endpoint (5 requests/minute)
-
-- **Resend API Validation**
-  - Startup validation for RESEND_API_KEY
-  - Better error messages for missing configuration
-
-- **Database: Communities Table** (`supabase/migrations/20241222_007_communities.sql`)
-  - Full schema with JSONB content fields
-  - RLS policies for public read, staff write
-  - Indexes for slug, location, and published status
-
-- **Celebration, FL Demo Data** (`supabase/migrations/20241222_008_seed_celebration_demo.sql`)
-  - Complete community profile with 5 subdivisions
-  - Market snapshot, schools info, quick facts
-  - Curated items for area developments
+- Complete dark theme redesign (Apple iPhone 12 era aesthetic)
+- Glass morphism card variants
+- Mobile floating CTAs on property and community pages
+- Image optimization configuration
 
 ### Changed
-- Updated community queries to use `CACHE_REVALIDATION.LISTING` (fixed typo from `LISTINGS`)
-
-## [2024-12-21] - Security & Staff Management
-
-### Added
-- Admin security whitelist for staff email domains
-- Staff management UI in admin panel
-- Magic link authentication via Resend API
+- Color palette updated to refined blue (#0077ff) instead of neon
+- Typography scale aligned with Apple HIG
+- All pages converted to dark theme
+- Button variants updated with gradient primary, glass secondary
 
 ### Fixed
-- Critical security issues in metadata handling
-- Admin link moved to footer for cleaner UI
+- WCAG color contrast compliance
+- Touch target accessibility (44px minimum)
+- Light theme artifacts in admin and auth pages
+
+---
 
 ## [2024-12-20] - Premium Homepage
 
 ### Added
-- Bento grid layout for homepage
-- Animations and stats section
-- Changed accent color to blue
+- Bento grid feature layout
+- Stats section with glass cards
+- Animated gradient background (subtle)
+- Responsive hero section
 
 ---
 
-## Migration Notes
+## [2024-12-19] - Initial Portal
 
-### 2024-12-22: Community Pages
-After deploying, run these migrations in Supabase SQL Editor:
-1. `supabase/migrations/20241222_007_communities.sql`
-2. `supabase/migrations/20241222_008_seed_celebration_demo.sql`
-
-Demo URL: `https://app.aerialshots.media/community/celebration-fl`
+### Added
+- Agent dashboard with listings, leads, AI tools
+- Media delivery pages
+- Property marketing websites
+- Community/neighborhood SEO pages
+- Referral program with credit system
+- Admin panel with QC workflow

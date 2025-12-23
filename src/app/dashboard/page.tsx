@@ -5,11 +5,18 @@ import {
   Building,
   Users,
   Gift,
-  TrendingUp,
-  ArrowRight,
   Star,
+  ArrowRight,
+  Copy,
+  ExternalLink,
+  CheckCircle,
+  Circle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -33,18 +40,39 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Get listings count
+  // Get current month date range
+  const now = new Date()
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString()
+
+  // Get listings count (current)
   const { count: listingsCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })
     .eq('agent_id', agent.id)
 
-  // Get leads count
+  // Get new leads count (current)
   const { count: leadsCount } = await supabase
     .from('leads')
     .select('*', { count: 'exact', head: true })
     .eq('agent_id', agent.id)
     .eq('status', 'new')
+
+  // Get this month's leads
+  const { count: thisMonthLeads } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('agent_id', agent.id)
+    .gte('created_at', thisMonthStart)
+
+  // Get last month's leads
+  const { count: lastMonthLeads } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('agent_id', agent.id)
+    .gte('created_at', lastMonthStart)
+    .lte('created_at', lastMonthEnd)
 
   // Get referrals count
   const { count: referralsCount } = await supabase
@@ -52,45 +80,75 @@ export default async function DashboardPage() {
     .select('*', { count: 'exact', head: true })
     .eq('referrer_id', agent.id)
 
+  // Get this month's referrals
+  const { count: thisMonthReferrals } = await supabase
+    .from('referrals')
+    .select('*', { count: 'exact', head: true })
+    .eq('referrer_id', agent.id)
+    .gte('created_at', thisMonthStart)
+
+  // Calculate trends
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0
+    return Math.round(((current - previous) / previous) * 100)
+  }
+
+  const leadsTrend = calculateTrend(thisMonthLeads ?? 0, lastMonthLeads ?? 0)
+
   const stats = [
     {
       name: 'Active Listings',
       value: listingsCount ?? 0,
       icon: Building,
       href: '/dashboard/listings',
-      color: 'bg-blue-500',
+      trend: null, // No trend for listings
     },
     {
       name: 'New Leads',
       value: leadsCount ?? 0,
       icon: Users,
       href: '/dashboard/leads',
-      color: 'bg-green-500',
+      trend: leadsTrend,
+      trendLabel: 'vs last month',
     },
     {
       name: 'Referrals',
       value: referralsCount ?? 0,
       icon: Gift,
       href: '/dashboard/referrals',
-      color: 'bg-purple-500',
+      trend: thisMonthReferrals ?? 0,
+      trendLabel: 'this month',
+      trendType: 'count',
     },
     {
       name: 'Credits',
       value: agent.credit_balance ?? 0,
       icon: Star,
       href: '/dashboard/rewards',
-      color: 'bg-amber-500',
+      trend: null,
     },
   ]
+
+  const profileItems = [
+    { label: 'Headshot', completed: !!agent.headshot_url },
+    { label: 'Bio', completed: !!agent.bio },
+    { label: 'Logo', completed: !!agent.logo_url },
+    { label: 'Instagram', completed: !!agent.instagram_url },
+  ]
+
+  const completedCount = profileItems.filter((item) => item.completed).length
+  const completionPercent = Math.round((completedCount / profileItems.length) * 100)
+
+  const referralUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.aerialshots.media'}/ref/${agent.referral_code || agent.id.slice(0, 8)}`
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">
-          Welcome back, {agent.name?.split(' ')[0] || 'Agent'}!
+        <h1 className="text-[28px] font-semibold tracking-tight text-white">
+          Welcome back, {agent.name?.split(' ')[0] || 'Agent'}
         </h1>
-        <p className="mt-1 text-neutral-600">
+        <p className="mt-1 text-[15px] text-[#a1a1a6]">
           Here's what's happening with your listings and leads.
         </p>
       </div>
@@ -98,147 +156,170 @@ export default async function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Link
-            key={stat.name}
-            href={stat.href}
-            className="group rounded-lg border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.color}`}
-              >
-                <stat.icon className="h-5 w-5 text-white" />
-              </div>
-              <ArrowRight className="h-5 w-5 text-neutral-400 transition-transform group-hover:translate-x-1" />
-            </div>
-            <p className="mt-4 text-3xl font-bold text-neutral-900">{stat.value}</p>
-            <p className="text-sm text-neutral-600">{stat.name}</p>
+          <Link key={stat.name} href={stat.href}>
+            <Card variant="interactive" className="h-full">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0077ff]/10">
+                    <stat.icon className="h-5 w-5 text-[#0077ff]" />
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-[#636366] group-hover:text-white transition-colors" />
+                </div>
+                <p className="mt-4 text-[32px] font-semibold tracking-tight text-white">
+                  {stat.value}
+                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] text-[#a1a1a6]">{stat.name}</p>
+
+                  {/* Trend Indicator */}
+                  {stat.trend !== null && stat.trendType !== 'count' && (
+                    <div
+                      className={`flex items-center gap-1 text-[11px] font-medium ${
+                        stat.trend > 0
+                          ? 'text-green-400'
+                          : stat.trend < 0
+                            ? 'text-red-400'
+                            : 'text-[#636366]'
+                      }`}
+                    >
+                      {stat.trend > 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : stat.trend < 0 ? (
+                        <TrendingDown className="h-3 w-3" />
+                      ) : (
+                        <Minus className="h-3 w-3" />
+                      )}
+                      {stat.trend > 0 ? '+' : ''}
+                      {stat.trend}%
+                    </div>
+                  )}
+
+                  {stat.trend !== null && stat.trendType === 'count' && (
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-[#0077ff]">
+                      +{stat.trend} {stat.trendLabel}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </Link>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Referral Program Card */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#ff4533]">
-              <Gift className="h-5 w-5 text-white" />
+        <Card variant="glass">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0077ff]">
+                <Gift className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-[17px]">Referral Program</CardTitle>
+                <CardDescription>Earn credits by referring new clients</CardDescription>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold text-neutral-900">Referral Program</h2>
-              <p className="text-sm text-neutral-600">Earn credits by referring new clients</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl bg-white/5 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[13px] text-[#636366]">Your referral link</p>
+                <Button variant="ghost" size="sm" className="h-7 px-2">
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  Copy
+                </Button>
+              </div>
+              <code className="block text-[13px] text-[#a1a1a6] truncate">
+                {referralUrl}
+              </code>
             </div>
-          </div>
 
-          <div className="mt-4 rounded-lg bg-neutral-50 p-4">
-            <p className="text-sm text-neutral-600">Your referral link:</p>
-            <code className="mt-1 block overflow-x-auto rounded bg-neutral-100 p-2 text-sm">
-              {`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.aerialshots.media'}/ref/${agent.referral_code || agent.id.slice(0, 8)}`}
-            </code>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-neutral-900">{agent.credit_balance ?? 0}</p>
-              <p className="text-sm text-neutral-600">Available credits</p>
+            <div className="flex items-center justify-between pt-2">
+              <div>
+                <p className="text-[28px] font-semibold text-white">{agent.credit_balance ?? 0}</p>
+                <p className="text-[13px] text-[#636366]">Available credits</p>
+              </div>
+              <Button asChild>
+                <Link href="/dashboard/referrals">
+                  View Details
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button asChild>
-              <Link href="/dashboard/referrals">View Details</Link>
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Profile Completion Card */}
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="font-semibold text-neutral-900">Complete Your Profile</h2>
-          <p className="mt-1 text-sm text-neutral-600">
-            A complete profile helps you stand out on property pages.
-          </p>
+        <Card variant="glass">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-[17px]">Complete Your Profile</CardTitle>
+                <CardDescription>Stand out on property pages</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-[22px] font-semibold text-white">{completionPercent}%</p>
+                <p className="text-[11px] text-[#636366] uppercase tracking-wide">Complete</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {profileItems.map((item) => (
+              <Link
+                key={item.label}
+                href="/dashboard/profile"
+                className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-white/5"
+              >
+                <div className="flex items-center gap-3">
+                  {item.completed ? (
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-[#636366]" />
+                  )}
+                  <span className={item.completed ? 'text-[#636366]' : 'text-white'}>
+                    {item.label}
+                  </span>
+                </div>
+                {item.completed ? (
+                  <span className="text-[11px] text-green-400 uppercase tracking-wide">Done</span>
+                ) : (
+                  <span className="text-[11px] text-[#0077ff] uppercase tracking-wide">Add</span>
+                )}
+              </Link>
+            ))}
 
-          <div className="mt-4 space-y-3">
-            <ProfileItem
-              label="Headshot"
-              completed={!!agent.headshot_url}
-              href="/dashboard/profile"
-            />
-            <ProfileItem
-              label="Bio"
-              completed={!!agent.bio}
-              href="/dashboard/profile"
-            />
-            <ProfileItem
-              label="Logo"
-              completed={!!agent.logo_url}
-              href="/dashboard/profile"
-            />
-            <ProfileItem
-              label="Instagram"
-              completed={!!agent.instagram_url}
-              href="/dashboard/profile"
-            />
-          </div>
-
-          <Button variant="outline" className="mt-4 w-full" asChild>
-            <Link href="/dashboard/profile">Edit Profile</Link>
-          </Button>
-        </div>
+            <Button variant="outline" className="w-full mt-4" asChild>
+              <Link href="/dashboard/profile">Edit Profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Portfolio Link */}
-      <div className="rounded-lg border border-neutral-200 bg-gradient-to-r from-neutral-900 to-neutral-800 p-6 text-white">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-semibold">Your Public Portfolio</h2>
-            <p className="mt-1 text-sm text-neutral-300">
-              Share your portfolio page with potential clients
-            </p>
+      <Card variant="glass" className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0077ff]/10 to-transparent pointer-events-none" />
+        <CardContent className="relative py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[17px] font-semibold text-white">Your Public Portfolio</h2>
+              <p className="mt-1 text-[15px] text-[#a1a1a6]">
+                Share your portfolio page with potential clients
+              </p>
+            </div>
+            <Button asChild>
+              <a
+                href={`/agents/${agent.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Portfolio
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
           </div>
-          <Button variant="secondary" asChild>
-            <a
-              href={`/agents/${agent.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Portfolio
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
-  )
-}
-
-function ProfileItem({
-  label,
-  completed,
-  href,
-}: {
-  label: string
-  completed: boolean
-  href: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-neutral-50"
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className={`h-2 w-2 rounded-full ${
-            completed ? 'bg-green-500' : 'bg-neutral-300'
-          }`}
-        />
-        <span className={completed ? 'text-neutral-600' : 'text-neutral-900'}>
-          {label}
-        </span>
-      </div>
-      {completed ? (
-        <span className="text-xs text-green-600">Complete</span>
-      ) : (
-        <span className="text-xs text-neutral-400">Add</span>
-      )}
-    </Link>
   )
 }

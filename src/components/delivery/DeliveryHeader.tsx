@@ -12,11 +12,11 @@ interface DeliveryHeaderProps {
 }
 
 export function DeliveryHeader({ listing, agent }: DeliveryHeaderProps) {
-  const brandColor = agent?.brand_color ?? '#ff4533'
+  const brandColor = agent?.brand_color ?? '#0077ff'
 
   return (
-    <header className="border-b border-neutral-800 bg-black">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <header className="border-b border-white/[0.08] bg-black">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           {/* Agent Branding */}
           <div className="flex items-center gap-4">
@@ -29,28 +29,30 @@ export function DeliveryHeader({ listing, agent }: DeliveryHeaderProps) {
                 className="h-10 w-auto object-contain"
               />
             ) : agent?.headshot_url ? (
-              <Image
-                src={agent.headshot_url}
-                alt={agent.name}
-                width={48}
-                height={48}
-                className="h-12 w-12 rounded-full object-cover"
-              />
+              <div className="relative">
+                <Image
+                  src={agent.headshot_url}
+                  alt={agent.name}
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-full object-cover ring-2 ring-white/10"
+                />
+              </div>
             ) : null}
             {agent && (
               <div>
-                <p className="text-sm text-neutral-400">Prepared for</p>
-                <p className="font-medium text-white">{agent.name}</p>
+                <p className="text-[13px] text-[#636366]">Prepared for</p>
+                <p className="text-[15px] font-medium text-white">{agent.name}</p>
               </div>
             )}
           </div>
 
           {/* Property Info */}
           <div className="text-left md:text-right">
-            <h1 className="text-xl font-semibold text-white sm:text-2xl">
+            <h1 className="text-[22px] font-semibold tracking-tight text-white sm:text-[28px]">
               {listing.address}
             </h1>
-            <p className="text-neutral-400">
+            <p className="text-[15px] text-[#a1a1a6]">
               {listing.city && `${listing.city}, `}
               {listing.state} {listing.zip}
             </p>
@@ -58,30 +60,36 @@ export function DeliveryHeader({ listing, agent }: DeliveryHeaderProps) {
         </div>
 
         {/* Property Stats */}
-        <div className="mt-6 flex flex-wrap gap-4">
+        <div className="mt-6 flex flex-wrap gap-3">
           {listing.beds && (
-            <div className="rounded-lg bg-neutral-900 px-4 py-2">
-              <span className="text-lg font-semibold text-white">{listing.beds}</span>
-              <span className="ml-1 text-sm text-neutral-400">beds</span>
+            <div className="rounded-xl bg-[#1c1c1e] px-4 py-2.5 border border-white/[0.08]">
+              <span className="text-[17px] font-semibold text-white">{listing.beds}</span>
+              <span className="ml-1.5 text-[13px] text-[#636366]">beds</span>
             </div>
           )}
           {listing.baths && (
-            <div className="rounded-lg bg-neutral-900 px-4 py-2">
-              <span className="text-lg font-semibold text-white">{listing.baths}</span>
-              <span className="ml-1 text-sm text-neutral-400">baths</span>
+            <div className="rounded-xl bg-[#1c1c1e] px-4 py-2.5 border border-white/[0.08]">
+              <span className="text-[17px] font-semibold text-white">{listing.baths}</span>
+              <span className="ml-1.5 text-[13px] text-[#636366]">baths</span>
             </div>
           )}
           {listing.sqft && (
-            <div className="rounded-lg bg-neutral-900 px-4 py-2">
-              <span className="text-lg font-semibold text-white">
+            <div className="rounded-xl bg-[#1c1c1e] px-4 py-2.5 border border-white/[0.08]">
+              <span className="text-[17px] font-semibold text-white">
                 {listing.sqft.toLocaleString()}
               </span>
-              <span className="ml-1 text-sm text-neutral-400">sqft</span>
+              <span className="ml-1.5 text-[13px] text-[#636366]">sqft</span>
             </div>
           )}
           {listing.price && (
-            <div className="rounded-lg px-4 py-2" style={{ backgroundColor: brandColor + '20' }}>
-              <span className="text-lg font-semibold" style={{ color: brandColor }}>
+            <div
+              className="rounded-xl px-4 py-2.5 border"
+              style={{
+                backgroundColor: brandColor + '15',
+                borderColor: brandColor + '30'
+              }}
+            >
+              <span className="text-[17px] font-semibold" style={{ color: brandColor }}>
                 ${listing.price.toLocaleString()}
               </span>
             </div>

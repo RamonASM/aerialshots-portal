@@ -10,7 +10,7 @@ interface PropertyDetailsProps {
   brandColor?: string
 }
 
-export function PropertyDetails({ listing, brandColor = '#ff4533' }: PropertyDetailsProps) {
+export function PropertyDetails({ listing, brandColor = '#0077ff' }: PropertyDetailsProps) {
   const stats = [
     {
       icon: Bed,
@@ -33,19 +33,19 @@ export function PropertyDetails({ listing, brandColor = '#ff4533' }: PropertyDet
   ]
 
   return (
-    <section className="bg-white py-8">
+    <section className="bg-[#0a0a0a] py-8 border-b border-white/[0.08]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Address & Price */}
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-neutral-500">
+            <div className="flex items-center gap-2 text-[#636366]">
               <MapPin className="h-4 w-4" />
-              <span className="text-sm">
+              <span className="text-[13px]">
                 {listing.city && `${listing.city}, `}
                 {listing.state} {listing.zip}
               </span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold text-neutral-900 sm:text-3xl lg:text-4xl">
+            <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-white sm:text-[34px] lg:text-[44px]">
               {listing.address}
             </h1>
           </div>
@@ -53,19 +53,22 @@ export function PropertyDetails({ listing, brandColor = '#ff4533' }: PropertyDet
           {listing.price && (
             <div className="flex-shrink-0">
               <div
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2"
-                style={{ backgroundColor: brandColor + '15' }}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 border"
+                style={{
+                  backgroundColor: brandColor + '15',
+                  borderColor: brandColor + '30'
+                }}
               >
                 <DollarSign className="h-5 w-5" style={{ color: brandColor }} />
                 <span
-                  className="text-2xl font-bold sm:text-3xl"
+                  className="text-[22px] font-semibold sm:text-[28px]"
                   style={{ color: brandColor }}
                 >
                   {listing.price.toLocaleString()}
                 </span>
               </div>
               {listing.status === 'sold' && (
-                <p className="mt-1 text-right text-sm font-medium text-green-600">
+                <p className="mt-2 text-right text-[11px] font-medium text-green-400 uppercase tracking-wider">
                   SOLD
                 </p>
               )}
@@ -74,29 +77,29 @@ export function PropertyDetails({ listing, brandColor = '#ff4533' }: PropertyDet
         </div>
 
         {/* Stats Bar */}
-        <div className="mt-6 flex flex-wrap gap-6 border-t border-neutral-200 pt-6">
+        <div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-6">
           {stats
             .filter((stat) => stat.show)
             .map((stat) => (
               <div key={stat.label} className="flex items-center gap-3">
-                <div className="rounded-lg bg-neutral-100 p-2">
-                  <stat.icon className="h-5 w-5 text-neutral-600" />
+                <div className="rounded-xl bg-[#1c1c1e] border border-white/[0.08] p-2.5">
+                  <stat.icon className="h-5 w-5 text-[#a1a1a6]" />
                 </div>
                 <div>
-                  <p className="text-xl font-semibold text-neutral-900">{stat.value}</p>
-                  <p className="text-sm text-neutral-500">{stat.label}</p>
+                  <p className="text-[17px] font-semibold text-white">{stat.value}</p>
+                  <p className="text-[13px] text-[#636366]">{stat.label}</p>
                 </div>
               </div>
             ))}
 
           {listing.dom !== null && listing.dom > 0 && (
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-neutral-100 p-2">
-                <Calendar className="h-5 w-5 text-neutral-600" />
+              <div className="rounded-xl bg-[#1c1c1e] border border-white/[0.08] p-2.5">
+                <Calendar className="h-5 w-5 text-[#a1a1a6]" />
               </div>
               <div>
-                <p className="text-xl font-semibold text-neutral-900">{listing.dom}</p>
-                <p className="text-sm text-neutral-500">Days on Market</p>
+                <p className="text-[17px] font-semibold text-white">{listing.dom}</p>
+                <p className="text-[13px] text-[#636366]">Days on Market</p>
               </div>
             </div>
           )}

@@ -12,9 +12,9 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
   if (!agents || agents.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
-      <h3 className="font-semibold text-neutral-900">Local Experts</h3>
-      <p className="mt-1 text-sm text-neutral-500">
+    <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e]/72 backdrop-blur-xl p-6">
+      <h3 className="font-semibold text-white">Local Experts</h3>
+      <p className="mt-1 text-[13px] text-[#636366]">
         Connect with agents who specialize in this area
       </p>
 
@@ -22,7 +22,7 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
         {agents.map((agent) => (
           <div
             key={agent.id}
-            className="flex items-start gap-3 rounded-lg border border-neutral-100 p-3 transition-colors hover:bg-neutral-50"
+            className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-[#0a0a0a] p-3 transition-colors hover:border-white/[0.16]"
           >
             {/* Agent Photo */}
             {agent.headshot_url ? (
@@ -36,7 +36,7 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
             ) : (
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ backgroundColor: agent.brand_color || '#3b82f6' }}
+                style={{ backgroundColor: agent.brand_color || '#0077ff' }}
               >
                 <User className="h-6 w-6 text-white" />
               </div>
@@ -44,11 +44,11 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
 
             {/* Agent Info */}
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-neutral-900 truncate">
+              <h4 className="font-medium text-white truncate">
                 {agent.name}
               </h4>
               {agent.bio && (
-                <p className="mt-0.5 text-sm text-neutral-500 line-clamp-2">
+                <p className="mt-0.5 text-[13px] text-[#636366] line-clamp-2">
                   {agent.bio}
                 </p>
               )}
@@ -58,7 +58,7 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
                 {agent.phone && (
                   <a
                     href={`tel:${agent.phone}`}
-                    className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#636366] hover:text-[#0077ff] transition-colors"
                   >
                     <Phone className="h-3 w-3" />
                     Call
@@ -67,7 +67,7 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
                 {agent.email && (
                   <a
                     href={`mailto:${agent.email}`}
-                    className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#636366] hover:text-[#0077ff] transition-colors"
                   >
                     <Mail className="h-3 w-3" />
                     Email
@@ -79,7 +79,7 @@ export function FeaturedAgents({ agents }: FeaturedAgentsProps) {
             {/* View Profile Link */}
             <Link
               href={`/agents/${agent.slug}`}
-              className="flex-shrink-0 text-neutral-400 hover:text-neutral-600"
+              className="flex-shrink-0 text-[#636366] hover:text-[#0077ff] transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
             </Link>

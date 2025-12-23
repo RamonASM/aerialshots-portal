@@ -69,21 +69,21 @@ export default async function ReferralLandingPage({ params }: PageProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-black py-20 text-white">
+      <section className="relative overflow-hidden py-20 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           {/* Referral Badge */}
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#ff4533] px-4 py-2">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#0077ff] px-4 py-2">
             <Gift className="h-5 w-5" />
             <span className="font-medium">Exclusive Referral Offer</span>
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Save <span className="text-[#ff4533]">10%</span> on Your First Shoot
+            Save <span className="text-[#0077ff]">10%</span> on Your First Shoot
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-300">
+          <p className="mx-auto mt-6 max-w-2xl text-xl text-[#a1a1a6]">
             Professional real estate photography and video services in Central Florida.
             Book your first shoot and save with your exclusive referral discount.
           </p>
@@ -94,10 +94,10 @@ export default async function ReferralLandingPage({ params }: PageProps) {
                 <img
                   src={referrer.headshot_url}
                   alt={referrer.name}
-                  className="h-12 w-12 rounded-full border-2 border-white"
+                  className="h-12 w-12 rounded-full border-2 border-white/20"
                 />
               )}
-              <p className="text-neutral-300">
+              <p className="text-[#a1a1a6]">
                 Referred by <span className="font-medium text-white">{referrer.name}</span>
               </p>
             </div>
@@ -106,7 +106,7 @@ export default async function ReferralLandingPage({ params }: PageProps) {
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Button
               size="lg"
-              className="bg-[#ff4533] text-lg hover:bg-[#e63d2e]"
+              className="text-lg"
               asChild
             >
               <a
@@ -120,7 +120,7 @@ export default async function ReferralLandingPage({ params }: PageProps) {
             <Button
               size="lg"
               variant="outline"
-              className="border-white text-lg text-white hover:bg-white hover:text-black"
+              className="text-lg"
               asChild
             >
               <a
@@ -138,20 +138,20 @@ export default async function ReferralLandingPage({ params }: PageProps) {
       {/* Services Section */}
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-bold text-neutral-900">
+          <h2 className="text-center text-[22px] font-semibold text-white">
             What We Offer
           </h2>
 
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             {services.map((service) => (
               <div key={service.title} className="text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#ff4533]/10">
-                  <service.icon className="h-8 w-8 text-[#ff4533]" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0077ff]/20 border border-[#0077ff]/30">
+                  <service.icon className="h-8 w-8 text-[#0077ff]" />
                 </div>
-                <h3 className="mt-4 font-semibold text-neutral-900">
+                <h3 className="mt-4 font-semibold text-white">
                   {service.title}
                 </h3>
-                <p className="mt-2 text-sm text-neutral-600">
+                <p className="mt-2 text-[13px] text-[#a1a1a6]">
                   {service.description}
                 </p>
               </div>
@@ -161,13 +161,13 @@ export default async function ReferralLandingPage({ params }: PageProps) {
       </section>
 
       {/* How It Works */}
-      <section className="bg-neutral-50 py-16">
+      <section className="bg-[#0a0a0a] py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-bold text-neutral-900">
+          <h2 className="text-center text-[22px] font-semibold text-white">
             How It Works
           </h2>
 
-          <div className="mt-10 space-y-6">
+          <div className="mt-10 space-y-4">
             {[
               {
                 step: 1,
@@ -187,14 +187,14 @@ export default async function ReferralLandingPage({ params }: PageProps) {
             ].map((item) => (
               <div
                 key={item.step}
-                className="flex items-start gap-4 rounded-lg bg-white p-6"
+                className="flex items-start gap-4 rounded-xl bg-[#1c1c1e] border border-white/[0.08] p-6"
               >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#ff4533] font-bold text-white">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#0077ff] font-bold text-white">
                   {item.step}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900">{item.title}</h3>
-                  <p className="mt-1 text-neutral-600">{item.description}</p>
+                  <h3 className="font-semibold text-white">{item.title}</h3>
+                  <p className="mt-1 text-[#a1a1a6]">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -205,7 +205,7 @@ export default async function ReferralLandingPage({ params }: PageProps) {
       {/* Benefits */}
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-bold text-neutral-900">
+          <h2 className="text-center text-[22px] font-semibold text-white">
             Why Agents Choose Us
           </h2>
 
@@ -220,10 +220,10 @@ export default async function ReferralLandingPage({ params }: PageProps) {
             ].map((benefit) => (
               <div
                 key={benefit}
-                className="flex items-center gap-3 rounded-lg border border-neutral-200 p-4"
+                className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-4"
               >
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-500" />
-                <span className="text-neutral-700">{benefit}</span>
+                <span className="text-[#a1a1a6]">{benefit}</span>
               </div>
             ))}
           </div>
@@ -231,16 +231,16 @@ export default async function ReferralLandingPage({ params }: PageProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-neutral-900 py-16 text-white">
+      <section className="bg-[#1c1c1e] py-16 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold">Ready to Get Started?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-neutral-300">
+          <h2 className="text-[28px] font-semibold">Ready to Get Started?</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[#a1a1a6]">
             Your 10% discount is ready to use. Book your first shoot today and
             see why agents love working with Aerial Shots Media.
           </p>
           <Button
             size="lg"
-            className="mt-8 bg-[#ff4533] text-lg hover:bg-[#e63d2e]"
+            className="mt-8 text-lg"
             asChild
           >
             <a
@@ -251,19 +251,19 @@ export default async function ReferralLandingPage({ params }: PageProps) {
               Claim Your 10% Discount
             </a>
           </Button>
-          <p className="mt-4 text-sm text-neutral-500">
-            Referral code: <code className="rounded bg-neutral-800 px-2 py-1">{code}</code>
+          <p className="mt-4 text-[13px] text-[#636366]">
+            Referral code: <code className="rounded-lg bg-black/50 border border-white/[0.08] px-2 py-1">{code}</code>
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-white">
+      <footer className="border-t border-white/[0.08] bg-black">
         <div className="mx-auto max-w-4xl px-4 py-8 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-neutral-500">
+          <p className="text-[13px] text-[#a1a1a6]">
             Aerial Shots Media - Central Florida's Premier Real Estate Photography
           </p>
-          <p className="mt-2 text-xs text-neutral-400">
+          <p className="mt-2 text-[11px] text-[#636366]">
             Orlando | Tampa | Kissimmee | Daytona Beach
           </p>
         </div>

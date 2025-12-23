@@ -62,12 +62,12 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
 
   if (isSubmitted) {
     return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-          <CheckCircle className="h-6 w-6 text-green-600" />
+      <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
+          <CheckCircle className="h-6 w-6 text-green-400" />
         </div>
-        <h3 className="mt-4 font-semibold text-green-900">Thanks for reaching out!</h3>
-        <p className="mt-2 text-sm text-green-700">
+        <h3 className="mt-4 font-semibold text-white">Thanks for reaching out!</h3>
+        <p className="mt-2 text-[13px] text-green-400">
           A local expert will be in touch with you soon.
         </p>
         <Button
@@ -83,9 +83,9 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
-      <h3 className="font-semibold text-neutral-900">Get in Touch</h3>
-      <p className="mt-1 text-sm text-neutral-500">
+    <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e]/72 backdrop-blur-xl p-6">
+      <h3 className="font-semibold text-white">Get in Touch</h3>
+      <p className="mt-1 text-[13px] text-[#636366]">
         Connect with a local expert in {communityName}
       </p>
 
@@ -94,10 +94,10 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
         <button
           type="button"
           onClick={() => setLeadType('buyer')}
-          className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors ${
             leadType === 'buyer'
-              ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+              ? 'border-[#0077ff] bg-[#0077ff]/10 text-[#3395ff]'
+              : 'border-white/[0.08] text-[#a1a1a6] hover:bg-white/5'
           }`}
         >
           <Home className="h-4 w-4" />
@@ -106,10 +106,10 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
         <button
           type="button"
           onClick={() => setLeadType('seller')}
-          className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors ${
             leadType === 'seller'
-              ? 'border-green-500 bg-green-50 text-green-700'
-              : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+              ? 'border-green-500 bg-green-500/10 text-green-400'
+              : 'border-white/[0.08] text-[#a1a1a6] hover:bg-white/5'
           }`}
         >
           <DollarSign className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
         <div>
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" className="text-[#a1a1a6]">Name</Label>
           <Input
             id="name"
             {...register('name', { required: 'Name is required' })}
@@ -127,12 +127,12 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
             className="mt-1"
           />
           {errors.name && (
-            <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
+            <p className="mt-1 text-[11px] text-red-400">{errors.name.message}</p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-[#a1a1a6]">Email</Label>
           <Input
             id="email"
             type="email"
@@ -147,12 +147,12 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
             className="mt-1"
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+            <p className="mt-1 text-[11px] text-red-400">{errors.email.message}</p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="phone" className="text-[#a1a1a6]">Phone</Label>
           <Input
             id="phone"
             type="tel"
@@ -163,7 +163,7 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
         </div>
 
         <div>
-          <Label htmlFor="message">Message</Label>
+          <Label htmlFor="message" className="text-[#a1a1a6]">Message</Label>
           <textarea
             id="message"
             {...register('message')}
@@ -173,12 +173,12 @@ export function CommunityLeadForm({ communityName, communityId }: CommunityLeadF
                 : "I'm thinking of selling my home..."
             }
             rows={3}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0a0a0a] px-3 py-2 text-[15px] text-white placeholder:text-[#636366] focus:border-[#0077ff] focus:outline-none focus:ring-1 focus:ring-[#0077ff] transition-colors"
           />
         </div>
 
         {error && (
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-[13px] text-red-400">{error}</p>
         )}
 
         <Button

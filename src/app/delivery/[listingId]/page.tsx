@@ -57,10 +57,10 @@ export default async function DeliveryPage({ params }: PageProps) {
       <DeliveryHeader listing={listing} agent={listing.agent} />
 
       {/* Actions Bar */}
-      <div className="border-b border-neutral-800 bg-neutral-950">
+      <div className="border-b border-white/[0.08] bg-[#0a0a0a]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div>
-            <p className="text-sm text-neutral-400">
+            <p className="text-[13px] text-[#a1a1a6]">
               Your media is ready for download
             </p>
           </div>
@@ -69,7 +69,6 @@ export default async function DeliveryPage({ params }: PageProps) {
               title={`Media for ${listing.address}`}
               text="View your professional real estate media"
               variant="outline"
-              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
             />
             {listing.agent && (
               <LaunchCampaignButton
@@ -105,22 +104,22 @@ export default async function DeliveryPage({ params }: PageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800 bg-neutral-950">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-center sm:px-6 lg:px-8">
-          <p className="text-sm text-neutral-500">
+      <footer className="border-t border-white/[0.08] bg-[#0a0a0a]">
+        <div className="mx-auto max-w-7xl px-4 py-10 text-center sm:px-6 lg:px-8">
+          <p className="text-[13px] text-[#636366]">
             Delivered by{' '}
             <a
               href="https://www.aerialshots.media"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ff4533] hover:underline"
+              className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
             >
               Aerial Shots Media
             </a>
           </p>
-          <p className="mt-2 text-xs text-neutral-600">
+          <p className="mt-3 text-[12px] text-[#48484a]">
             Need help? Contact us at{' '}
-            <a href="mailto:hello@aerialshots.media" className="hover:text-neutral-400">
+            <a href="mailto:hello@aerialshots.media" className="hover:text-[#a1a1a6] transition-colors">
               hello@aerialshots.media
             </a>
           </p>

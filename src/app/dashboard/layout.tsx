@@ -12,21 +12,25 @@ import {
   Sparkles,
   BookOpen,
   LogOut,
-  Menu,
   Settings,
+  Camera,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DashboardNav } from '@/components/dashboard/DashboardNav'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Listings', href: '/dashboard/listings', icon: Building },
-  { name: 'Tips', href: '/dashboard/tips', icon: Lightbulb },
-  { name: 'Leads', href: '/dashboard/leads', icon: Users },
+  { name: 'Leads', href: '/dashboard/leads', icon: Users, badge: 'leads' },
   { name: 'AI Tools', href: '/dashboard/ai-tools', icon: Sparkles },
   { name: 'Storywork', href: '/dashboard/storywork', icon: BookOpen },
   { name: 'Referrals', href: '/dashboard/referrals', icon: Gift },
   { name: 'Rewards', href: '/dashboard/rewards', icon: Award },
+]
+
+const secondaryNav = [
+  { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
@@ -52,21 +56,39 @@ export default async function DashboardLayout({
     .eq('email', user.email!)
     .single()
 
+  // Get new leads count for badge
+  const { count: newLeadsCount } = agent?.id
+    ? await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('agent_id', agent.id)
+        .eq('status', 'new')
+    : { count: 0 }
+
+  const badges = {
+    leads: newLeadsCount ?? 0,
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-neutral-900">
-              ASM <span className="text-[#ff4533]">Portal</span>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.08] bg-black/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-6">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-[#0077ff] flex items-center justify-center">
+              <Camera className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-[15px] font-semibold text-white">
+              Agent Portal
             </span>
           </Link>
 
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-neutral-600 sm:block">
-              {agent?.name || user.email}
-            </span>
+          <div className="flex items-center gap-3">
+            {agent?.name && (
+              <span className="hidden text-[13px] text-[#a1a1a6] sm:block">
+                {agent.name}
+              </span>
+            )}
             <form action="/api/auth/signout" method="POST">
               <Button variant="ghost" size="sm" type="submit">
                 <LogOut className="h-4 w-4" />
@@ -77,41 +99,41 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-          {/* Sidebar Navigation */}
-          <nav className="hidden lg:block">
-            <div className="sticky top-8 space-y-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </nav>
+      <div className="flex pt-14">
+        {/* Sidebar Navigation - Desktop */}
+        <DashboardNav
+          navigation={navigation}
+          secondaryNav={secondaryNav}
+          badges={badges}
+        />
 
-          {/* Mobile Navigation */}
-          <nav className="flex gap-2 overflow-x-auto pb-4 lg:hidden">
+        {/* Mobile Navigation */}
+        <nav className="fixed top-14 left-0 right-0 z-40 border-b border-white/[0.08] bg-[#0a0a0a] lg:hidden overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 px-4 py-3">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex flex-shrink-0 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700"
+                className="relative flex flex-shrink-0 items-center gap-2 rounded-lg glass-light px-3 py-2 text-[13px] text-[#a1a1a6] hover:text-white transition-colors"
               >
                 <item.icon className="h-4 w-4" />
                 {item.name}
+                {item.badge && badges[item.badge as keyof typeof badges] > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-black">
+                    {badges[item.badge as keyof typeof badges]}
+                  </span>
+                )}
               </Link>
             ))}
-          </nav>
+          </div>
+        </nav>
 
-          {/* Main Content */}
-          <main>{children}</main>
-        </div>
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-[240px] pt-[52px] lg:pt-0">
+          <div className="mx-auto max-w-[1100px] px-6 py-8">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   )

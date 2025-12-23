@@ -7,37 +7,37 @@ interface SchoolsSectionProps {
 
 function SchoolCard({ school }: { school: CommunitySchoolInfo }) {
   const typeColors: Record<string, string> = {
-    elementary: 'bg-green-100 text-green-700',
-    middle: 'bg-blue-100 text-blue-700',
-    high: 'bg-purple-100 text-purple-700',
-    private: 'bg-amber-100 text-amber-700',
-    charter: 'bg-teal-100 text-teal-700',
+    elementary: 'bg-green-500/20 text-green-400 border-green-500/30',
+    middle: 'bg-[#0077ff]/20 text-[#3395ff] border-[#0077ff]/30',
+    high: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    private: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    charter: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4 transition-shadow hover:shadow-md">
+    <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-4 transition-all duration-200 hover:border-white/[0.16]">
       <div className="flex items-start justify-between">
         <div>
           <span
-            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-              typeColors[school.type] || 'bg-neutral-100 text-neutral-700'
+            className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${
+              typeColors[school.type] || 'bg-white/5 text-[#a1a1a6] border-white/[0.08]'
             }`}
           >
             {school.type}
           </span>
-          <h4 className="mt-2 font-semibold text-neutral-900">{school.name}</h4>
+          <h4 className="mt-2 font-semibold text-white">{school.name}</h4>
         </div>
         {school.rating && (
-          <div className="flex items-center gap-1 rounded-full bg-yellow-50 px-2 py-1">
+          <div className="flex items-center gap-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 px-2 py-1">
             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-700">
+            <span className="text-[13px] font-medium text-yellow-400">
               {school.rating}/10
             </span>
           </div>
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-sm text-neutral-500">
+      <div className="mt-3 flex flex-wrap gap-3 text-[13px] text-[#636366]">
         {school.grades && (
           <div className="flex items-center gap-1">
             <GraduationCap className="h-3.5 w-3.5" />
@@ -73,10 +73,10 @@ export function SchoolsSection({ schoolsInfo }: SchoolsSectionProps) {
   return (
     <section>
       <div className="flex items-center gap-2">
-        <GraduationCap className="h-6 w-6 text-blue-600" />
-        <h2 className="text-2xl font-bold text-neutral-900">Schools</h2>
+        <GraduationCap className="h-6 w-6 text-[#0077ff]" />
+        <h2 className="text-[22px] font-semibold text-white">Schools</h2>
       </div>
-      <p className="mt-2 text-neutral-600">
+      <p className="mt-2 text-[#a1a1a6]">
         Quality education options in the area
       </p>
 
@@ -84,7 +84,7 @@ export function SchoolsSection({ schoolsInfo }: SchoolsSectionProps) {
         {/* Elementary Schools */}
         {schoolsInfo.elementary && schoolsInfo.elementary.length > 0 && (
           <div>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
               Elementary Schools
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -98,7 +98,7 @@ export function SchoolsSection({ schoolsInfo }: SchoolsSectionProps) {
         {/* Middle Schools */}
         {schoolsInfo.middle && schoolsInfo.middle.length > 0 && (
           <div>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
               Middle Schools
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -112,7 +112,7 @@ export function SchoolsSection({ schoolsInfo }: SchoolsSectionProps) {
         {/* High Schools */}
         {schoolsInfo.high && schoolsInfo.high.length > 0 && (
           <div>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
               High Schools
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -126,7 +126,7 @@ export function SchoolsSection({ schoolsInfo }: SchoolsSectionProps) {
         {/* Private Schools */}
         {schoolsInfo.private && schoolsInfo.private.length > 0 && (
           <div>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[#636366]">
               Private Schools
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">

@@ -45,7 +45,7 @@ export default async function AdminLayout({
     .single()
 
   if (!staff) {
-    redirect('/dashboard')
+    redirect(`https://${process.env.NEXT_PUBLIC_APP_DOMAIN}/dashboard`)
   }
 
   return (

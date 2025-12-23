@@ -19,10 +19,10 @@ export function ActiveListings({ listings, communityName }: ActiveListingsProps)
     <section>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-neutral-900">
+          <h2 className="text-[22px] font-semibold text-white">
             Homes for Sale
           </h2>
-          <p className="mt-1 text-neutral-600">
+          <p className="mt-1 text-[#a1a1a6]">
             {listings.length} active listing{listings.length !== 1 ? 's' : ''} in {communityName}
           </p>
         </div>
@@ -36,26 +36,26 @@ export function ActiveListings({ listings, communityName }: ActiveListingsProps)
             <Link
               key={listing.id}
               href={`/property/${listing.id}`}
-              className="group overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all hover:shadow-lg"
+              className="group overflow-hidden rounded-xl border border-white/[0.08] bg-[#1c1c1e] transition-all duration-200 hover:border-white/[0.16]"
             >
               {/* Image */}
-              <div className="relative h-48 overflow-hidden bg-neutral-100">
+              <div className="relative h-48 overflow-hidden bg-[#0a0a0a]">
                 {heroImage?.aryeo_url ? (
                   <Image
                     src={heroImage.aryeo_url}
                     alt={listing.address}
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <Building className="h-12 w-12 text-neutral-300" />
+                    <Building className="h-12 w-12 text-[#636366]" />
                   </div>
                 )}
 
                 {/* Price Badge */}
                 {listing.price && (
-                  <div className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 font-bold text-neutral-900 shadow-sm backdrop-blur-sm">
+                  <div className="absolute bottom-3 left-3 rounded-lg bg-black/80 border border-white/[0.08] px-3 py-1.5 font-semibold text-white backdrop-blur-sm">
                     ${listing.price.toLocaleString()}
                   </div>
                 )}
@@ -63,17 +63,17 @@ export function ActiveListings({ listings, communityName }: ActiveListingsProps)
 
               {/* Details */}
               <div className="p-4">
-                <h3 className="font-semibold text-neutral-900 truncate">
+                <h3 className="font-semibold text-white truncate">
                   {listing.address}
                 </h3>
-                <p className="text-sm text-neutral-500">
+                <p className="text-[13px] text-[#636366]">
                   {[listing.city, listing.state, listing.zip]
                     .filter(Boolean)
                     .join(', ')}
                 </p>
 
                 {/* Stats */}
-                <div className="mt-3 flex items-center gap-4 text-sm text-neutral-600">
+                <div className="mt-3 flex items-center gap-4 text-[13px] text-[#a1a1a6]">
                   {listing.beds && (
                     <div className="flex items-center gap-1">
                       <Bed className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function ActiveListings({ listings, communityName }: ActiveListingsProps)
         <div className="mt-6 text-center">
           <Link
             href="/dashboard/listings"
-            className="text-blue-600 hover:underline"
+            className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
           >
             View all {listings.length} listings →
           </Link>

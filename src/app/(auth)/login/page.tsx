@@ -3,7 +3,8 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { Mail, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react'
+import Link from 'next/link'
+import { Mail, Loader2, CheckCircle, AlertCircle, Info, Camera, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,7 +35,6 @@ function LoginForm() {
     try {
       setError(null)
 
-      // Use our custom magic link API that sends via Resend
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: {
@@ -58,20 +58,23 @@ function LoginForm() {
 
   if (sent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-        <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        {/* Subtle gradient */}
+        <div className="fixed inset-0 bg-gradient-to-b from-[#0077ff]/5 via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative w-full max-w-[420px] glass rounded-2xl p-8 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
+            <CheckCircle className="h-7 w-7 text-green-400" />
           </div>
-          <h1 className="mt-6 text-2xl font-bold text-neutral-900">Check your email</h1>
-          <p className="mt-2 text-neutral-600">
-            We sent a magic link to <strong>{watchEmail}</strong>
+          <h1 className="mt-6 text-[22px] font-semibold text-white">Check your email</h1>
+          <p className="mt-2 text-[15px] text-[#a1a1a6]">
+            We sent a magic link to <span className="text-white font-medium">{watchEmail}</span>
           </p>
-          <p className="mt-4 text-sm text-neutral-500">
+          <p className="mt-4 text-[13px] text-[#636366]">
             Click the link in your email to sign in. The link expires in 1 hour.
           </p>
-          <div className="mt-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
-            <strong>Tip:</strong> Check your spam folder if you don&apos;t see our email.
+          <div className="mt-6 rounded-xl bg-[#0077ff]/10 border border-[#0077ff]/20 p-4 text-[13px] text-[#3395ff]">
+            <strong className="text-[#0077ff]">Tip:</strong> Check your spam folder if you don&apos;t see our email.
           </div>
           <Button
             variant="outline"
@@ -86,83 +89,115 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-neutral-900">Welcome back</h1>
-          <p className="mt-2 text-neutral-600">
-            Sign in to your Aerial Shots Media portal
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+      {/* Subtle gradient */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#0077ff]/5 via-transparent to-transparent pointer-events-none" />
 
-        {/* Aryeo Hint */}
-        <div className="mt-6 flex items-start gap-3 rounded-lg bg-blue-50 p-4">
-          <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium">Already use Aryeo?</p>
-            <p className="mt-1 text-blue-700">
-              Use the same email address you use with Aryeo to automatically link your account.
+      <div className="relative w-full max-w-[420px]">
+        {/* Back to home */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-[13px] text-[#636366] hover:text-white transition-colors mb-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to home
+        </Link>
+
+        {/* Main card */}
+        <div className="glass rounded-2xl p-8">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2.5 mb-8">
+            <div className="h-9 w-9 rounded-xl bg-[#0077ff] flex items-center justify-center">
+              <Camera className="h-4.5 w-4.5 text-white" />
+            </div>
+            <span className="text-[17px] font-semibold text-white">
+              Agent Portal
+            </span>
+          </div>
+
+          <div className="text-center mb-8">
+            <h1 className="text-[22px] font-semibold text-white">Welcome back</h1>
+            <p className="mt-2 text-[15px] text-[#a1a1a6]">
+              Sign in to access your media and listings
             </p>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
-          <div>
-            <Label htmlFor="email">Email address</Label>
-            <div className="relative mt-1">
-              <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-              <Input
-                id="email"
-                type="email"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                placeholder="you@example.com"
-                className="pl-10"
-                autoComplete="email"
-                autoFocus
-              />
+          {/* Aryeo Hint */}
+          <div className="flex items-start gap-3 rounded-xl bg-[#0077ff]/10 border border-[#0077ff]/20 p-4 mb-6">
+            <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#0077ff]" />
+            <div className="text-[13px]">
+              <p className="font-medium text-[#3395ff]">Already use Aryeo?</p>
+              <p className="mt-1 text-[#636366]">
+                Use the same email to automatically link your account.
+              </p>
             </div>
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              {error}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <Label htmlFor="email" className="text-[13px] text-[#a1a1a6]">
+                Email address
+              </Label>
+              <div className="relative mt-2">
+                <Mail className="absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#636366]" />
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  })}
+                  placeholder="you@example.com"
+                  className="pl-11"
+                  autoComplete="email"
+                  autoFocus
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-2 text-[13px] text-[#ff453a]">{errors.email.message}</p>
+              )}
             </div>
-          )}
 
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[#ff4533] hover:bg-[#e63d2e]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending link...
-              </>
-            ) : (
-              'Send magic link'
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl bg-[#ff453a]/10 border border-[#ff453a]/20 p-3 text-[13px] text-[#ff453a]">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {error}
+              </div>
             )}
-          </Button>
 
-          <p className="text-center text-xs text-neutral-500">
-            We&apos;ll send you a magic link to sign in - no password needed.
-          </p>
-        </form>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full"
+              size="lg"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending link...
+                </>
+              ) : (
+                'Continue with email'
+              )}
+            </Button>
 
-        <div className="mt-8 border-t border-neutral-200 pt-6">
-          <p className="text-center text-sm text-neutral-500">
+            <p className="text-center text-[13px] text-[#636366]">
+              We&apos;ll send you a magic link — no password needed.
+            </p>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-[13px] text-[#636366]">
             Don&apos;t have an account?{' '}
-            <a href="https://www.aerialshots.media" className="text-[#ff4533] hover:underline">
+            <a
+              href="https://www.aerialshots.media"
+              className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
+            >
               Book your first shoot
             </a>
           </p>
@@ -174,10 +209,11 @@ function LoginForm() {
 
 function LoginFormFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#0077ff]/5 via-transparent to-transparent pointer-events-none" />
+      <div className="relative w-full max-w-[420px] glass rounded-2xl p-8">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#636366]" />
         </div>
       </div>
     </div>

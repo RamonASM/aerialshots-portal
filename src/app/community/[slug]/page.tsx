@@ -74,7 +74,7 @@ export async function generateMetadata({
 function LoadingSection() {
   return (
     <div className="flex items-center justify-center py-12">
-      <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      <Loader2 className="h-8 w-8 animate-spin text-[#636366]" />
     </div>
   )
 }
@@ -115,7 +115,7 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
     <>
       <CommunityJsonLd community={community} />
 
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-black">
         {/* Hero Section */}
         <CommunityHero
           name={community.name}
@@ -190,21 +190,31 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
         </div>
 
         {/* Footer */}
-        <footer className="border-t border-neutral-200 bg-neutral-50 py-8">
-          <div className="mx-auto max-w-7xl px-4 text-center text-sm text-neutral-500">
+        <footer className="border-t border-white/[0.08] bg-[#0a0a0a] py-10 pb-24 lg:pb-10">
+          <div className="mx-auto max-w-7xl px-4 text-center text-[13px] text-[#636366]">
             <p>
               Powered by{' '}
               <a
                 href="https://www.aerialshots.media"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
               >
                 Aerial Shots Media
               </a>
             </p>
           </div>
         </footer>
+
+        {/* Mobile Floating CTA */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.08] bg-black/90 backdrop-blur-xl p-4 lg:hidden">
+          <a
+            href="#community-lead-form"
+            className="flex h-12 w-full items-center justify-center rounded-xl bg-[#0077ff] text-base font-medium text-white transition-all hover:bg-[#0062cc]"
+          >
+            Get Community Info
+          </a>
+        </div>
       </main>
     </>
   )

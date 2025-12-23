@@ -26,22 +26,22 @@ export function CommunityHero({
   const location = [city, state].filter(Boolean).join(', ')
 
   return (
-    <div className="relative h-[450px] w-full overflow-hidden bg-neutral-900">
+    <div className="relative h-[450px] w-full overflow-hidden bg-black">
       {/* Background Image */}
       {heroImage ? (
         <Image
           src={heroImage}
           alt={name}
           fill
-          className="object-cover opacity-80"
+          className="object-cover opacity-70"
           priority
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-700" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0077ff]/30 to-transparent" />
       )}
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -50,20 +50,20 @@ export function CommunityHero({
             <div>
               {/* Location Badge */}
               {location && (
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-sm text-white backdrop-blur-sm">
+                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/[0.08] px-3 py-1.5 text-[13px] text-white/90 backdrop-blur-sm">
                   <MapPin className="h-3.5 w-3.5" />
                   {location}
                 </div>
               )}
 
               {/* Community Name */}
-              <h1 className="text-4xl font-bold text-white md:text-5xl">
+              <h1 className="text-[34px] font-semibold tracking-tight text-white md:text-[44px]">
                 {name}
               </h1>
 
               {/* Tagline */}
               {tagline && (
-                <p className="mt-2 text-lg text-white/90 md:text-xl">
+                <p className="mt-2 text-[17px] text-white/80 md:text-lg">
                   {tagline}
                 </p>
               )}
@@ -72,23 +72,23 @@ export function CommunityHero({
               {quickFacts && (
                 <div className="mt-4 flex flex-wrap gap-4">
                   {quickFacts.population && (
-                    <div className="flex items-center gap-2 text-white/80">
+                    <div className="flex items-center gap-2 text-[#a1a1a6]">
                       <Users className="h-4 w-4" />
-                      <span className="text-sm">
+                      <span className="text-[13px]">
                         {quickFacts.population.toLocaleString()} residents
                       </span>
                     </div>
                   )}
                   {quickFacts.founded && (
-                    <div className="flex items-center gap-2 text-white/80">
+                    <div className="flex items-center gap-2 text-[#a1a1a6]">
                       <Calendar className="h-4 w-4" />
-                      <span className="text-sm">Est. {quickFacts.founded}</span>
+                      <span className="text-[13px]">Est. {quickFacts.founded}</span>
                     </div>
                   )}
                   {quickFacts.area_sqmi && (
-                    <div className="flex items-center gap-2 text-white/80">
+                    <div className="flex items-center gap-2 text-[#a1a1a6]">
                       <Home className="h-4 w-4" />
-                      <span className="text-sm">
+                      <span className="text-[13px]">
                         {quickFacts.area_sqmi} sq mi
                       </span>
                     </div>
@@ -102,8 +102,7 @@ export function CommunityHero({
               <ShareButton
                 title={`${name} - Homes & Real Estate`}
                 text={tagline || `Explore homes for sale in ${name}`}
-                variant="secondary"
-                className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+                variant="outline"
               />
             </div>
           </div>

@@ -11,10 +11,10 @@ export function WhatsComingSection({ items }: WhatsComingSectionProps) {
   if (items.length === 0) return null
 
   return (
-    <section className="bg-white py-12">
+    <section className="bg-[#0a0a0a] py-12 border-t border-white/[0.08]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-neutral-900">What's Coming</h2>
-        <p className="mt-2 text-neutral-600">
+        <h2 className="text-[22px] font-semibold text-white">What's Coming</h2>
+        <p className="mt-2 text-[15px] text-[#a1a1a6]">
           New developments and changes in the neighborhood
         </p>
 
@@ -25,11 +25,11 @@ export function WhatsComingSection({ items }: WhatsComingSectionProps) {
             return (
               <div
                 key={item.id}
-                className="rounded-lg border border-neutral-200 bg-white p-4"
+                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-4"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg text-xl"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
                     style={{ backgroundColor: categoryInfo.color + '20' }}
                   >
                     {categoryInfo.icon}
@@ -37,17 +37,17 @@ export function WhatsComingSection({ items }: WhatsComingSectionProps) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className="inline-block rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                        className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white"
                         style={{ backgroundColor: categoryInfo.color }}
                       >
                         {categoryInfo.title}
                       </span>
                     </div>
-                    <h3 className="mt-2 font-semibold text-neutral-900">
+                    <h3 className="mt-2 text-[15px] font-semibold text-white">
                       {item.title}
                     </h3>
                     {item.description && (
-                      <p className="mt-1 text-sm text-neutral-600">
+                      <p className="mt-1 text-[13px] text-[#a1a1a6]">
                         {item.description}
                       </p>
                     )}
@@ -56,7 +56,7 @@ export function WhatsComingSection({ items }: WhatsComingSectionProps) {
                         href={item.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-sm text-[#ff4533] hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-[13px] text-[#0077ff] hover:text-[#3395ff] transition-colors"
                       >
                         Learn more
                         <ExternalLink className="h-3 w-3" />

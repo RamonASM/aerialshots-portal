@@ -12,9 +12,9 @@ interface AgentContactCardProps {
   brandColor?: string
 }
 
-export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContactCardProps) {
+export function AgentContactCard({ agent, brandColor = '#0077ff' }: AgentContactCardProps) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-6">
+    <div className="rounded-xl border border-white/[0.08] bg-[#1c1c1e]/72 backdrop-blur-xl p-6">
       {/* Agent Info */}
       <div className="flex items-start gap-4">
         {agent.headshot_url ? (
@@ -23,11 +23,11 @@ export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContact
             alt={agent.name}
             width={80}
             height={80}
-            className="h-20 w-20 rounded-full object-cover"
+            className="h-20 w-20 rounded-full object-cover ring-2 ring-white/10"
           />
         ) : (
           <div
-            className="flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white"
+            className="flex h-20 w-20 items-center justify-center rounded-full text-[22px] font-semibold text-white"
             style={{ backgroundColor: brandColor }}
           >
             {agent.name.charAt(0)}
@@ -35,22 +35,22 @@ export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContact
         )}
 
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-neutral-900">{agent.name}</h3>
+          <h3 className="text-[17px] font-semibold text-white">{agent.name}</h3>
           {agent.bio && (
-            <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{agent.bio}</p>
+            <p className="mt-1 line-clamp-2 text-[13px] text-[#a1a1a6]">{agent.bio}</p>
           )}
         </div>
       </div>
 
       {/* Agent Logo */}
       {agent.logo_url && (
-        <div className="mt-4 border-t border-neutral-100 pt-4">
+        <div className="mt-4 border-t border-white/[0.08] pt-4">
           <Image
             src={agent.logo_url}
             alt={`${agent.name} logo`}
             width={120}
             height={40}
-            className="h-8 w-auto object-contain"
+            className="h-8 w-auto object-contain brightness-0 invert opacity-70"
           />
         </div>
       )}
@@ -67,10 +67,10 @@ export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContact
         )}
 
         {agent.email && (
-          <Button variant="outline" className="w-full justify-start" asChild>
+          <Button variant="outline" className="w-full justify-start text-[13px]" asChild>
             <a href={`mailto:${agent.email}`}>
               <Mail className="mr-2 h-4 w-4" />
-              {agent.email}
+              <span className="truncate">{agent.email}</span>
             </a>
           </Button>
         )}
@@ -80,7 +80,7 @@ export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContact
             <a href={agent.instagram_url} target="_blank" rel="noopener noreferrer">
               <Instagram className="mr-2 h-4 w-4" />
               Instagram
-              <ExternalLink className="ml-auto h-3 w-3" />
+              <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
             </a>
           </Button>
         )}
@@ -88,7 +88,7 @@ export function AgentContactCard({ agent, brandColor = '#ff4533' }: AgentContact
 
       {/* View Portfolio Link */}
       {agent.slug && (
-        <div className="mt-4 border-t border-neutral-100 pt-4">
+        <div className="mt-4 border-t border-white/[0.08] pt-4">
           <Button
             className="w-full"
             style={{ backgroundColor: brandColor }}

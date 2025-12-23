@@ -31,7 +31,7 @@ export default async function AdminPage() {
       icon: Layers,
       stat: curatedCount ?? 0,
       statLabel: 'curated items',
-      color: 'bg-blue-500',
+      color: 'bg-[#0077ff]',
     },
     {
       name: 'Operations',
@@ -54,43 +54,47 @@ export default async function AdminPage() {
   ]
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Admin Dashboard</h1>
-        <p className="mt-1 text-neutral-600">
-          Manage operations, content, and customer care.
-        </p>
-      </div>
+    <div className="min-h-screen bg-black">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-[22px] font-semibold text-white">Admin Dashboard</h1>
+            <p className="mt-1 text-[#a1a1a6]">
+              Manage operations, content, and customer care.
+            </p>
+          </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {modules.map((module) => (
-          <Link
-            key={module.name}
-            href={module.href}
-            className="group rounded-lg border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div
-                className={`flex h-12 w-12 items-center justify-center rounded-lg ${module.color}`}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {modules.map((module) => (
+              <Link
+                key={module.name}
+                href={module.href}
+                className="group rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6 transition-all hover:border-white/[0.16]"
               >
-                <module.icon className="h-6 w-6 text-white" />
-              </div>
-              <ArrowRight className="h-5 w-5 text-neutral-400 transition-transform group-hover:translate-x-1" />
-            </div>
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${module.color}`}
+                  >
+                    <module.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-[#636366] transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                </div>
 
-            <h2 className="mt-4 font-semibold text-neutral-900">{module.name}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{module.description}</p>
+                <h2 className="mt-4 font-semibold text-white">{module.name}</h2>
+                <p className="mt-1 text-[13px] text-[#a1a1a6]">{module.description}</p>
 
-            <div className="mt-4 border-t border-neutral-100 pt-4">
-              <span className="text-2xl font-bold text-neutral-900">
-                {module.stat}
-              </span>
-              <span className="ml-2 text-sm text-neutral-500">
-                {module.statLabel}
-              </span>
-            </div>
-          </Link>
-        ))}
+                <div className="mt-4 border-t border-white/[0.08] pt-4">
+                  <span className="text-[28px] font-semibold text-white">
+                    {module.stat}
+                  </span>
+                  <span className="ml-2 text-[13px] text-[#636366]">
+                    {module.statLabel}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
