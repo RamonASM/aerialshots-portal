@@ -7,7 +7,11 @@ import {
   badRequest,
   databaseError,
 } from '@/lib/utils/errors'
+import { checkRateLimit, getRateLimitHeaders, createRateLimitKey } from '@/lib/utils/rate-limit'
 import { z } from 'zod'
+
+// Rate limit: 5 leads per IP per 10 minutes
+const LEAD_RATE_LIMIT = { limit: 5, windowSeconds: 600 }
 
 /**
  * Lead creation schema
@@ -27,8 +31,21 @@ const createLeadSchema = z.object({
  *
  * Public endpoint - no authentication required
  * Used by property pages for visitor inquiries
+ * Rate limited: 5 requests per IP per 10 minutes
  */
 export async function POST(request: NextRequest) {
+  // Rate limit by IP
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  const clientIp = forwardedFor?.split(',')[0]?.trim() || 'unknown'
+
+  const rateLimit = checkRateLimit(createRateLimitKey('leads', 'ip', clientIp), LEAD_RATE_LIMIT)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) }
+    )
+  }
+
   return handleApiError(async () => {
     const body = await request.json()
 

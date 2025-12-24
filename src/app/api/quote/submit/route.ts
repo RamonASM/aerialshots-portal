@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resend } from '@/lib/email/resend'
+import { checkRateLimit, getRateLimitHeaders, createRateLimitKey } from '@/lib/utils/rate-limit'
 import type { QuoteFormData } from '@/lib/pricing/quote-config'
 import {
   PROPERTY_TYPES,
@@ -253,8 +254,23 @@ function generateClientEmailHtml(data: QuoteFormData): string {
   `
 }
 
+// Rate limit: 3 quotes per IP per 30 minutes (prevents email spam)
+const QUOTE_RATE_LIMIT = { limit: 3, windowSeconds: 1800 }
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit by IP
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const clientIp = forwardedFor?.split(',')[0]?.trim() || 'unknown'
+
+    const rateLimit = checkRateLimit(createRateLimitKey('quote', 'ip', clientIp), QUOTE_RATE_LIMIT)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: getRateLimitHeaders(rateLimit) }
+      )
+    }
+
     const data: QuoteFormData = await request.json()
 
     // Validate required fields

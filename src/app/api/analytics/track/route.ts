@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import { checkRateLimit, createRateLimitKey } from '@/lib/utils/rate-limit'
+
+// Rate limit: 100 events per IP per minute (generous for page views, but prevents abuse)
+const ANALYTICS_RATE_LIMIT = { limit: 100, windowSeconds: 60 }
 
 // Simple device detection from user agent
 function getDeviceType(ua: string): 'mobile' | 'tablet' | 'desktop' | 'unknown' {
@@ -39,8 +43,20 @@ function getOS(ua: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
     const headersList = await headers()
+
+    // Get visitor IP for rate limiting
+    const forwardedFor = headersList.get('x-forwarded-for')
+    const visitorIp = forwardedFor?.split(',')[0].trim() || 'unknown'
+
+    // Rate limit by IP
+    const rateLimit = checkRateLimit(createRateLimitKey('analytics', 'ip', visitorIp), ANALYTICS_RATE_LIMIT)
+    if (!rateLimit.allowed) {
+      // Silently reject - don't reveal rate limiting to potential attackers
+      return NextResponse.json({ success: true })
+    }
+
+    const body = await request.json()
 
     const {
       listingId,
@@ -59,8 +75,6 @@ export async function POST(request: NextRequest) {
     // Get visitor info from headers
     const userAgent = headersList.get('user-agent') || ''
     const referrer = headersList.get('referer') || body.referrer || null
-    const forwardedFor = headersList.get('x-forwarded-for')
-    const visitorIp = forwardedFor?.split(',')[0].trim() || 'unknown'
 
     const supabase = await createClient()
 
