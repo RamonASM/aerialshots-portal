@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 const statusColumns = [
   { key: 'scheduled', label: 'Scheduled', color: 'bg-blue-500' },
@@ -50,11 +51,14 @@ export default async function OpsPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Operations Dashboard</h1>
-          <p className="mt-1 text-neutral-600">
-            Track jobs from scheduling to delivery.
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900">Operations Dashboard</h1>
+            <p className="mt-1 text-neutral-600">
+              Track jobs from scheduling to delivery.
+            </p>
+          </div>
+          <RealtimeRefresh />
         </div>
         <div className="flex gap-2">
           <Button asChild>

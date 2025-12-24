@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { MapPin, Clock, Camera, CheckCircle, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function PhotographerPage() {
   const supabase = await createClient()
@@ -39,14 +40,19 @@ export default async function PhotographerPage() {
     <div className="min-h-screen bg-neutral-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white px-4 py-4">
-        <h1 className="text-xl font-bold text-neutral-900">Today's Shoots</h1>
-        <p className="text-sm text-neutral-600">
-          {today.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900">Today's Shoots</h1>
+            <p className="text-sm text-neutral-600">
+              {today.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+          </div>
+          <RealtimeRefresh statuses={['scheduled', 'in_progress']} />
+        </div>
       </header>
 
       {/* Stats */}

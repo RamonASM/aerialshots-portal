@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { CheckCircle, XCircle, Clock, Eye, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function QCPage() {
   const supabase = await createClient()
@@ -54,11 +55,14 @@ export default async function QCPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Quality Control</h1>
-        <p className="mt-1 text-neutral-600">
-          Review and approve staged photos before delivery.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Quality Control</h1>
+          <p className="mt-1 text-neutral-600">
+            Review and approve staged photos before delivery.
+          </p>
+        </div>
+        <RealtimeRefresh statuses={['ready_for_qc', 'in_qc', 'delivered']} />
       </div>
 
       {/* Stats */}

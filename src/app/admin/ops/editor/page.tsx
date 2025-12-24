@@ -13,6 +13,7 @@ import {
   Timer,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function EditorDashboardPage() {
   const supabase = await createClient()
@@ -96,12 +97,15 @@ export default async function EditorDashboardPage() {
               Welcome back, {staff.name}
             </p>
           </div>
-          <Link
-            href="/admin/ops"
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            Ops Overview
-          </Link>
+          <div className="flex items-center gap-4">
+            <RealtimeRefresh statuses={['staged', 'awaiting_editing', 'in_editing']} />
+            <Link
+              href="/admin/ops"
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              Ops Overview
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 // Unified Notification Service
 
-import { sendEmail } from './email'
+import { sendEmail, isEmailConfigured } from './email'
 import { sendSMS, isSMSConfigured } from './sms'
 import * as templates from './templates'
 import type {
@@ -186,5 +186,5 @@ export async function notifyStatusUpdate(
   })
 }
 
-// Export configuration check
-export { isSMSConfigured }
+// Export configuration checks
+export { isEmailConfigured, isSMSConfigured }

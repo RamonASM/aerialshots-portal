@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/middleware/auth'
 import { handleApiError, badRequest, databaseError } from '@/lib/utils/errors'
+import { sendNotification, isEmailConfigured, isSMSConfigured } from '@/lib/notifications'
 import { z } from 'zod'
 
 /**
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
         // Verify staff exists and has correct role
         const { data: targetStaff, error: staffError } = await supabase
           .from('staff')
-          .select('id, name, role, is_active')
+          .select('id, name, email, phone, role, is_active')
           .eq('id', assignment.staff_id)
           .single()
 
@@ -246,6 +247,37 @@ export async function POST(request: NextRequest) {
         }).catch(() => {
           // Activity log is optional
         })
+
+        // Send notification to assigned staff (async, don't block)
+        if (isEmailConfigured() || isSMSConfigured()) {
+          const notificationType = assignment.role === 'photographer'
+            ? 'photographer_assigned'
+            : 'editor_assigned'
+
+          // Determine channel based on role and available configs
+          let channel: 'email' | 'sms' | 'both' = 'email'
+          if (assignment.role === 'photographer' && isSMSConfigured() && targetStaff.phone) {
+            channel = isEmailConfigured() ? 'both' : 'sms'
+          }
+
+          sendNotification({
+            type: notificationType as any,
+            recipient: {
+              name: targetStaff.name,
+              email: targetStaff.email,
+              phone: targetStaff.phone || undefined,
+            },
+            channel,
+            data: {
+              listingAddress: listing.address,
+              listingId: listing.id,
+              scheduledAt: assignment.scheduled_at,
+              assignedBy: staff.name,
+            },
+          }).catch((err) => {
+            console.error('Failed to send assignment notification:', err)
+          })
+        }
 
         results.push({
           success: true,

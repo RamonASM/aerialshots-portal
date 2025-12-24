@@ -51,5 +51,10 @@ export async function sendBatchEmails(
   return results
 }
 
+// Check if email is configured
+export function isEmailConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY
+}
+
 // Convenience functions for common email types
 export { sendEmail as send }
