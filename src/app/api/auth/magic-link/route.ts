@@ -78,6 +78,14 @@ export async function POST(request: NextRequest) {
     // Build the full callback URL
     const callbackUrl = `${baseUrl}/api/auth/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`
 
+    console.log('Magic link generation:', {
+      email: normalizedEmail,
+      isStaff,
+      baseUrl,
+      callbackUrl,
+      adminDomain: process.env.NEXT_PUBLIC_ADMIN_DOMAIN,
+    })
+
     // Generate magic link using Supabase Admin API
     const { data, error } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
@@ -86,6 +94,8 @@ export async function POST(request: NextRequest) {
         redirectTo: callbackUrl,
       },
     })
+
+    console.log('Generated magic link:', data?.properties?.action_link?.substring(0, 100) + '...')
 
     if (error) {
       console.error('Failed to generate magic link:', {
