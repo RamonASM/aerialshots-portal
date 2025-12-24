@@ -3,7 +3,8 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { Mail, Loader2, CheckCircle, AlertCircle, Shield, Lock } from 'lucide-react'
+import { Mail, Loader2, CheckCircle, AlertCircle, Lock } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -96,18 +97,17 @@ function StaffLoginForm() {
         {/* Main card */}
         <div className="rounded-2xl border border-white/[0.08] bg-[#1c1c1e] p-8">
           {/* Header */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-amber-400" />
-            </div>
-            <div>
-              <span className="text-[17px] font-semibold text-white block">
-                asm.aerialshots.media
-              </span>
-              <span className="text-[11px] text-[#636366] uppercase tracking-wider">
-                Team Login
-              </span>
-            </div>
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src="/asm-logo-light.png"
+              alt="ASM Logo"
+              width={80}
+              height={80}
+              className="mb-4"
+            />
+            <span className="text-[11px] text-[#636366] uppercase tracking-wider">
+              Team Portal
+            </span>
           </div>
 
           <div className="text-center mb-6">
