@@ -88,13 +88,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error('Failed to generate magic link:', error)
-      throw serverError('Failed to generate sign-in link')
+      console.error('Failed to generate magic link:', {
+        error,
+        email: normalizedEmail,
+        callbackUrl,
+      })
+      throw serverError(`Failed to generate sign-in link: ${error.message || 'Unknown error'}`)
     }
 
     if (!data?.properties?.action_link) {
-      console.error('No magic link returned from Supabase')
-      throw serverError('Failed to generate sign-in link')
+      console.error('No magic link returned from Supabase', { data })
+      throw serverError('Failed to generate sign-in link: No link returned')
     }
 
     // Send email via Resend
