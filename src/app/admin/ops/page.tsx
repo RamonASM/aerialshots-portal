@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, Edit3 } from 'lucide-react'
+import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const statusColumns = [
@@ -57,6 +57,12 @@ export default async function OpsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/admin/ops/assign">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Assign Jobs
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/admin/ops/photographer">
               <Camera className="mr-2 h-4 w-4" />
