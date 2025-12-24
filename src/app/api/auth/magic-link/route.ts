@@ -7,6 +7,7 @@ import { z } from 'zod'
 
 const magicLinkSchema = z.object({
   email: z.string().email('Invalid email address'),
+  redirectTo: z.string().optional(),
 })
 
 // Rate limit: 5 requests per IP per minute
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       throw badRequest(result.error.issues[0].message)
     }
 
-    const { email } = result.data
+    const { email, redirectTo } = result.data
     const normalizedEmail = email.toLowerCase().trim()
 
     // Check email-based rate limit
@@ -68,12 +69,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
+    // Determine the base URL based on email domain
+    const isStaff = normalizedEmail.endsWith('@aerialshots.media')
+    const baseUrl = isStaff
+      ? `https://${process.env.NEXT_PUBLIC_ADMIN_DOMAIN || 'asm.aerialshots.media'}`
+      : `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'app.aerialshots.media'}`
+
+    // Build the full callback URL
+    const callbackUrl = `${baseUrl}/api/auth/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`
+
     // Generate magic link using Supabase Admin API
     const { data, error } = await supabase.auth.admin.generateLink({
       type: 'magiclink',
       email: normalizedEmail,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.aerialshots.media'}/api/auth/callback`,
+        redirectTo: callbackUrl,
       },
     })
 
