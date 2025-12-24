@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, Edit3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const statusColumns = [
   { key: 'scheduled', label: 'Scheduled', color: 'bg-blue-500' },
   { key: 'in_progress', label: 'In Progress', color: 'bg-yellow-500' },
   { key: 'staged', label: 'Staged', color: 'bg-purple-500' },
-  { key: 'processing', label: 'Processing', color: 'bg-orange-500' },
+  { key: 'awaiting_editing', label: 'Awaiting Edit', color: 'bg-indigo-500' },
+  { key: 'in_editing', label: 'In Editing', color: 'bg-violet-500' },
   { key: 'ready_for_qc', label: 'Ready for QC', color: 'bg-cyan-500' },
   { key: 'in_qc', label: 'In QC', color: 'bg-pink-500' },
   { key: 'delivered', label: 'Delivered', color: 'bg-green-500' },
@@ -55,20 +56,34 @@ export default async function OpsPage() {
             Track jobs from scheduling to delivery.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/admin/ops/photographer">
-            <Camera className="mr-2 h-4 w-4" />
-            Photographer View
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/ops/photographer">
+              <Camera className="mr-2 h-4 w-4" />
+              Photographer
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/ops/editor">
+              <Palette className="mr-2 h-4 w-4" />
+              Editor
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/ops/qc">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              QC
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-5">
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-blue-500" />
-            <span className="text-sm text-neutral-600">Scheduled Today</span>
+            <span className="text-sm text-neutral-600">Scheduled</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-neutral-900">
             {jobsByStatus.scheduled?.filter((j) => {
@@ -81,7 +96,7 @@ export default async function OpsPage() {
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-yellow-500" />
-            <span className="text-sm text-neutral-600">In Progress</span>
+            <span className="text-sm text-neutral-600">Shooting</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-neutral-900">
             {jobsByStatus.in_progress?.length || 0}
@@ -90,18 +105,28 @@ export default async function OpsPage() {
 
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-cyan-500" />
-            <span className="text-sm text-neutral-600">Ready for QC</span>
+            <Palette className="h-5 w-5 text-violet-500" />
+            <span className="text-sm text-neutral-600">Editing</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-neutral-900">
-            {jobsByStatus.ready_for_qc?.length || 0}
+            {(jobsByStatus.awaiting_editing?.length || 0) + (jobsByStatus.in_editing?.length || 0)}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-cyan-500" />
+            <span className="text-sm text-neutral-600">In QC</span>
+          </div>
+          <p className="mt-2 text-2xl font-bold text-neutral-900">
+            {(jobsByStatus.ready_for_qc?.length || 0) + (jobsByStatus.in_qc?.length || 0)}
           </p>
         </div>
 
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span className="text-sm text-amber-700">Rush Jobs</span>
+            <span className="text-sm text-amber-700">Rush</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-amber-800">
             {rushJobs.length}

@@ -15,12 +15,15 @@ import {
   Settings,
   Camera,
   ChevronRight,
+  ShoppingCart,
+  Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Orders', href: '/dashboard/orders', icon: ShoppingCart },
   { name: 'Listings', href: '/dashboard/listings', icon: Building },
   { name: 'Leads', href: '/dashboard/leads', icon: Users, badge: 'leads' },
   { name: 'AI Tools', href: '/dashboard/ai-tools', icon: Sparkles },
@@ -84,8 +87,15 @@ export default async function DashboardLayout({
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/book"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-blue-600"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Book</span>
+            </Link>
             {agent?.name && (
-              <span className="hidden text-[13px] text-[#a1a1a6] sm:block">
+              <span className="hidden text-[13px] text-[#a1a1a6] md:block">
                 {agent.name}
               </span>
             )}

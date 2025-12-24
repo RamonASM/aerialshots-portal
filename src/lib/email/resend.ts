@@ -80,3 +80,252 @@ export async function sendMagicLinkEmail({
 
   return data
 }
+
+/**
+ * Send order confirmation email to customer
+ */
+export async function sendOrderConfirmationEmail({
+  to,
+  customerName,
+  orderId,
+  packageName,
+  propertyAddress,
+  scheduledDate,
+  total,
+}: {
+  to: string
+  customerName: string
+  orderId: string
+  packageName: string
+  propertyAddress?: string
+  scheduledDate?: string
+  total: number
+}) {
+  const firstName = customerName.split(' ')[0]
+
+  const formattedDate = scheduledDate
+    ? new Date(scheduledDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : null
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <noreply@aerialshots.media>',
+    to,
+    subject: `Booking Confirmed - ${packageName} Package`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0;">Aerial Shots Media</h1>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 32px;">
+              <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">✓</span>
+              </div>
+              <h2 style="color: #171717; font-size: 22px; font-weight: 600; margin: 0 0 8px 0;">
+                Booking Confirmed!
+              </h2>
+              <p style="color: #525252; font-size: 16px; margin: 0;">
+                Thanks for your order, ${firstName}!
+              </p>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="color: #171717; font-size: 14px; font-weight: 600; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">Order Details</h3>
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Order #</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 500;">${orderId.slice(0, 8).toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Package</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 500;">${packageName}</td>
+                </tr>
+                ${propertyAddress ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Property</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 500;">${propertyAddress}</td>
+                </tr>
+                ` : ''}
+                ${formattedDate ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Scheduled</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 500;">${formattedDate}</td>
+                </tr>
+                ` : ''}
+                <tr style="border-top: 1px solid #e5e7eb;">
+                  <td style="padding: 12px 0 0; color: #171717; font-weight: 600;">Total</td>
+                  <td style="padding: 12px 0 0; color: #171717; text-align: right; font-weight: 700; font-size: 18px;">$${total.toLocaleString()}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="color: #0369a1; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">What happens next?</h3>
+              <ol style="color: #0c4a6e; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                <li>We'll assign a photographer and confirm details</li>
+                <li>You'll receive photographer contact info 24hrs before</li>
+                <li>Expect delivery within 24-48 hours after the shoot</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <a href="https://portal.aerialshots.media/dashboard/orders" style="display: inline-block; background: #3b82f6; color: white; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 8px;">
+                View Order Details
+              </a>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
+
+            <p style="color: #737373; font-size: 14px; line-height: 1.5; margin: 0; text-align: center;">
+              Questions? Reply to this email or call us at<br>
+              <a href="tel:+14077745070" style="color: #3b82f6;">(407) 774-5070</a>
+            </p>
+
+            <p style="color: #a3a3a3; font-size: 12px; margin: 24px 0 0 0; text-align: center;">
+              Aerial Shots Media · Orlando, Tampa, Central Florida
+            </p>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send order confirmation email:', error)
+    // Don't throw - we don't want to fail the order if email fails
+  }
+
+  return data
+}
+
+/**
+ * Send order notification to support team
+ */
+export async function sendOrderNotificationEmail({
+  orderId,
+  customerName,
+  customerEmail,
+  customerPhone,
+  packageName,
+  propertyAddress,
+  scheduledDate,
+  total,
+}: {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  customerPhone?: string
+  packageName: string
+  propertyAddress?: string
+  scheduledDate?: string
+  total: number
+}) {
+  const formattedDate = scheduledDate
+    ? new Date(scheduledDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : 'Not scheduled yet'
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <noreply@aerialshots.media>',
+    to: 'support@aerialshots.media',
+    replyTo: customerEmail,
+    subject: `New Booking: ${packageName} - ${customerName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 24px; text-align: center;">
+              <h1 style="color: white; font-size: 20px; margin: 0;">New Booking Received!</h1>
+              <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0 0;">${packageName} Package - $${total.toLocaleString()}</p>
+            </div>
+
+            <div style="padding: 24px;">
+              <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <h2 style="color: #171717; font-size: 16px; margin: 0 0 12px 0;">Customer Information</h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <tr>
+                    <td style="padding: 6px 0; color: #737373; width: 100px;">Name:</td>
+                    <td style="padding: 6px 0; color: #171717; font-weight: 600;">${customerName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; color: #737373;">Email:</td>
+                    <td style="padding: 6px 0;"><a href="mailto:${customerEmail}" style="color: #3b82f6; text-decoration: none;">${customerEmail}</a></td>
+                  </tr>
+                  ${customerPhone ? `
+                  <tr>
+                    <td style="padding: 6px 0; color: #737373;">Phone:</td>
+                    <td style="padding: 6px 0;"><a href="tel:${customerPhone}" style="color: #3b82f6; text-decoration: none;">${customerPhone}</a></td>
+                  </tr>
+                  ` : ''}
+                </table>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h2 style="color: #171717; font-size: 16px; margin: 0 0 12px 0;">Order Details</h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #737373; width: 120px;">Order ID:</td>
+                    <td style="padding: 8px 0; color: #171717; font-weight: 500;">${orderId}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #737373;">Package:</td>
+                    <td style="padding: 8px 0; color: #171717; font-weight: 500;">${packageName}</td>
+                  </tr>
+                  ${propertyAddress ? `
+                  <tr>
+                    <td style="padding: 8px 0; color: #737373;">Property:</td>
+                    <td style="padding: 8px 0; color: #171717; font-weight: 500;">${propertyAddress}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
+                    <td style="padding: 8px 0; color: #737373;">Scheduled:</td>
+                    <td style="padding: 8px 0; color: #171717; font-weight: 500;">${formattedDate}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #737373;">Total:</td>
+                    <td style="padding: 8px 0; color: #171717; font-weight: 700;">$${total.toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <a href="mailto:${customerEmail}" style="display: inline-block; background: #3b82f6; color: white; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; margin-right: 8px;">Reply to Customer</a>
+              ${customerPhone ? `<a href="tel:${customerPhone}" style="display: inline-block; background: #171717; color: white; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px;">Call Now</a>` : ''}
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send order notification email:', error)
+  }
+
+  return data
+}

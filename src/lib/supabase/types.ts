@@ -1562,6 +1562,170 @@ export interface Database {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          id: string
+          agent_id: string | null
+          listing_id: string | null
+          service_type: 'listing' | 'retainer'
+          package_key: string
+          package_name: string
+          sqft_tier: string | null
+          services: Record<string, unknown>[]
+          subtotal_cents: number
+          discount_cents: number
+          tax_cents: number
+          total_cents: number
+          property_address: string | null
+          property_city: string | null
+          property_state: string
+          property_zip: string | null
+          property_sqft: number | null
+          property_beds: number | null
+          property_baths: number | null
+          contact_name: string
+          contact_email: string
+          contact_phone: string | null
+          scheduled_at: string | null
+          scheduled_duration_minutes: number | null
+          status: OrderStatus
+          payment_intent_id: string | null
+          payment_status: PaymentStatus
+          paid_at: string | null
+          retainer_start_date: string | null
+          retainer_months: number | null
+          special_instructions: string | null
+          internal_notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          agent_id?: string | null
+          listing_id?: string | null
+          service_type: 'listing' | 'retainer'
+          package_key: string
+          package_name: string
+          sqft_tier?: string | null
+          services?: Record<string, unknown>[]
+          subtotal_cents: number
+          discount_cents?: number
+          tax_cents?: number
+          total_cents: number
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string
+          property_zip?: string | null
+          property_sqft?: number | null
+          property_beds?: number | null
+          property_baths?: number | null
+          contact_name: string
+          contact_email: string
+          contact_phone?: string | null
+          scheduled_at?: string | null
+          scheduled_duration_minutes?: number | null
+          status?: OrderStatus
+          payment_intent_id?: string | null
+          payment_status?: PaymentStatus
+          paid_at?: string | null
+          retainer_start_date?: string | null
+          retainer_months?: number | null
+          special_instructions?: string | null
+          internal_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          agent_id?: string | null
+          listing_id?: string | null
+          service_type?: 'listing' | 'retainer'
+          package_key?: string
+          package_name?: string
+          sqft_tier?: string | null
+          services?: Record<string, unknown>[]
+          subtotal_cents?: number
+          discount_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          property_address?: string | null
+          property_city?: string | null
+          property_state?: string
+          property_zip?: string | null
+          property_sqft?: number | null
+          property_beds?: number | null
+          property_baths?: number | null
+          contact_name?: string
+          contact_email?: string
+          contact_phone?: string | null
+          scheduled_at?: string | null
+          scheduled_duration_minutes?: number | null
+          status?: OrderStatus
+          payment_intent_id?: string | null
+          payment_status?: PaymentStatus
+          paid_at?: string | null
+          retainer_start_date?: string | null
+          retainer_months?: number | null
+          special_instructions?: string | null
+          internal_notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_agent_id_fkey"
+            columns: ["agent_id"]
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      order_status_history: {
+        Row: {
+          id: string
+          order_id: string
+          previous_status: string | null
+          new_status: string
+          changed_by: string | null
+          changed_by_type: 'staff' | 'agent' | 'system' | 'stripe' | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          previous_status?: string | null
+          new_status: string
+          changed_by?: string | null
+          changed_by_type?: 'staff' | 'agent' | 'system' | 'stripe' | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          previous_status?: string | null
+          new_status?: string
+          changed_by?: string | null
+          changed_by_type?: 'staff' | 'agent' | 'system' | 'stripe' | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1577,6 +1741,26 @@ export interface Database {
     }
   }
 }
+
+// Order Types
+export type OrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'confirmed'
+  | 'scheduled'
+  | 'in_progress'
+  | 'completed'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded'
+
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'refunded'
+  | 'cancelled'
 
 // AI Agent Types
 export type AIAgentCategory = 'operations' | 'content' | 'development' | 'lifestyle'
