@@ -78,6 +78,7 @@ export function checkRateLimit(keyData: ApiKeyData): {
 
   // Check minute limit
   if (entry.minute.count >= limits.requestsPerMinute) {
+    const retryAfterSeconds = Math.ceil((entry.minute.resetAt - now) / 1000)
     return {
       allowed: false,
       remaining: { minute: 0, month: remainingMonth },
@@ -89,8 +90,16 @@ export function checkRateLimit(keyData: ApiKeyData): {
           message: `Rate limit exceeded. Maximum ${limits.requestsPerMinute} requests per minute for ${keyData.tier} tier.`,
           details: {
             limit: limits.requestsPerMinute,
+            remaining: 0,
             resetAt: new Date(entry.minute.resetAt).toISOString(),
+            retryAfter: retryAfterSeconds,
             upgradeUrl: 'https://app.aerialshots.media/developers/pricing',
+            recommendations: [
+              'Implement exponential backoff in your requests',
+              'Cache API responses using the X-Cache header',
+              retryAfterSeconds > 30 ? `Wait ${retryAfterSeconds} seconds before retrying` : 'Retry shortly',
+              keyData.tier === 'free' ? 'Upgrade to Pro for 60 requests/minute' : undefined,
+            ].filter(Boolean),
           },
         },
         meta: {
@@ -104,6 +113,10 @@ export function checkRateLimit(keyData: ApiKeyData): {
 
   // Check month limit
   if (entry.month.count >= limits.requestsPerMonth) {
+    const daysUntilReset = Math.ceil((entry.month.resetAt - now) / (24 * 60 * 60 * 1000))
+    const nextTier = keyData.tier === 'free' ? 'pro' : keyData.tier === 'pro' ? 'business' : null
+    const nextTierLimit = nextTier ? TIER_LIMITS[nextTier].requestsPerMonth : null
+
     return {
       allowed: false,
       remaining: { minute: remainingMinute, month: 0 },
@@ -115,8 +128,17 @@ export function checkRateLimit(keyData: ApiKeyData): {
           message: `Monthly limit exceeded. Maximum ${limits.requestsPerMonth.toLocaleString()} requests per month for ${keyData.tier} tier.`,
           details: {
             limit: limits.requestsPerMonth,
+            used: entry.month.count,
+            remaining: 0,
             resetAt: new Date(entry.month.resetAt).toISOString(),
+            daysUntilReset,
             upgradeUrl: 'https://app.aerialshots.media/developers/pricing',
+            recommendations: [
+              `Your quota resets in ${daysUntilReset} day${daysUntilReset === 1 ? '' : 's'}`,
+              nextTier ? `Upgrade to ${nextTier} tier for ${nextTierLimit?.toLocaleString()} requests/month` : undefined,
+              'Consider caching responses to reduce API calls',
+              'Use the /overview endpoint to batch multiple data types',
+            ].filter(Boolean),
           },
         },
         meta: {
@@ -164,6 +186,12 @@ export function addRateLimitHeaders<T>(
   response.headers.set('X-RateLimit-Reset-Month', Math.ceil(rateLimitResult.resetAt.month / 1000).toString())
 
   response.headers.set('X-API-Tier', keyData.tier)
+
+  // Add Retry-After header when rate limited
+  if (!rateLimitResult.allowed) {
+    const retryAfter = Math.ceil((rateLimitResult.resetAt.minute - Date.now()) / 1000)
+    response.headers.set('Retry-After', Math.max(1, retryAfter).toString())
+  }
 
   return response
 }

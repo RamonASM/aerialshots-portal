@@ -109,13 +109,14 @@ async function LifestyleData({ lat, lng, communityName }: { lat: number; lng: nu
       {/* Life Here - Extended Data Sections */}
       {lifeHereData && (
         <div className="space-y-8">
-          {/* Location Scores */}
+          {/* Life Here Scores */}
           {lifeHereData.scores && (
             <LocationScoresCard
-              walkScore={lifeHereData.scores.walkScore}
-              transitScore={lifeHereData.scores.transitScore}
-              bikeScore={lifeHereData.scores.bikeScore}
-              overall={lifeHereData.scores.overall}
+              lifeHereScore={lifeHereData.scores.lifeHereScore}
+              diningScore={lifeHereData.scores.dining}
+              convenienceScore={lifeHereData.scores.convenience}
+              lifestyleScore={lifeHereData.scores.lifestyle}
+              commuteScore={lifeHereData.scores.commute}
             />
           )}
 

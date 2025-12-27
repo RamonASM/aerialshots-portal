@@ -1,7 +1,8 @@
 // Life Here Data Fetching Utility
 // Centralized data fetching for Property and Community pages
+// Uses the new Life Here Score system instead of Walk Score
 
-import { getWalkScore, type WalkScoreData } from '@/lib/integrations/walkscore/client'
+import { calculateLifeHereScore, type LifeHereScore } from '@/lib/scoring'
 import { getNearbyThemeParks } from '@/lib/integrations/themeparks/client'
 import {
   getAirportProximity,
@@ -23,26 +24,53 @@ import type {
   NewsData,
 } from '@/lib/api/types'
 
-export interface LifeHereScores {
-  walkScore: {
+export interface LifeHereScoreData {
+  lifeHereScore: {
     score: number
+    label: string
+    profile: string
     description: string
-    explanation: string
-  } | null
-  transitScore: {
+  }
+  dining: {
     score: number
-    description: string
-    explanation: string
-  } | null
-  bikeScore: {
+    label: string
+    description: string | undefined
+    highlights: {
+      restaurantCount: number
+      topRated: number
+      cuisineTypes: number
+    }
+  }
+  convenience: {
     score: number
-    description: string
-    explanation: string
-  } | null
-  overall: {
+    label: string
+    description: string | undefined
+    highlights: {
+      nearestGroceryMiles: number
+      has24HourPharmacy: boolean
+    }
+  }
+  lifestyle: {
     score: number
-    description: string
-  } | null
+    label: string
+    description: string | undefined
+    highlights: {
+      gymCount: number
+      parkCount: number
+      entertainmentVenues: number
+    }
+  }
+  commute: {
+    score: number
+    label: string
+    description: string | undefined
+    highlights: {
+      airportMinutes: number
+      beachMinutes: number
+      downtownMinutes: number
+      themeParkMinutes: number | undefined
+    }
+  }
 }
 
 export interface LifeHereCommute {
@@ -59,7 +87,7 @@ export interface LifeHereCommute {
 }
 
 export interface LifeHereData {
-  scores: LifeHereScores | null
+  scores: LifeHereScoreData | null
   themeparks: ThemeParkWithWaits[]
   commute: LifeHereCommute | null
   dining: DiningData | null
@@ -68,105 +96,70 @@ export interface LifeHereData {
 }
 
 /**
- * Get score explanation based on type and value
+ * Transform Life Here Score to the format expected by LocationScoresCard
  */
-function getScoreExplanation(type: 'walk' | 'transit' | 'bike', score: number): string {
-  if (type === 'walk') {
-    if (score >= 90) return "Daily errands do not require a car - a Walker's Paradise"
-    if (score >= 70) return 'Most errands can be accomplished on foot - Very Walkable'
-    if (score >= 50) return 'Some errands can be accomplished on foot - Somewhat Walkable'
-    if (score >= 25) return 'Most errands require a car - Car-Dependent'
-    return 'Almost all errands require a car - Car-Dependent'
-  }
-
-  if (type === 'transit') {
-    if (score >= 90) return 'Convenient for most trips - Excellent Transit'
-    if (score >= 70) return 'Many nearby public transportation options - Excellent Transit'
-    if (score >= 50) return 'Many nearby public transportation options - Good Transit'
-    if (score >= 25) return 'A few public transportation options - Some Transit'
-    return 'Minimal transit options - Minimal Transit'
-  }
-
-  // bike
-  if (score >= 90) return "Biking is convenient for most trips - Biker's Paradise"
-  if (score >= 70) return 'Biking is convenient for most trips - Very Bikeable'
-  if (score >= 50) return 'Biking is convenient for some trips - Bikeable'
-  return 'Minimal bike infrastructure - Somewhat Bikeable'
-}
-
-/**
- * Calculate overall livability score
- */
-function calculateOverallScore(
-  walkScore: number,
-  transitScore?: number,
-  bikeScore?: number
-): number {
-  // Weighted average: Walk 50%, Transit 30%, Bike 20%
-  let total = walkScore * 0.5
-  let weight = 0.5
-
-  if (transitScore !== undefined) {
-    total += transitScore * 0.3
-    weight += 0.3
-  }
-
-  if (bikeScore !== undefined) {
-    total += bikeScore * 0.2
-    weight += 0.2
-  }
-
-  return Math.round(total / weight)
-}
-
-/**
- * Get overall description
- */
-function getOverallDescription(score: number): string {
-  if (score >= 90) return 'Excellent Livability'
-  if (score >= 70) return 'Very Good Livability'
-  if (score >= 50) return 'Good Livability'
-  if (score >= 25) return 'Moderate Livability'
-  return 'Car-Dependent Area'
-}
-
-/**
- * Transform Walk Score data to LifeHereScores format
- */
-function transformScores(walkScoreData: WalkScoreData | null): LifeHereScores | null {
-  if (!walkScoreData) return null
-
-  const overallScore = calculateOverallScore(
-    walkScoreData.walkScore,
-    walkScoreData.transitScore,
-    walkScoreData.bikeScore
-  )
+function transformScores(lifeHereScore: LifeHereScore | null): LifeHereScoreData | null {
+  if (!lifeHereScore) return null
 
   return {
-    walkScore: {
-      score: walkScoreData.walkScore,
-      description: walkScoreData.walkScoreDescription,
-      explanation: getScoreExplanation('walk', walkScoreData.walkScore),
+    lifeHereScore: {
+      score: lifeHereScore.overall,
+      label: lifeHereScore.label,
+      profile: lifeHereScore.profile,
+      description: getOverallDescription(lifeHereScore.overall),
     },
-    transitScore: walkScoreData.transitScore
-      ? {
-          score: walkScoreData.transitScore,
-          description: walkScoreData.transitScoreDescription || '',
-          explanation: getScoreExplanation('transit', walkScoreData.transitScore),
-        }
-      : null,
-    bikeScore: walkScoreData.bikeScore
-      ? {
-          score: walkScoreData.bikeScore,
-          description: walkScoreData.bikeScoreDescription || '',
-          explanation: getScoreExplanation('bike', walkScoreData.bikeScore),
-        }
-      : null,
-    overall: {
-      score: overallScore,
-      description: getOverallDescription(overallScore),
+    dining: {
+      score: lifeHereScore.dining.score,
+      label: lifeHereScore.dining.label,
+      description: lifeHereScore.dining.details,
+      highlights: {
+        restaurantCount: lifeHereScore.dining.restaurantCount,
+        topRated: lifeHereScore.dining.topRestaurants,
+        cuisineTypes: lifeHereScore.dining.cuisineTypes,
+      },
+    },
+    convenience: {
+      score: lifeHereScore.convenience.score,
+      label: lifeHereScore.convenience.label,
+      description: lifeHereScore.convenience.details,
+      highlights: {
+        nearestGroceryMiles: lifeHereScore.convenience.nearestGroceryMiles,
+        has24HourPharmacy: lifeHereScore.convenience.has24HourPharmacy,
+      },
+    },
+    lifestyle: {
+      score: lifeHereScore.lifestyle.score,
+      label: lifeHereScore.lifestyle.label,
+      description: lifeHereScore.lifestyle.details,
+      highlights: {
+        gymCount: lifeHereScore.lifestyle.gymCount,
+        parkCount: lifeHereScore.lifestyle.parkCount,
+        entertainmentVenues: lifeHereScore.lifestyle.entertainmentVenues,
+      },
+    },
+    commute: {
+      score: lifeHereScore.commute.score,
+      label: lifeHereScore.commute.label,
+      description: lifeHereScore.commute.details,
+      highlights: {
+        airportMinutes: lifeHereScore.commute.airportMinutes,
+        beachMinutes: lifeHereScore.commute.beachMinutes,
+        downtownMinutes: lifeHereScore.commute.downtownMinutes,
+        themeParkMinutes: lifeHereScore.commute.themeParkMinutes,
+      },
     },
   }
+}
+
+/**
+ * Get overall description based on score
+ */
+function getOverallDescription(score: number): string {
+  if (score >= 90) return 'Exceptional lifestyle location with outstanding amenities and accessibility'
+  if (score >= 70) return 'Excellent lifestyle location with great amenities and good accessibility'
+  if (score >= 50) return 'Good lifestyle location with solid amenities and reasonable accessibility'
+  if (score >= 30) return 'Moderate lifestyle location with basic amenities'
+  return 'Limited amenities in this area - car-dependent lifestyle'
 }
 
 /**
@@ -176,11 +169,12 @@ function transformScores(walkScoreData: WalkScoreData | null): LifeHereScores | 
 export async function getLifeHereData(
   lat: number,
   lng: number,
-  address?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _address?: string
 ): Promise<LifeHereData> {
   // Fetch all data sources in parallel
   const [
-    walkScoreData,
+    lifeHereScore,
     themeparks,
     airports,
     beaches,
@@ -190,8 +184,8 @@ export async function getLifeHereData(
     movies,
     news,
   ] = await Promise.all([
-    getWalkScore(lat, lng, address || 'Property Location').catch((err) => {
-      console.error('Error fetching Walk Score:', err)
+    calculateLifeHereScore(lat, lng, 'balanced').catch((err) => {
+      console.error('Error calculating Life Here Score:', err)
       return null
     }),
     getNearbyThemeParks(lat, lng, 75).catch((err) => {
@@ -229,7 +223,7 @@ export async function getLifeHereData(
   ])
 
   return {
-    scores: transformScores(walkScoreData),
+    scores: transformScores(lifeHereScore),
     themeparks,
     commute: airports || beaches.length > 0 || destinations.length > 0 || summary
       ? {
@@ -250,11 +244,10 @@ export async function getLifeHereData(
  */
 export async function getLifeHereScores(
   lat: number,
-  lng: number,
-  address?: string
-): Promise<LifeHereScores | null> {
-  const walkScoreData = await getWalkScore(lat, lng, address || 'Property Location').catch(() => null)
-  return transformScores(walkScoreData)
+  lng: number
+): Promise<LifeHereScoreData | null> {
+  const lifeHereScore = await calculateLifeHereScore(lat, lng, 'balanced').catch(() => null)
+  return transformScores(lifeHereScore)
 }
 
 /**

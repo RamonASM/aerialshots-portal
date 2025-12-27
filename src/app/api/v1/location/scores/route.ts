@@ -1,14 +1,16 @@
 // Life Here API - Scores Endpoint
-// GET /api/v1/location/scores?lat=&lng=
-// Returns Walk Score, Transit Score, and Bike Score
+// GET /api/v1/location/scores?lat=&lng=&profile=balanced
+// Returns Life Here Score - our proprietary Central Florida-focused scoring system
 
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { validateApiKey, apiError } from '@/lib/api/middleware/api-key'
 import { checkRateLimit, addRateLimitHeaders } from '@/lib/api/middleware/rate-limit'
 import { addCorsHeaders, handleCorsPrelight } from '@/lib/api/middleware/cors'
-import { getWalkScore } from '@/lib/integrations/walkscore/client'
+import { calculateLifeHereScore, type LifestyleProfile } from '@/lib/scoring'
 import { withLocationCache } from '@/lib/api/cache'
+
+const VALID_PROFILES: LifestyleProfile[] = ['balanced', 'family', 'professional', 'active', 'foodie']
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -47,72 +49,93 @@ export async function GET(request: NextRequest) {
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }
 
-  // Optional address for more accurate results
-  const address = url.searchParams.get('address') || 'Property Location'
+  // Parse lifestyle profile
+  const profileParam = url.searchParams.get('profile') || 'balanced'
+  const profile: LifestyleProfile = VALID_PROFILES.includes(profileParam as LifestyleProfile)
+    ? (profileParam as LifestyleProfile)
+    : 'balanced'
 
   try {
-    // Scores are very stable, cache for 24 hours
+    // Life Here Scores are calculated from live place data, cache for 30 minutes
+    // Use 'scores' category for caching, profile-specific data is handled by the score calculation
     const cacheResult = await withLocationCache(lat, lng, 'scores', async () => {
-      const walkScoreData = await getWalkScore(lat, lng, address)
-
-      if (!walkScoreData) {
-        return null
-      }
-
-      // Build detailed response
-      const scores = {
-        walkScore: {
-          score: walkScoreData.walkScore,
-          description: walkScoreData.walkScoreDescription,
-          explanation: getScoreExplanation('walk', walkScoreData.walkScore),
-        },
-        transitScore: walkScoreData.transitScore
-          ? {
-              score: walkScoreData.transitScore,
-              description: walkScoreData.transitScoreDescription,
-              explanation: getScoreExplanation('transit', walkScoreData.transitScore),
-            }
-          : null,
-        bikeScore: walkScoreData.bikeScore
-          ? {
-              score: walkScoreData.bikeScore,
-              description: walkScoreData.bikeScoreDescription,
-              explanation: getScoreExplanation('bike', walkScoreData.bikeScore),
-            }
-          : null,
-      }
-
-      // Calculate overall livability score (weighted average)
-      const overallScore = calculateOverallScore(
-        walkScoreData.walkScore,
-        walkScoreData.transitScore,
-        walkScoreData.bikeScore
-      )
-
-      return {
-        scores,
-        overall: {
-          score: overallScore,
-          description: getOverallDescription(overallScore),
-        },
-        location: { lat, lng, address },
-      }
+      const lifeHereScore = await calculateLifeHereScore(lat, lng, profile)
+      return lifeHereScore
     })
 
     if (!cacheResult.data) {
-      const response = apiError('NO_DATA', 'Walk Score data not available for this location.', 404, requestId)
+      const response = apiError('NO_DATA', 'Unable to calculate Life Here Score for this location.', 404, requestId)
       return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
     }
 
+    const score = cacheResult.data
+
     const response = NextResponse.json({
       success: true,
-      data: cacheResult.data,
+      data: {
+        // Overall Life Here Score
+        lifeHereScore: {
+          score: score.overall,
+          label: score.label,
+          profile: score.profile,
+          description: getOverallDescription(score.overall),
+        },
+        // Individual category scores
+        scores: {
+          dining: {
+            score: score.dining.score,
+            label: score.dining.label,
+            description: score.dining.details,
+            highlights: {
+              restaurantCount: score.dining.restaurantCount,
+              topRated: score.dining.topRestaurants,
+              cuisineTypes: score.dining.cuisineTypes,
+            },
+          },
+          convenience: {
+            score: score.convenience.score,
+            label: score.convenience.label,
+            description: score.convenience.details,
+            highlights: {
+              nearestGroceryMiles: score.convenience.nearestGroceryMiles,
+              has24HourPharmacy: score.convenience.has24HourPharmacy,
+            },
+          },
+          lifestyle: {
+            score: score.lifestyle.score,
+            label: score.lifestyle.label,
+            description: score.lifestyle.details,
+            highlights: {
+              gymCount: score.lifestyle.gymCount,
+              parkCount: score.lifestyle.parkCount,
+              entertainmentVenues: score.lifestyle.entertainmentVenues,
+            },
+          },
+          commute: {
+            score: score.commute.score,
+            label: score.commute.label,
+            description: score.commute.details,
+            highlights: {
+              airportMinutes: score.commute.airportMinutes,
+              beachMinutes: score.commute.beachMinutes,
+              downtownMinutes: score.commute.downtownMinutes,
+              themeParkMinutes: score.commute.themeParkMinutes,
+            },
+          },
+        },
+        // Profile descriptions
+        profileInfo: getProfileInfo(profile),
+        // Location
+        location: { lat, lng },
+      },
       meta: {
         requestId,
         cached: cacheResult.meta.cached,
         cachedAt: cacheResult.meta.cachedAt,
         responseTime: cacheResult.meta.responseTime,
-        source: 'walkscore.com',
+        calculatedAt: score.calculatedAt,
+        source: 'lifehere.api',
+        availableProfiles: VALID_PROFILES,
       },
     })
 
@@ -125,62 +148,52 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Scores API error:', error)
-    const response = apiError('INTERNAL_ERROR', 'Failed to fetch scores data.', 500, requestId)
+    console.error('Life Here Score API error:', error)
+    const response = apiError('INTERNAL_ERROR', 'Failed to calculate Life Here Score.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }
 }
 
-function getScoreExplanation(type: 'walk' | 'transit' | 'bike', score: number): string {
-  if (type === 'walk') {
-    if (score >= 90) return "Daily errands do not require a car - a Walker's Paradise"
-    if (score >= 70) return 'Most errands can be accomplished on foot - Very Walkable'
-    if (score >= 50) return 'Some errands can be accomplished on foot - Somewhat Walkable'
-    if (score >= 25) return 'Most errands require a car - Car-Dependent'
-    return 'Almost all errands require a car - Car-Dependent'
-  }
-
-  if (type === 'transit') {
-    if (score >= 90) return 'Convenient for most trips - Excellent Transit'
-    if (score >= 70) return 'Many nearby public transportation options - Excellent Transit'
-    if (score >= 50) return 'Many nearby public transportation options - Good Transit'
-    if (score >= 25) return 'A few public transportation options - Some Transit'
-    return 'Minimal transit options - Minimal Transit'
-  }
-
-  // bike
-  if (score >= 90) return "Biking is convenient for most trips - Biker's Paradise"
-  if (score >= 70) return 'Biking is convenient for most trips - Very Bikeable'
-  if (score >= 50) return 'Biking is convenient for some trips - Bikeable'
-  return 'Minimal bike infrastructure - Somewhat Bikeable'
-}
-
-function calculateOverallScore(
-  walkScore: number,
-  transitScore?: number,
-  bikeScore?: number
-): number {
-  // Weighted average: Walk 50%, Transit 30%, Bike 20%
-  let total = walkScore * 0.5
-  let weight = 0.5
-
-  if (transitScore !== undefined) {
-    total += transitScore * 0.3
-    weight += 0.3
-  }
-
-  if (bikeScore !== undefined) {
-    total += bikeScore * 0.2
-    weight += 0.2
-  }
-
-  return Math.round(total / weight)
-}
-
 function getOverallDescription(score: number): string {
-  if (score >= 90) return 'Excellent Livability'
-  if (score >= 70) return 'Very Good Livability'
-  if (score >= 50) return 'Good Livability'
-  if (score >= 25) return 'Moderate Livability'
-  return 'Car-Dependent Area'
+  if (score >= 90) return 'Exceptional lifestyle location with outstanding amenities and accessibility'
+  if (score >= 70) return 'Excellent lifestyle location with great amenities and good accessibility'
+  if (score >= 50) return 'Good lifestyle location with solid amenities and reasonable accessibility'
+  if (score >= 30) return 'Moderate lifestyle location with basic amenities'
+  return 'Limited amenities in this area - car-dependent lifestyle'
+}
+
+function getProfileInfo(profile: LifestyleProfile): {
+  name: string
+  description: string
+  emphasis: string[]
+} {
+  const profiles = {
+    balanced: {
+      name: 'Balanced Lifestyle',
+      description: 'Equal emphasis on convenience, dining, lifestyle, and commute factors',
+      emphasis: ['Convenience', 'Commute', 'Dining', 'Lifestyle'],
+    },
+    family: {
+      name: 'Family-Oriented',
+      description: 'Prioritizes convenience and lifestyle for family living',
+      emphasis: ['Convenience', 'Lifestyle', 'Commute', 'Dining'],
+    },
+    professional: {
+      name: 'Career Professional',
+      description: 'Heavy emphasis on commute times and work accessibility',
+      emphasis: ['Commute', 'Convenience', 'Dining', 'Lifestyle'],
+    },
+    active: {
+      name: 'Active Lifestyle',
+      description: 'Prioritizes fitness, recreation, and outdoor activities',
+      emphasis: ['Lifestyle', 'Commute', 'Convenience', 'Dining'],
+    },
+    foodie: {
+      name: 'Food Enthusiast',
+      description: 'Prioritizes dining options, variety, and quality restaurants',
+      emphasis: ['Dining', 'Lifestyle', 'Convenience', 'Commute'],
+    },
+  }
+
+  return profiles[profile]
 }
