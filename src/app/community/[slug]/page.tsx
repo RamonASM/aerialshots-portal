@@ -5,6 +5,7 @@ import { getCommunityBySlug, getListingsInCommunity, getFeaturedAgents } from '@
 import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
+import { getLifeHereData, type LifeHereData } from '@/lib/queries/life-here'
 import { CommunityHero } from '@/components/community/CommunityHero'
 import { OverviewSection } from '@/components/community/OverviewSection'
 import { MarketSnapshot } from '@/components/community/MarketSnapshot'
@@ -15,6 +16,14 @@ import { ActiveListings } from '@/components/community/ActiveListings'
 import { CommunityLifestyle } from '@/components/community/CommunityLifestyle'
 import { CommunityLeadForm } from '@/components/community/CommunityLeadForm'
 import { CommunityJsonLd } from '@/components/community/CommunityJsonLd'
+import {
+  LocationScoresCard,
+  ThemeParksSection,
+  CommuteSection,
+  DiningSection,
+  MoviesSection,
+  NewsSection,
+} from '@/components/life-here'
 import { Loader2 } from 'lucide-react'
 
 interface CommunityPageProps {
@@ -79,21 +88,69 @@ function LoadingSection() {
   )
 }
 
-async function LifestyleData({ lat, lng }: { lat: number; lng: number }) {
-  const [nearbyPlaces, events, curatedItems] = await Promise.all([
+async function LifestyleData({ lat, lng, communityName }: { lat: number; lng: number; communityName: string }) {
+  const [nearbyPlaces, events, curatedItems, lifeHereData] = await Promise.all([
     getAllNearbyPlaces(lat, lng).catch(() => null),
     searchLocalEvents(lat, lng).catch(() => []),
     getCuratedItemsNearLocation(lat, lng, 10).catch(() => []),
+    getLifeHereData(lat, lng, communityName).catch(() => null),
   ])
 
   return (
-    <CommunityLifestyle
-      nearbyPlaces={nearbyPlaces}
-      events={events}
-      curatedItems={curatedItems}
-      lat={lat}
-      lng={lng}
-    />
+    <div className="space-y-8">
+      <CommunityLifestyle
+        nearbyPlaces={nearbyPlaces}
+        events={events}
+        curatedItems={curatedItems}
+        lat={lat}
+        lng={lng}
+      />
+
+      {/* Life Here - Extended Data Sections */}
+      {lifeHereData && (
+        <div className="space-y-8">
+          {/* Location Scores */}
+          {lifeHereData.scores && (
+            <LocationScoresCard
+              walkScore={lifeHereData.scores.walkScore}
+              transitScore={lifeHereData.scores.transitScore}
+              bikeScore={lifeHereData.scores.bikeScore}
+              overall={lifeHereData.scores.overall}
+            />
+          )}
+
+          {/* Theme Parks */}
+          {lifeHereData.themeparks.length > 0 && (
+            <ThemeParksSection parks={lifeHereData.themeparks} />
+          )}
+
+          {/* Commute & Travel Times */}
+          {lifeHereData.commute && (
+            <CommuteSection
+              airports={lifeHereData.commute.airports}
+              beaches={lifeHereData.commute.beaches}
+              destinations={lifeHereData.commute.destinations}
+              summary={lifeHereData.commute.summary}
+            />
+          )}
+
+          {/* Dining */}
+          {lifeHereData.dining && (
+            <DiningSection dining={lifeHereData.dining} />
+          )}
+
+          {/* Movies & Theaters */}
+          {lifeHereData.movies && (
+            <MoviesSection movies={lifeHereData.movies} />
+          )}
+
+          {/* Local News */}
+          {lifeHereData.news && (
+            <NewsSection news={lifeHereData.news} />
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -153,9 +210,13 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
                 <SchoolsSection schoolsInfo={community.schools_info} />
               )}
 
-              {/* Lifestyle - Places, Events, What's Coming */}
+              {/* Lifestyle - Places, Events, What's Coming, Life Here */}
               <Suspense fallback={<LoadingSection />}>
-                <LifestyleData lat={community.lat} lng={community.lng} />
+                <LifestyleData
+                  lat={community.lat}
+                  lng={community.lng}
+                  communityName={community.name}
+                />
               </Suspense>
 
               {/* Active Listings */}

@@ -1726,6 +1726,88 @@ export interface Database {
           }
         ]
       }
+      api_keys: {
+        Row: {
+          id: string
+          user_id: string | null
+          key_hash: string
+          key_prefix: string
+          name: string | null
+          tier: 'free' | 'pro' | 'business' | 'enterprise'
+          monthly_limit: number
+          is_active: boolean
+          created_at: string
+          last_used_at: string | null
+          usage_count: number
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          key_hash: string
+          key_prefix: string
+          name?: string | null
+          tier?: 'free' | 'pro' | 'business' | 'enterprise'
+          monthly_limit?: number
+          is_active?: boolean
+          created_at?: string
+          last_used_at?: string | null
+          usage_count?: number
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          key_hash?: string
+          key_prefix?: string
+          name?: string | null
+          tier?: 'free' | 'pro' | 'business' | 'enterprise'
+          monthly_limit?: number
+          is_active?: boolean
+          created_at?: string
+          last_used_at?: string | null
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      api_usage: {
+        Row: {
+          id: string
+          api_key_id: string
+          endpoint: string
+          method: string
+          status_code: number | null
+          response_time_ms: number | null
+          cached: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          api_key_id: string
+          endpoint: string
+          method?: string
+          status_code?: number | null
+          response_time_ms?: number | null
+          cached?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          api_key_id?: string
+          endpoint?: string
+          method?: string
+          status_code?: number | null
+          response_time_ms?: number | null
+          cached?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

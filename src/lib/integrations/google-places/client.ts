@@ -1,42 +1,48 @@
-// Google Places API Client
-// Documentation: https://developers.google.com/maps/documentation/places/web-service
+// Google Places API Client (Places API New)
+// Documentation: https://developers.google.com/maps/documentation/places/web-service/nearby-search
 
 import { PLACE_CATEGORIES, type PlaceCategory, type NearbyPlace } from '@/lib/utils/category-info'
 
 // Re-export for convenience
 export { PLACE_CATEGORIES, type PlaceCategory, type NearbyPlace }
 
-export interface PlaceResult {
-  place_id: string
-  name: string
-  vicinity: string
-  rating?: number
-  user_ratings_total?: number
-  types: string[]
-  geometry: {
-    location: {
-      lat: number
-      lng: number
-    }
+const PLACES_API_BASE = 'https://places.googleapis.com/v1'
+
+// Places API (New) response types
+interface GooglePlaceNew {
+  id: string
+  displayName: {
+    text: string
+    languageCode: string
   }
-  opening_hours?: {
-    open_now: boolean
+  formattedAddress: string
+  shortFormattedAddress?: string
+  location: {
+    latitude: number
+    longitude: number
+  }
+  rating?: number
+  userRatingCount?: number
+  priceLevel?: 'PRICE_LEVEL_FREE' | 'PRICE_LEVEL_INEXPENSIVE' | 'PRICE_LEVEL_MODERATE' | 'PRICE_LEVEL_EXPENSIVE' | 'PRICE_LEVEL_VERY_EXPENSIVE'
+  types?: string[]
+  primaryType?: string
+  currentOpeningHours?: {
+    openNow: boolean
+  }
+  regularOpeningHours?: {
+    openNow: boolean
   }
   photos?: Array<{
-    photo_reference: string
-    height: number
-    width: number
+    name: string
+    widthPx: number
+    heightPx: number
   }>
-  price_level?: number
+  businessStatus?: string
 }
 
-export interface NearbySearchResponse {
-  results: PlaceResult[]
-  status: string
-  next_page_token?: string
+interface NearbySearchResponse {
+  places?: GooglePlaceNew[]
 }
-
-const GOOGLE_PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place'
 
 // Calculate distance between two coordinates in miles
 function calculateDistance(
@@ -58,13 +64,31 @@ function calculateDistance(
   return R * c
 }
 
-// Get photo URL from photo reference
-function getPhotoUrl(photoReference: string, maxWidth = 400): string {
+// Get photo URL from new Places API photo name
+function getPhotoUrl(photoName: string, maxWidth = 400): string {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
-  return `${GOOGLE_PLACES_API_BASE}/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`
+  return `${PLACES_API_BASE}/${photoName}/media?maxWidthPx=${maxWidth}&key=${apiKey}`
 }
 
-// Search for nearby places
+// Map price level enum to number
+function mapPriceLevel(priceLevel?: string): number | undefined {
+  switch (priceLevel) {
+    case 'PRICE_LEVEL_FREE':
+      return 0
+    case 'PRICE_LEVEL_INEXPENSIVE':
+      return 1
+    case 'PRICE_LEVEL_MODERATE':
+      return 2
+    case 'PRICE_LEVEL_EXPENSIVE':
+      return 3
+    case 'PRICE_LEVEL_VERY_EXPENSIVE':
+      return 4
+    default:
+      return undefined
+  }
+}
+
+// Search for nearby places using Places API (New)
 export async function searchNearbyPlaces(
   lat: number,
   lng: number,
@@ -80,44 +104,75 @@ export async function searchNearbyPlaces(
   const types = PLACE_CATEGORIES[category]
   const places: NearbyPlace[] = []
 
-  for (const type of types) {
-    try {
-      const url = new URL(`${GOOGLE_PLACES_API_BASE}/nearbysearch/json`)
-      url.searchParams.set('location', `${lat},${lng}`)
-      url.searchParams.set('radius', String(radius))
-      url.searchParams.set('type', type)
-      url.searchParams.set('key', apiKey)
-
-      const response = await fetch(url.toString())
-      const data: NearbySearchResponse = await response.json()
-
-      if (data.status === 'OK') {
-        for (const place of data.results.slice(0, 5)) {
-          places.push({
-            id: place.place_id,
-            name: place.name,
-            address: place.vicinity,
-            rating: place.rating ?? null,
-            reviewCount: place.user_ratings_total ?? 0,
-            category,
-            type,
-            distance: calculateDistance(
-              lat,
-              lng,
-              place.geometry.location.lat,
-              place.geometry.location.lng
-            ),
-            isOpen: place.opening_hours?.open_now,
-            priceLevel: place.price_level,
-            photoUrl: place.photos?.[0]
-              ? getPhotoUrl(place.photos[0].photo_reference)
-              : undefined,
-          })
-        }
-      }
-    } catch (error) {
-      console.error(`Error fetching ${type} places:`, error)
+  // With the new API, we can search for multiple types at once
+  try {
+    const requestBody = {
+      locationRestriction: {
+        circle: {
+          center: {
+            latitude: lat,
+            longitude: lng,
+          },
+          radius: radius,
+        },
+      },
+      includedTypes: [...types], // Convert readonly tuple to array
+      maxResultCount: 20,
+      rankPreference: 'DISTANCE',
     }
+
+    const response = await fetch(`${PLACES_API_BASE}/places:searchNearby`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.shortFormattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.types,places.primaryType,places.currentOpeningHours,places.regularOpeningHours,places.photos,places.businessStatus',
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    const data: NearbySearchResponse = await response.json()
+
+    if (data.places) {
+      for (const place of data.places) {
+        // Skip permanently closed places
+        if (place.businessStatus === 'CLOSED_PERMANENTLY') continue
+
+        const distance = calculateDistance(
+          lat,
+          lng,
+          place.location.latitude,
+          place.location.longitude
+        )
+
+        // Determine the type based on primaryType or first matching type
+        let placeType = place.primaryType || ''
+        if (!placeType && place.types) {
+          const matchingType = place.types.find(t =>
+            (types as readonly string[]).includes(t)
+          )
+          placeType = matchingType || place.types[0] || ''
+        }
+
+        places.push({
+          id: place.id,
+          name: place.displayName.text,
+          address: place.shortFormattedAddress || place.formattedAddress,
+          rating: place.rating ?? null,
+          reviewCount: place.userRatingCount ?? 0,
+          category,
+          type: placeType,
+          distance,
+          isOpen: place.currentOpeningHours?.openNow ?? place.regularOpeningHours?.openNow,
+          priceLevel: mapPriceLevel(place.priceLevel),
+          photoUrl: place.photos?.[0]
+            ? getPhotoUrl(place.photos[0].name)
+            : undefined,
+        })
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching ${category} places:`, error)
   }
 
   // Sort by rating and return top results

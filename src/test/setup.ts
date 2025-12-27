@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { vi, beforeEach } from 'vitest'
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
@@ -47,3 +47,22 @@ vi.mock('@/lib/supabase/client', () => ({
 
 // Mock environment variables
 vi.stubEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'pk_test_mock')
+vi.stubEnv('YELP_API_KEY', 'test-yelp-key')
+vi.stubEnv('EVENTBRITE_API_KEY', 'test-eventbrite-key')
+vi.stubEnv('TMDB_API_KEY', 'test-tmdb-key')
+vi.stubEnv('NEWS_API_KEY', 'test-news-key')
+vi.stubEnv('GOOGLE_MAPS_API_KEY', 'test-google-key')
+vi.stubEnv('WALKSCORE_API_KEY', 'test-walkscore-key')
+
+// Mock global fetch
+const mockFetch = vi.fn()
+global.fetch = mockFetch
+
+// Reset mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockFetch.mockReset()
+})
+
+// Export mock fetch for tests to configure
+export { mockFetch }

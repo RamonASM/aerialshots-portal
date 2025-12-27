@@ -4,6 +4,7 @@ import { getListingById, organizeMediaByCategory } from '@/lib/queries/listings'
 import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
 import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
+import { getLifeHereData } from '@/lib/queries/life-here'
 import {
   PropertyHero,
   PropertyDetails,
@@ -15,6 +16,14 @@ import {
   AgentContactCard,
   MobileContactCTA,
 } from '@/components/property'
+import {
+  LocationScoresCard,
+  ThemeParksSection,
+  CommuteSection,
+  DiningSection,
+  MoviesSection,
+  NewsSection,
+} from '@/components/life-here'
 import { ShareButton } from '@/components/ui/share-button'
 import type { Metadata } from 'next'
 
@@ -85,25 +94,7 @@ export default async function PropertyPage({ params }: PageProps) {
   const heroImages = mediaByCategory.mls || []
   const heroVideo = mediaByCategory.video?.[0] || null
 
-  // Fetch neighborhood data if we have coordinates
-  let nearbyPlaces = null
-  let localEvents = null
-  let curatedItems = null
-
-  if (listing.lat && listing.lng) {
-    // Run these in parallel
-    const [places, events, curated] = await Promise.all([
-      getAllNearbyPlaces(listing.lat, listing.lng).catch(() => null),
-      searchLocalEvents(listing.lat, listing.lng).catch(() => []),
-      getCuratedItemsNearLocation(listing.lat, listing.lng).catch(() => []),
-    ])
-
-    nearbyPlaces = places
-    localEvents = events
-    curatedItems = curated
-  }
-
-  // Build Walk Score address
+  // Build Walk Score address (used for Life Here data)
   const walkScoreAddress = [
     listing.address,
     listing.city,
@@ -112,6 +103,27 @@ export default async function PropertyPage({ params }: PageProps) {
   ]
     .filter(Boolean)
     .join(', ')
+
+  // Fetch neighborhood data if we have coordinates
+  let nearbyPlaces = null
+  let localEvents = null
+  let curatedItems = null
+  let lifeHereData = null
+
+  if (listing.lat && listing.lng) {
+    // Run these in parallel
+    const [places, events, curated, lifeHere] = await Promise.all([
+      getAllNearbyPlaces(listing.lat, listing.lng).catch(() => null),
+      searchLocalEvents(listing.lat, listing.lng).catch(() => []),
+      getCuratedItemsNearLocation(listing.lat, listing.lng).catch(() => []),
+      getLifeHereData(listing.lat, listing.lng, walkScoreAddress).catch(() => null),
+    ])
+
+    nearbyPlaces = places
+    localEvents = events
+    curatedItems = curated
+    lifeHereData = lifeHere
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -205,17 +217,64 @@ export default async function PropertyPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Life Here Section */}
+      {/* Life Here Section - Nearby Places */}
       <Suspense fallback={<LoadingSection />}>
         {nearbyPlaces && (
           <LifeHereSection
             places={nearbyPlaces}
-            walkScoreAddress={walkScoreAddress}
+            walkScoreAddress={lifeHereData?.scores ? undefined : walkScoreAddress}
             lat={listing.lat ?? undefined}
             lng={listing.lng ?? undefined}
           />
         )}
       </Suspense>
+
+      {/* Life Here - Extended Data Sections */}
+      {lifeHereData && (
+        <div className="bg-[#0a0a0a] border-t border-white/[0.08]">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Location Scores (replaces Walk Score iframe when data available) */}
+            {lifeHereData.scores && (
+              <LocationScoresCard
+                walkScore={lifeHereData.scores.walkScore}
+                transitScore={lifeHereData.scores.transitScore}
+                bikeScore={lifeHereData.scores.bikeScore}
+                overall={lifeHereData.scores.overall}
+              />
+            )}
+
+            {/* Theme Parks */}
+            {lifeHereData.themeparks.length > 0 && (
+              <ThemeParksSection parks={lifeHereData.themeparks} />
+            )}
+
+            {/* Commute & Travel Times */}
+            {lifeHereData.commute && (
+              <CommuteSection
+                airports={lifeHereData.commute.airports}
+                beaches={lifeHereData.commute.beaches}
+                destinations={lifeHereData.commute.destinations}
+                summary={lifeHereData.commute.summary}
+              />
+            )}
+
+            {/* Dining */}
+            {lifeHereData.dining && (
+              <DiningSection dining={lifeHereData.dining} />
+            )}
+
+            {/* Movies & Theaters */}
+            {lifeHereData.movies && (
+              <MoviesSection movies={lifeHereData.movies} />
+            )}
+
+            {/* Local News */}
+            {lifeHereData.news && (
+              <NewsSection news={lifeHereData.news} />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Events Section */}
       <Suspense fallback={<LoadingSection />}>

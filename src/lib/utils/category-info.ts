@@ -61,10 +61,10 @@ export function getCuratedCategoryInfo(category: string): {
   )
 }
 
-// Google Places category display info
+// Google Places category display info (Places API New types)
 export const PLACE_CATEGORIES = {
   dining: ['restaurant', 'cafe', 'bakery'],
-  shopping: ['shopping_mall', 'grocery_or_supermarket', 'store'],
+  shopping: ['shopping_mall', 'supermarket', 'store'],
   fitness: ['gym', 'park', 'spa'],
   entertainment: ['movie_theater', 'night_club', 'bar'],
   services: ['bank', 'hospital', 'pharmacy'],
