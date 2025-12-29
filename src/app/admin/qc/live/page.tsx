@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { RefreshCw, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PriorityQueue } from '@/components/qc/PriorityQueue'
@@ -96,7 +97,7 @@ export default function QCLiveDashboard() {
       await refreshData()
     } catch (error) {
       console.error('Error approving listing:', error)
-      alert('Failed to approve listing. Please try again.')
+      toast.error('Failed to approve listing. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -121,7 +122,7 @@ export default function QCLiveDashboard() {
       await refreshData()
     } catch (error) {
       console.error('Error rejecting listing:', error)
-      alert('Failed to reject listing. Please try again.')
+      toast.error('Failed to reject listing. Please try again.')
     } finally {
       setIsLoading(false)
     }

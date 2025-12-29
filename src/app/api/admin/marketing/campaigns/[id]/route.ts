@@ -1,0 +1,300 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import {
+  sendCampaign,
+  getCampaignStats,
+  scheduleCampaign,
+  cancelCampaign,
+} from '@/lib/marketing/campaigns'
+import { apiLogger, formatError } from '@/lib/logger'
+
+interface RouteParams {
+  params: Promise<{ id: string }>
+}
+
+/**
+ * GET /api/admin/marketing/campaigns/[id]
+ * Get campaign details with statistics
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  try {
+    const { id } = await params
+    const supabase = await createClient()
+
+    // Verify admin authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.email) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id, role')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff) {
+      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
+    }
+
+    // Get campaign
+    const { data: campaign, error } = await supabase
+      .from('marketing_campaigns')
+      .select('*, created_by_staff:staff!created_by(name, email)')
+      .eq('id', id)
+      .single()
+
+    if (error || !campaign) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+    }
+
+    // Get stats if campaign has been sent
+    let stats = null
+    if (['sending', 'sent'].includes(campaign.status)) {
+      stats = await getCampaignStats(id)
+    }
+
+    return NextResponse.json({
+      campaign,
+      stats,
+    })
+  } catch (error) {
+    apiLogger.error({ error: formatError(error) }, 'Failed to get campaign')
+    return NextResponse.json({ error: 'Failed to get campaign' }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/admin/marketing/campaigns/[id]
+ * Update campaign (draft only)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  try {
+    const { id } = await params
+    const supabase = await createClient()
+
+    // Verify admin authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.email) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id, role')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff || !['admin', 'owner'].includes(staff.role)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    // Get current campaign
+    const { data: existingCampaign } = await supabase
+      .from('marketing_campaigns')
+      .select('status')
+      .eq('id', id)
+      .single()
+
+    if (!existingCampaign) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+    }
+
+    if (!['draft', 'scheduled'].includes(existingCampaign.status)) {
+      return NextResponse.json(
+        { error: 'Can only edit draft or scheduled campaigns' },
+        { status: 400 }
+      )
+    }
+
+    const updates = await request.json()
+
+    const { data: campaign, error } = await supabase
+      .from('marketing_campaigns')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json({ campaign })
+  } catch (error) {
+    apiLogger.error({ error: formatError(error) }, 'Failed to update campaign')
+    return NextResponse.json({ error: 'Failed to update campaign' }, { status: 500 })
+  }
+}
+
+/**
+ * POST /api/admin/marketing/campaigns/[id]
+ * Perform action on campaign (send, schedule, cancel, test)
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  try {
+    const { id } = await params
+    const supabase = await createClient()
+
+    // Verify admin authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.email) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id, role')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff || !['admin', 'owner'].includes(staff.role)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const { action, ...actionParams } = await request.json()
+
+    switch (action) {
+      case 'send': {
+        const result = await sendCampaign({
+          campaignId: id,
+          batchSize: actionParams.batchSize,
+          delayBetweenBatchesMs: actionParams.delayMs,
+        })
+
+        apiLogger.info({
+          campaignId: id,
+          sentCount: result.sentCount,
+          failedCount: result.failedCount,
+          staffEmail: user.email,
+        }, 'Campaign sent')
+
+        return NextResponse.json({
+          success: result.success,
+          message: `Sent ${result.sentCount} emails, ${result.failedCount} failed`,
+          details: result,
+        })
+      }
+
+      case 'test': {
+        if (!actionParams.testEmails?.length) {
+          return NextResponse.json(
+            { error: 'Test emails required' },
+            { status: 400 }
+          )
+        }
+
+        const result = await sendCampaign({
+          campaignId: id,
+          testMode: true,
+          testEmails: actionParams.testEmails,
+        })
+
+        return NextResponse.json({
+          success: result.success,
+          message: `Test sent to ${result.sentCount} email(s)`,
+          details: result,
+        })
+      }
+
+      case 'schedule': {
+        if (!actionParams.scheduledFor) {
+          return NextResponse.json(
+            { error: 'scheduledFor date required' },
+            { status: 400 }
+          )
+        }
+
+        await scheduleCampaign(id, actionParams.scheduledFor)
+
+        return NextResponse.json({
+          success: true,
+          message: `Campaign scheduled for ${actionParams.scheduledFor}`,
+        })
+      }
+
+      case 'cancel': {
+        await cancelCampaign(id)
+
+        return NextResponse.json({
+          success: true,
+          message: 'Campaign cancelled',
+        })
+      }
+
+      default:
+        return NextResponse.json(
+          { error: `Unknown action: ${action}` },
+          { status: 400 }
+        )
+    }
+  } catch (error) {
+    apiLogger.error({ error: formatError(error) }, 'Campaign action failed')
+    return NextResponse.json({ error: 'Action failed' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE /api/admin/marketing/campaigns/[id]
+ * Delete a campaign (draft/cancelled only)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  try {
+    const { id } = await params
+    const supabase = await createClient()
+
+    // Verify admin authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.email) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id, role')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff || !['admin', 'owner'].includes(staff.role)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    // Only allow deleting draft or cancelled campaigns
+    const { error } = await supabase
+      .from('marketing_campaigns')
+      .delete()
+      .eq('id', id)
+      .in('status', ['draft', 'cancelled'])
+
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Campaign deleted',
+    })
+  } catch (error) {
+    apiLogger.error({ error: formatError(error) }, 'Failed to delete campaign')
+    return NextResponse.json({ error: 'Failed to delete campaign' }, { status: 500 })
+  }
+}

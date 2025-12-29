@@ -1,13 +1,15 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import Link from 'next/link'
 import { Mail, Loader2, CheckCircle, AlertCircle, Info, Camera, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { createBrowserClient } from '@supabase/ssr'
+import type { Database } from '@/lib/supabase/types'
 
 interface LoginFormData {
   email: string
@@ -15,12 +17,90 @@ interface LoginFormData {
 
 function LoginForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const errorParam = searchParams.get('error')
 
   const [sent, setSent] = useState(false)
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false)
   const [error, setError] = useState<string | null>(
     errorParam === 'auth_failed' ? 'Authentication failed. Please try again.' : null
   )
+
+  // Handle auth callback with tokens in URL fragment
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const hash = window.location.hash
+
+      // Check if we have tokens in the URL fragment
+      if (hash && hash.includes('access_token')) {
+        setIsProcessingAuth(true)
+        console.log('Login: Found tokens in hash fragment')
+
+        try {
+          const supabase = createBrowserClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+
+          // Parse the hash
+          const hashParams = new URLSearchParams(hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+
+          if (accessToken && refreshToken) {
+            console.log('Login: Setting session...')
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+
+            if (sessionError) {
+              console.error('Login: Failed to set session:', sessionError)
+              setError('Authentication failed. Please try again.')
+              setIsProcessingAuth(false)
+              return
+            }
+
+            // Get user to determine redirect
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+            if (userError || !user) {
+              console.error('Login: Failed to get user:', userError)
+              setError('Authentication failed. Please try again.')
+              setIsProcessingAuth(false)
+              return
+            }
+
+            console.log('Login: Authenticated as', user.email)
+
+            // Redirect based on email domain
+            const isStaff = user.email?.toLowerCase().endsWith('@aerialshots.media')
+            router.push(isStaff ? '/admin' : '/dashboard')
+          }
+        } catch (err) {
+          console.error('Login: Auth callback error:', err)
+          setError('Authentication failed. Please try again.')
+          setIsProcessingAuth(false)
+        }
+      }
+    }
+
+    handleAuthCallback()
+  }, [router])
+
+  // Show loading state while processing auth
+  if (isProcessingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="fixed inset-0 bg-gradient-to-b from-[#0077ff]/5 via-transparent to-transparent pointer-events-none" />
+        <div className="relative w-full max-w-[420px] glass rounded-2xl p-8 text-center">
+          <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#0077ff]" />
+          <h1 className="mt-6 text-[22px] font-semibold text-white">Signing you in...</h1>
+          <p className="mt-2 text-[15px] text-[#a1a1a6]">Please wait</p>
+        </div>
+      </div>
+    )
+  }
 
   const {
     register,

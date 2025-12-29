@@ -39,11 +39,16 @@ src/
 │   ├── admin/             # Staff admin panel
 │   ├── agents/[agentSlug] # Agent portfolio pages
 │   ├── api/               # API routes
+│   │   ├── founddr/       # HDR processing endpoints
+│   │   ├── webhooks/      # Webhook handlers (FoundDR, Cubicasa, Aryeo)
+│   │   ├── integrations/  # QuickBooks OAuth
+│   │   └── cron/          # Scheduled tasks
 │   ├── community/[slug]   # Community/neighborhood pages
 │   ├── dashboard/         # Agent dashboard
 │   ├── delivery/[listingId]  # Media delivery
 │   └── property/[listingId]  # Property websites
 ├── components/
+│   ├── admin/ops/         # Admin operations components
 │   ├── community/         # Community page components
 │   ├── dashboard/         # Dashboard-specific components
 │   ├── delivery/          # Media delivery components
@@ -51,8 +56,12 @@ src/
 │   └── ui/                # shadcn/ui components
 ├── lib/
 │   ├── integrations/      # External API clients
+│   │   ├── founddr/       # HDR photo processing
+│   │   ├── cubicasa/      # Floor plan generation
+│   │   ├── quickbooks/    # Invoice sync
 │   │   ├── google-places/ # Nearby places
 │   │   └── ticketmaster/  # Local events
+│   ├── notifications/     # Email/SMS notification system
 │   ├── queries/           # Cached data fetching
 │   ├── supabase/          # Database client & types
 │   └── utils/             # Shared utilities
@@ -119,15 +128,53 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed change history.
 ## Environment Variables
 
 Required in `.env.local`:
-```
+```bash
+# Core
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=https://app.aerialshots.media
+
+# AI
 ANTHROPIC_API_KEY=
+
+# Email/SMS
 RESEND_API_KEY=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Integrations - Data
 GOOGLE_PLACES_API_KEY=
 TICKETMASTER_API_KEY=
 ARYEO_API_KEY=
+
+# FoundDR (HDR Processing) - awaiting setup
+FOUNDDR_API_URL=
+FOUNDDR_API_SECRET=
+FOUNDDR_WEBHOOK_URL=
+FOUNDDR_WEBHOOK_SECRET=
+
+# Cubicasa (Floor Plans) - awaiting API access
+CUBICASA_API_KEY=
+CUBICASA_WEBHOOK_SECRET=
+CUBICASA_ENVIRONMENT=production
+
+# QuickBooks (Invoicing)
+QUICKBOOKS_CLIENT_ID=
+QUICKBOOKS_CLIENT_SECRET=
+QUICKBOOKS_REDIRECT_URI=
+QUICKBOOKS_ENVIRONMENT=sandbox
+
+# Aloft (Drone Airspace) - awaiting API access
+ALOFT_API_KEY=
+
+# Notifications
+GOOGLE_REVIEW_URL=https://g.page/r/YOUR_REVIEW_LINK/review
+REVIEW_REQUEST_DELAY_MS=7200000
+
+# Cron Jobs
+CRON_SECRET=
 ```
 
 ## Notes for Claude

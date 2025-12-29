@@ -12,6 +12,16 @@ const VALID_TYPES: NotificationType[] = [
   'booking_confirmed',
   'payment_received',
   'status_update',
+  'seller_schedule_request',
+  'seller_media_ready',
+  'schedule_confirmed',
+]
+
+// Types that agents can send (seller-facing notifications)
+const AGENT_ALLOWED_TYPES: NotificationType[] = [
+  'seller_schedule_request',
+  'seller_media_ready',
+  'schedule_confirmed',
 ]
 
 export async function POST(request: NextRequest) {
@@ -24,15 +34,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff
+    // Check if user is staff or agent
     const { data: staff } = await supabase
       .from('staff')
       .select('id, role')
       .eq('email', user.email)
       .single()
 
-    if (!staff) {
-      return NextResponse.json({ error: 'Forbidden - Staff only' }, { status: 403 })
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id, name')
+      .eq('email', user.email)
+      .single()
+
+    if (!staff && !agent) {
+      return NextResponse.json({ error: 'Forbidden - Staff or Agent only' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -48,6 +64,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `Invalid notification type. Must be one of: ${VALID_TYPES.join(', ')}` },
         { status: 400 }
+      )
+    }
+
+    // Agents can only send seller-facing notification types
+    if (agent && !staff && !AGENT_ALLOWED_TYPES.includes(type)) {
+      return NextResponse.json(
+        { error: `Agents can only send: ${AGENT_ALLOWED_TYPES.join(', ')}` },
+        { status: 403 }
       )
     }
 
@@ -102,7 +126,8 @@ export async function POST(request: NextRequest) {
       recipientPhone: recipient.phone,
       channel,
       results,
-      staffId: staff.id,
+      staffId: staff?.id,
+      agentId: agent?.id,
     })
 
     const successCount = results.filter(r => r.success).length
@@ -132,19 +157,21 @@ async function logNotification(
     recipientPhone?: string
     channel: string
     results: any[]
-    staffId: string
+    staffId?: string
+    agentId?: string
   }
 ) {
   try {
-    // Only log if notifications_log table exists
-    await supabase.from('notifications_log').insert({
+    // Try to log to notification_logs table (from enterprise migration)
+    await supabase.from('notification_logs').insert({
       notification_type: data.type,
+      channel: data.channel,
       recipient_email: data.recipientEmail,
       recipient_phone: data.recipientPhone,
-      channel: data.channel,
-      success: data.results.every(r => r.success),
-      response: JSON.stringify(data.results),
-      sent_by: data.staffId,
+      status: data.results.every(r => r.success) ? 'sent' : 'failed',
+      error_message: data.results.find(r => !r.success)?.error || null,
+      metadata: { results: data.results },
+      agent_id: data.agentId || null,
     })
   } catch {
     // Table might not exist yet - silently ignore
@@ -157,6 +184,7 @@ export async function GET() {
     message: 'Notification API',
     smsConfigured: isSMSConfigured(),
     supportedTypes: VALID_TYPES,
+    agentAllowedTypes: AGENT_ALLOWED_TYPES,
     channels: ['email', 'sms', 'both'],
   })
 }

@@ -1,0 +1,166 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is staff
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('email', user.email!)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const searchParams = request.nextUrl.searchParams
+    const search = searchParams.get('search') || ''
+    const published = searchParams.get('published')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = (page - 1) * limit
+
+    // Build query for communities table
+    let query = supabase
+      .from('communities')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    // Apply filters
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%,description.ilike.%${search}%`)
+    }
+
+    if (published === 'true') {
+      query = query.eq('is_published', true)
+    } else if (published === 'false') {
+      query = query.eq('is_published', false)
+    }
+
+    const { data: communities, count, error } = await query
+
+    if (error) throw error
+
+    // Communities don't have a direct listing relationship in the current schema
+    // Return communities as-is for now
+    const enrichedCommunities = communities?.map(community => ({
+      ...community,
+      listingCount: 0, // Placeholder until relationship is established
+    }))
+
+    return NextResponse.json({
+      communities: enrichedCommunities || [],
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit),
+    })
+  } catch (error) {
+    console.error('Error fetching communities:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch communities' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('id, role')
+      .eq('email', user.email!)
+      .eq('is_active', true)
+      .single()
+
+    if (!staff || staff.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const {
+      name,
+      slug,
+      city,
+      state,
+      description,
+      hero_image_url,
+      lat,
+      lng,
+      is_published = false,
+    } = body
+
+    if (!name || !slug) {
+      return NextResponse.json(
+        { error: 'Name and slug are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if slug exists
+    const { data: existing } = await supabase
+      .from('communities')
+      .select('id')
+      .eq('slug', slug)
+      .single()
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'A community with this slug already exists' },
+        { status: 400 }
+      )
+    }
+
+    const { data: community, error } = await supabase
+      .from('communities')
+      .insert({
+        name,
+        slug,
+        city,
+        state,
+        description,
+        hero_image_url,
+        lat,
+        lng,
+        is_published,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ community })
+  } catch (error) {
+    console.error('Error creating community:', error)
+    return NextResponse.json(
+      { error: 'Failed to create community' },
+      { status: 500 }
+    )
+  }
+}

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
+import { executeWorkflow } from '@/lib/agents/orchestrator'
+// Import to ensure workflows are registered
+import '@/lib/agents/workflows/post-delivery'
 
 interface BannerbearWebhookPayload {
   uid: string
@@ -15,11 +18,16 @@ interface BannerbearWebhookPayload {
 // Verify webhook signature from Bannerbear
 function verifyWebhookSignature(payload: string, signature: string | null): boolean {
   const webhookSecret = process.env.BANNERBEAR_WEBHOOK_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
 
-  // If no secret is configured, allow all requests (development mode)
-  // In production, always configure the secret
+  // SECURITY: Require webhook secret in production
   if (!webhookSecret) {
-    console.warn('BANNERBEAR_WEBHOOK_SECRET not configured - skipping signature verification')
+    if (isProduction) {
+      console.error('CRITICAL: BANNERBEAR_WEBHOOK_SECRET not configured in production')
+      return false
+    }
+    // Only allow bypass in explicit development mode
+    console.warn('[DEV ONLY] BANNERBEAR_WEBHOOK_SECRET not configured - skipping verification')
     return true
   }
 
@@ -142,6 +150,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Trigger post-delivery workflow when all slides are rendered
+    if (allRendered) {
+      try {
+        // Get campaign info for the workflow (carousels are linked via campaign)
+        const { data: carouselData } = await supabase
+          .from('listing_carousels')
+          .select('campaign_id, listing_campaigns(listing_id, agent_id)')
+          .eq('id', carouselId)
+          .single()
+
+        const campaign = carouselData?.listing_campaigns as { listing_id: string | null; agent_id: string } | null
+        const listingId = campaign?.listing_id
+        const campaignId = carouselData?.campaign_id
+
+        if (listingId) {
+          console.log('Triggering post-delivery workflow for listing:', listingId)
+
+          // Execute workflow asynchronously (don't await - webhook should return quickly)
+          executeWorkflow('post-delivery', {
+            event: 'carousel.rendered',
+            listingId,
+            campaignId: campaignId || undefined,
+            data: {
+              carouselId,
+              carouselUrls: renderedUrls,
+              agentId: campaign?.agent_id,
+              mediaTypes: ['carousel'],
+            },
+          }).catch(error => {
+            console.error('Post-delivery workflow failed:', error)
+          })
+        }
+      } catch (workflowError) {
+        // Log but don't fail the webhook response
+        console.error('Error triggering post-delivery workflow:', workflowError)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       carouselId,
@@ -149,6 +195,7 @@ export async function POST(request: NextRequest) {
       status: allRendered ? 'completed' : 'rendering',
       renderedCount: renderedUrls.filter(u => u).length,
       totalSlides: slides.length,
+      workflowTriggered: allRendered,
     })
   } catch (error) {
     console.error('Bannerbear webhook error:', error)

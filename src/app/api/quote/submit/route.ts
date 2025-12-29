@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { resend } from '@/lib/email/resend'
+import { apiLogger, formatError } from '@/lib/logger'
 import { checkRateLimit, getRateLimitHeaders, createRateLimitKey } from '@/lib/utils/rate-limit'
 import type { QuoteFormData } from '@/lib/pricing/quote-config'
 import {
@@ -16,6 +18,31 @@ import {
   REFERRAL_SOURCES,
 } from '@/lib/pricing/quote-config'
 
+// Zod schema for quote form validation
+const QuoteFormSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
+  email: z.string().email('Invalid email address').max(254, 'Email is too long'),
+  phone: z.string().min(10, 'Phone number must have at least 10 digits').max(20, 'Phone number is too long'),
+  serviceType: z.enum(['listing', 'retainer'], { message: 'Service type is required' }),
+  // Listing-specific fields
+  propertyType: z.string().optional(),
+  approximateSqft: z.string().optional(),
+  propertyAddress: z.string().max(500).optional(),
+  timeline: z.string().optional(),
+  interestedPackage: z.string().optional(),
+  additionalServices: z.array(z.string()).optional(),
+  // Retainer-specific fields
+  businessName: z.string().max(200).optional(),
+  teamSize: z.string().optional(),
+  currentSocialPresence: z.string().optional(),
+  contentGoals: z.array(z.string()).optional(),
+  biggestChallenge: z.string().optional(),
+  monthlyBudget: z.string().optional(),
+  howDidYouHear: z.string().optional(),
+  // Common optional fields
+  additionalNotes: z.string().max(2000, 'Additional notes are too long').optional(),
+})
+
 // Helper to get label from value
 function getLabel(options: readonly { value: string; label: string }[], value?: string): string {
   if (!value) return 'Not specified'
@@ -28,13 +55,32 @@ function getLabels(options: readonly { value: string; label: string }[], values?
   return values.map((v) => getLabel(options, v)).join(', ')
 }
 
+// Validate email format
+function isValidEmail(email: string): boolean {
+  // RFC 5322 compliant email regex (simplified but robust)
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  if (!email || email.length > 254) return false
+  return emailRegex.test(email)
+}
+
+// Sanitize string for HTML output (prevent XSS/injection)
+function sanitizeHtml(str: string): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 // Format phone number for display
 function formatPhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 10) {
     return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
   }
-  return phone
+  return sanitizeHtml(phone)
 }
 
 // Generate support email HTML
@@ -265,47 +311,70 @@ export async function POST(request: NextRequest) {
 
     const rateLimit = checkRateLimit(createRateLimitKey('quote', 'ip', clientIp), QUOTE_RATE_LIMIT)
     if (!rateLimit.allowed) {
+      apiLogger.warn({ clientIp }, 'Quote submission rate limited')
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429, headers: getRateLimitHeaders(rateLimit) }
       )
     }
 
-    const data: QuoteFormData = await request.json()
+    const rawData = await request.json()
 
-    // Validate required fields
-    if (!data.name || !data.email || !data.phone || !data.serviceType) {
+    // Validate with Zod schema
+    const parseResult = QuoteFormSchema.safeParse(rawData)
+    if (!parseResult.success) {
+      const errors = parseResult.error.issues.map((e) => e.message).join(', ')
+      apiLogger.warn({ errors, clientIp }, 'Quote validation failed')
+      return NextResponse.json({ error: errors }, { status: 400 })
+    }
+
+    const data = parseResult.data
+
+    // Additional phone validation (ensure enough digits)
+    const phoneDigits = data.phone.replace(/\D/g, '')
+    if (phoneDigits.length < 10) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Invalid phone number' },
         { status: 400 }
       )
     }
 
-    const serviceTypeLabel = data.serviceType === 'listing' ? 'Listing Media' : 'Content Retainer'
+    // Sanitize all user inputs for HTML safety
+    const sanitizedData = {
+      ...data,
+      name: sanitizeHtml(data.name),
+      email: data.email.toLowerCase().trim(), // Email doesn't need HTML sanitization
+      phone: data.phone, // Processed by formatPhone which sanitizes
+      propertyAddress: data.propertyAddress ? sanitizeHtml(data.propertyAddress) : undefined,
+      businessName: data.businessName ? sanitizeHtml(data.businessName) : undefined,
+      additionalNotes: data.additionalNotes ? sanitizeHtml(data.additionalNotes) : undefined,
+    }
 
-    // Send email to support team
+    const serviceTypeLabel = sanitizedData.serviceType === 'listing' ? 'Listing Media' : 'Content Retainer'
+
+    // Send email to support team (use sanitized data for HTML, validated email for addressing)
     const supportEmail = await resend.emails.send({
       from: 'Aerial Shots Media <noreply@aerialshots.media>',
       to: 'support@aerialshots.media',
-      replyTo: data.email,
-      subject: `New Quote Request: ${serviceTypeLabel} - ${data.name}`,
-      html: generateSupportEmailHtml(data),
+      replyTo: sanitizedData.email,
+      subject: `New Quote Request: ${serviceTypeLabel} - ${sanitizedData.name}`,
+      html: generateSupportEmailHtml(sanitizedData as QuoteFormData),
     })
 
     if (supportEmail.error) {
-      console.error('Failed to send support email:', supportEmail.error)
+      apiLogger.error({ error: formatError(supportEmail.error), email: sanitizedData.email }, 'Failed to send support email')
     }
 
-    // Send confirmation email to client
+    // Send confirmation email to client (use validated email)
     const clientEmail = await resend.emails.send({
       from: 'Aerial Shots Media <noreply@aerialshots.media>',
-      to: data.email,
-      subject: `We received your request, ${data.name.split(' ')[0]}!`,
-      html: generateClientEmailHtml(data),
+      to: sanitizedData.email,
+      subject: `We received your request, ${sanitizedData.name.split(' ')[0]}!`,
+      html: generateClientEmailHtml(sanitizedData as QuoteFormData),
     })
 
     if (clientEmail.error) {
-      console.error('Failed to send client email:', clientEmail.error)
+      apiLogger.error({ error: formatError(clientEmail.error), email: sanitizedData.email }, 'Failed to send client confirmation email')
     }
 
     return NextResponse.json({
@@ -313,7 +382,7 @@ export async function POST(request: NextRequest) {
       message: 'Quote request submitted successfully',
     })
   } catch (error) {
-    console.error('Quote submission error:', error)
+    apiLogger.error({ error: formatError(error) }, 'Quote submission error')
     return NextResponse.json(
       { error: 'Failed to submit quote request' },
       { status: 500 }

@@ -10,8 +10,14 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  Plug,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { IntegrationPanelClient } from '@/components/admin/ops/IntegrationPanelClient'
+import { JobNotesClient } from '@/components/admin/ops/JobNotesClient'
+import { JobTasksClient } from '@/components/admin/ops/JobTasksClient'
+import { JobServicesClient } from '@/components/admin/ops/JobServicesClient'
+import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -61,7 +67,17 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const { data: listingData, error } = await supabase
     .from('listings')
-    .select('*')
+    .select(`
+      *,
+      fotello_job_id,
+      fotello_status,
+      cubicasa_order_id,
+      cubicasa_status,
+      zillow_3d_id,
+      zillow_3d_status,
+      integration_error_message,
+      last_integration_check
+    `)
     .eq('id', id)
     .single()
 
@@ -118,6 +134,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             {listing.city}, {listing.state} {listing.zip}
           </p>
         </div>
+        <JobServicesClient listingId={listing.id} />
       </div>
 
       {/* Status Progress */}
@@ -170,6 +187,27 @@ export default async function JobDetailPage({ params }: PageProps) {
           <Button type="submit">Update Status</Button>
         </form>
       </div>
+
+      {/* Integration Status */}
+      <IntegrationPanelClient
+        listingId={listing.id}
+        integrations={{
+          fotello: {
+            status: (listing.fotello_status as IntegrationStatus) || 'pending',
+            external_id: listing.fotello_job_id || null,
+          },
+          cubicasa: {
+            status: (listing.cubicasa_status as IntegrationStatus) || 'pending',
+            external_id: listing.cubicasa_order_id || null,
+          },
+          zillow_3d: {
+            status: (listing.zillow_3d_status as Zillow3DStatus) || 'pending',
+            external_id: listing.zillow_3d_id || null,
+          },
+        }}
+        errorMessage={listing.integration_error_message}
+        lastCheck={listing.last_integration_check}
+      />
 
       {/* Details Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -271,6 +309,15 @@ export default async function JobDetailPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      {/* Tasks and Notes */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Tasks */}
+        <JobTasksClient listingId={listing.id} />
+
+        {/* Notes */}
+        <JobNotesClient listingId={listing.id} />
+      </div>
 
       {/* Event History */}
       <div className="rounded-lg border border-neutral-200 bg-white p-6">

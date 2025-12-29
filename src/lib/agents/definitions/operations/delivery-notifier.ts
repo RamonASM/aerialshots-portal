@@ -5,14 +5,106 @@ import { registerAgent } from '../../registry'
 import { generateWithAI } from '@/lib/ai/client'
 import type { AgentExecutionContext, AgentExecutionResult } from '../../types'
 import { getCategoryInfo } from '@/lib/queries/listings'
+import { resend } from '@/lib/email/resend'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface DeliveryNotificationInput {
+  listingId: string
+  // These can be provided directly OR fetched from database using listingId
+  agentEmail?: string
+  agentName?: string
+  address?: string
+  mediaCategories?: string[] // Array of category keys: ['mls', 'social_feed', 'video', etc.]
+  deliveryUrl?: string
+}
+
+interface ResolvedNotificationData {
   listingId: string
   agentEmail: string
   agentName: string
   address: string
-  mediaCategories: string[] // Array of category keys: ['mls', 'social_feed', 'video', etc.]
+  mediaCategories: string[]
   deliveryUrl: string
+}
+
+/**
+ * Fetch listing and agent data from database when not provided in input
+ */
+async function resolveNotificationData(
+  input: DeliveryNotificationInput
+): Promise<ResolvedNotificationData | null> {
+  // If all data is provided, use it directly
+  if (
+    input.agentEmail &&
+    input.agentName &&
+    input.address &&
+    input.mediaCategories?.length &&
+    input.deliveryUrl
+  ) {
+    return {
+      listingId: input.listingId,
+      agentEmail: input.agentEmail,
+      agentName: input.agentName,
+      address: input.address,
+      mediaCategories: input.mediaCategories,
+      deliveryUrl: input.deliveryUrl,
+    }
+  }
+
+  // Fetch missing data from database
+  const supabase = createAdminClient()
+
+  const { data: listing, error } = await supabase
+    .from('listings')
+    .select(`
+      id,
+      address,
+      agent:agents (
+        id,
+        name,
+        email
+      )
+    `)
+    .eq('id', input.listingId)
+    .single()
+
+  if (error || !listing) {
+    console.error('Failed to fetch listing data:', error)
+    return null
+  }
+
+  // Get media categories from media_assets
+  let mediaCategories = input.mediaCategories || []
+  if (!mediaCategories.length) {
+    const { data: assets } = await supabase
+      .from('media_assets')
+      .select('category')
+      .eq('listing_id', input.listingId)
+      .eq('qc_status', 'approved')
+
+    if (assets?.length) {
+      // Get unique categories
+      mediaCategories = [...new Set(assets.map((a) => a.category).filter((c): c is string => Boolean(c)))]
+    }
+
+    // Fallback to default categories if none found
+    if (!mediaCategories.length) {
+      mediaCategories = ['mls', 'social_feed']
+    }
+  }
+
+  const agent = listing.agent as { id: string; name: string; email: string } | null
+
+  return {
+    listingId: input.listingId,
+    agentEmail: input.agentEmail || agent?.email || '',
+    agentName: input.agentName || agent?.name || 'Valued Agent',
+    address: input.address || listing.address || 'Your Property',
+    mediaCategories,
+    deliveryUrl:
+      input.deliveryUrl ||
+      `https://portal.aerialshots.media/delivery/${input.listingId}`,
+  }
 }
 
 const DELIVERY_NOTIFIER_PROMPT = `You are a professional real estate media specialist who helps agents get the most value from their media.
@@ -40,7 +132,7 @@ async function generateMediaTips(
   categories: string[],
   address: string,
   config: { maxTokens?: number; temperature?: number }
-): Promise<Record<string, string>> {
+): Promise<{ tips: Record<string, string>; tokensUsed: number }> {
   // Get base category info
   const categoryDetails = categories.map((cat) => {
     const info = getCategoryInfo(cat)
@@ -91,8 +183,11 @@ Format your response as:
         }
       }
 
-      return tipsMap
+      return { tips: tipsMap, tokensUsed: aiResponse.tokensUsed }
     }
+
+    // JSON parsing failed, return empty with tokens
+    return { tips: {}, tokensUsed: aiResponse.tokensUsed }
   } catch (error) {
     console.error('Error generating AI tips:', error)
   }
@@ -102,7 +197,7 @@ Format your response as:
   for (const cat of categoryDetails) {
     fallbackTips[cat.category] = cat.baseTip
   }
-  return fallbackTips
+  return { tips: fallbackTips, tokensUsed: 0 }
 }
 
 /**
@@ -232,22 +327,33 @@ async function execute(
   const { input, config } = context
 
   try {
-    // Validate input
-    const notificationInput = input as unknown as DeliveryNotificationInput
+    // Validate and resolve input
+    const rawInput = input as unknown as DeliveryNotificationInput
 
-    if (!notificationInput.listingId || !notificationInput.agentEmail) {
+    if (!rawInput.listingId) {
       return {
         success: false,
-        error: 'Missing required fields: listingId and agentEmail',
+        error: 'Missing required field: listingId',
         errorCode: 'INVALID_INPUT',
       }
     }
 
-    if (!notificationInput.mediaCategories || notificationInput.mediaCategories.length === 0) {
+    // Resolve missing data from database
+    const notificationInput = await resolveNotificationData(rawInput)
+
+    if (!notificationInput) {
       return {
         success: false,
-        error: 'No media categories provided',
-        errorCode: 'NO_MEDIA',
+        error: 'Failed to resolve listing and agent data',
+        errorCode: 'DATA_RESOLUTION_FAILED',
+      }
+    }
+
+    if (!notificationInput.agentEmail) {
+      return {
+        success: false,
+        error: 'Could not determine agent email address',
+        errorCode: 'NO_AGENT_EMAIL',
       }
     }
 
@@ -256,14 +362,13 @@ async function execute(
     let tokensUsed = 0
 
     try {
-      tips = await generateMediaTips(
+      const tipsResult = await generateMediaTips(
         notificationInput.mediaCategories,
         notificationInput.address,
         config
       )
-
-      // Note: In a production implementation, we'd get tokensUsed from the AI call
-      tokensUsed = 500 // Placeholder for now
+      tips = tipsResult.tips
+      tokensUsed = tipsResult.tokensUsed
     } catch (error) {
       console.error('Error generating tips, using fallback:', error)
       // Use fallback tips
@@ -277,28 +382,57 @@ async function execute(
     // Format notification content
     const notification = formatNotificationContent(notificationInput, tips)
 
-    // Log the notification (in production, this would integrate with email service)
-    console.log('=== DELIVERY NOTIFICATION ===')
-    console.log('To:', notificationInput.agentEmail)
-    console.log('Subject:', notification.subject)
-    console.log('Preview:', notification.previewText)
-    console.log('\nGenerated Tips:')
-    Object.entries(tips).forEach(([category, tip]) => {
-      const info = getCategoryInfo(category)
-      console.log(`\n${info.title} (${category}):`)
-      console.log(tip)
-    })
-    console.log('\nDelivery URL:', notificationInput.deliveryUrl)
-    console.log('=============================\n')
+    // Send the email via Resend
+    let emailSent = false
+    let emailSentAt: string | null = null
+    let emailError: string | null = null
 
-    // TODO: Integrate with email service (SendGrid, Resend, etc.)
-    // Example:
-    // await sendEmail({
-    //   to: notificationInput.agentEmail,
-    //   subject: notification.subject,
-    //   html: notification.bodyHtml,
-    //   text: notification.bodyText,
-    // })
+    try {
+      const emailResult = await resend.emails.send({
+        from: 'Aerial Shots Media <notifications@aerialshots.media>',
+        to: notificationInput.agentEmail,
+        subject: notification.subject,
+        html: notification.bodyHtml,
+        text: notification.bodyText,
+        replyTo: 'support@aerialshots.media',
+      })
+
+      if (emailResult.error) {
+        emailError = emailResult.error.message
+        console.error('Email send error:', emailResult.error)
+      } else {
+        emailSent = true
+        emailSentAt = new Date().toISOString()
+      }
+    } catch (error) {
+      emailError = error instanceof Error ? error.message : 'Unknown email error'
+      console.error('Failed to send delivery notification email:', error)
+    }
+
+    // Log to notification_logs table for tracking
+    try {
+      const supabase = createAdminClient()
+      await supabase.from('notification_logs').insert({
+        listing_id: notificationInput.listingId,
+        notification_type: 'delivery_ready',
+        channel: 'email',
+        recipient_type: 'agent',
+        recipient_email: notificationInput.agentEmail,
+        subject: notification.subject,
+        status: emailSent ? 'sent' : 'failed',
+        error_message: emailError,
+        sent_at: emailSentAt,
+        metadata: {
+          recipient_name: notificationInput.agentName,
+          categories: notificationInput.mediaCategories,
+          tips,
+          deliveryUrl: notificationInput.deliveryUrl,
+        },
+      })
+    } catch (logError) {
+      // Don't fail the agent if logging fails
+      console.error('Failed to log notification:', logError)
+    }
 
     return {
       success: true,
@@ -311,9 +445,9 @@ async function execute(
           previewText: notification.previewText,
           tips,
         },
-        // Set to true once email integration is complete
-        emailSent: false,
-        emailSentAt: null,
+        emailSent,
+        emailSentAt,
+        emailError,
       },
       tokensUsed,
     }

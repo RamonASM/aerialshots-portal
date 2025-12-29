@@ -76,7 +76,9 @@ export async function POST(request: NextRequest) {
       : `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'app.aerialshots.media'}`
 
     // Build the full callback URL
-    const callbackUrl = `${baseUrl}/api/auth/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`
+    // Use /auth/callback (not /api/auth/callback) so the client-side page
+    // can handle implicit flow tokens in the URL fragment
+    const callbackUrl = `${baseUrl}/auth/callback${redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ''}`
 
     console.log('Magic link generation:', {
       email: normalizedEmail,

@@ -10,6 +10,7 @@ import {
   determineOrderType,
 } from '@/lib/integrations/aryeo/transformer'
 import type { WebhookPayload, WebhookEventType } from '@/lib/integrations/aryeo/types'
+import { notifyDeliveryReady, notifyBookingConfirmed } from '@/lib/notifications'
 
 // Verify webhook signature (if using direct webhooks)
 function verifyWebhookSignature(
@@ -254,6 +255,31 @@ async function handleOrderFulfilled(payload: WebhookPayload) {
           priority: 1,
           due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Next day
         })
+
+        // Send delivery notification to agent
+        try {
+          const { data: agent } = await supabase
+            .from('agents')
+            .select('name, email')
+            .eq('id', existingListing.agent_id)
+            .single()
+
+          if (agent?.email) {
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://portal.aerialshots.media'
+            const deliveryUrl = `${baseUrl}/delivery/${existingListing.id}`
+
+            notifyDeliveryReady(
+              { email: agent.email, name: agent.name || 'Agent' },
+              {
+                agentName: agent.name || 'Agent',
+                listingAddress: order.listing?.address?.unparsed_address || 'Your property',
+                deliveryUrl,
+              }
+            ).catch(err => console.error('Delivery notification error:', err))
+          }
+        } catch (notifyError) {
+          console.error('Failed to send delivery notification:', notifyError)
+        }
       }
     } else {
       // Create listing if it doesn't exist
@@ -344,13 +370,58 @@ async function handleAppointmentScheduled(payload: WebhookPayload) {
 
   // Update listing ops_status if we can link it
   if (payload.data.listing_id) {
-    await supabase
+    const { data: listing } = await supabase
       .from('listings')
       .update({
         ops_status: 'scheduled',
         scheduled_at: payload.timestamp,
       })
       .eq('aryeo_listing_id', payload.data.listing_id)
+      .select('id, address, agent_id')
+      .single()
+
+    // Send booking confirmation to agent
+    if (listing?.agent_id) {
+      try {
+        const { data: agent } = await supabase
+          .from('agents')
+          .select('name, email, phone')
+          .eq('id', listing.agent_id)
+          .single()
+
+        if (agent?.email) {
+          const scheduledDate = payload.timestamp
+            ? new Date(payload.timestamp).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : 'TBD'
+          const scheduledTime = payload.timestamp
+            ? new Date(payload.timestamp).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+              })
+            : 'TBD'
+
+          notifyBookingConfirmed(
+            { email: agent.email, phone: agent.phone || undefined, name: agent.name || 'Agent' },
+            {
+              agentName: agent.name || 'Agent',
+              listingAddress: listing.address || 'Your property',
+              packageName: String(payload.data.package_name || 'Photography Package'),
+              scheduledDate,
+              scheduledTime,
+              totalAmount: String(payload.data.total_amount || 'See invoice'),
+              orderId: String(payload.data.order_id || listing.id),
+            }
+          ).catch(err => console.error('Booking notification error:', err))
+        }
+      } catch (notifyError) {
+        console.error('Failed to send booking confirmation:', notifyError)
+      }
+    }
   }
 }
 

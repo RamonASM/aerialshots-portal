@@ -282,7 +282,7 @@ export async function getRevenueByPhotographer(
     }> = {}
 
     for (const order of orders || []) {
-      const photographerId = listingToPhotographer.get(order.listing_id) || 'unassigned'
+      const photographerId = (order.listing_id ? listingToPhotographer.get(order.listing_id) : null) || 'unassigned'
 
       if (!photographerRevenue[photographerId]) {
         photographerRevenue[photographerId] = {
@@ -322,7 +322,7 @@ export async function getRevenueByPhotographer(
       .gte('paid_at', previousPeriod.start)
       .lte('paid_at', previousPeriod.end)
 
-    const prevListingIds = [...new Set(prevOrders?.map(o => o.listing_id).filter(Boolean))]
+    const prevListingIds = [...new Set(prevOrders?.map(o => o.listing_id).filter((id): id is string => id !== null))]
     const { data: prevListings } = await supabase
       .from('listings')
       .select('id, photographer_id')
@@ -332,7 +332,7 @@ export async function getRevenueByPhotographer(
     const prevPhotographerRevenue: Record<string, number> = {}
 
     for (const order of prevOrders || []) {
-      const photographerId = prevListingToPhotographer.get(order.listing_id) || 'unassigned'
+      const photographerId = (order.listing_id ? prevListingToPhotographer.get(order.listing_id) : null) || 'unassigned'
       prevPhotographerRevenue[photographerId] = (prevPhotographerRevenue[photographerId] || 0) + (order.total_cents || 0)
     }
 
@@ -400,7 +400,7 @@ export async function getRevenueByTerritory(
     if (error) throw error
 
     // Get listing photographer info
-    const listingIds = [...new Set(orders?.map(o => o.listing_id).filter(Boolean))]
+    const listingIds = [...new Set(orders?.map(o => o.listing_id).filter((id): id is string => id !== null))]
     const { data: listings } = await supabase
       .from('listings')
       .select('id, photographer_id')
@@ -440,7 +440,7 @@ export async function getRevenueByTerritory(
       data.order_count++
       if (order.agent_id) data.agents.add(order.agent_id)
 
-      const photographerId = listingToPhotographer.get(order.listing_id)
+      const photographerId = order.listing_id ? listingToPhotographer.get(order.listing_id) : null
       if (photographerId) {
         data.photographer_revenue[photographerId] =
           (data.photographer_revenue[photographerId] || 0) + (order.total_cents || 0)

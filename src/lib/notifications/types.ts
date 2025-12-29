@@ -10,6 +10,13 @@ export type NotificationType =
   | 'booking_confirmed'
   | 'payment_received'
   | 'status_update'
+  | 'seller_schedule_request'
+  | 'seller_media_ready'
+  | 'schedule_confirmed'
+  | 'integration_complete'
+  | 'integration_failed'
+  | 'low_credit_balance'
+  | 'review_request'
 
 export interface NotificationRecipient {
   email?: string
@@ -104,4 +111,78 @@ export interface StatusUpdateData {
   previousStatus: string
   newStatus: string
   message?: string
+}
+
+// Seller notification data types
+export interface SellerScheduleRequestData {
+  sellerName: string
+  listingAddress: string
+  agentName: string
+  agentPhone?: string
+  scheduleUrl: string
+  expiresAt?: string
+}
+
+export interface SellerMediaReadyData {
+  sellerName: string
+  listingAddress: string
+  agentName: string
+  portalUrl: string
+  assetSummary: {
+    photos: number
+    videos: number
+    floorPlans: number
+    tours: number
+  }
+  expiresAt?: string
+}
+
+export interface ScheduleConfirmedData {
+  recipientName: string
+  listingAddress: string
+  scheduledDate: string
+  scheduledTime: string
+  agentName?: string
+  agentPhone?: string
+  isAgent: boolean // true if notifying agent, false if notifying seller
+}
+
+// Integration notification data types
+export interface IntegrationCompleteData {
+  recipientName: string
+  integrationName: string // e.g., "AI-edited photos", "Floor plans", "3D tour"
+  propertyAddress: string
+  listingId: string
+  dashboardUrl: string
+  message?: string
+}
+
+export interface IntegrationFailedData {
+  recipientName: string
+  integrationName: string // e.g., "Fotello (AI editing)", "Cubicasa (floor plans)"
+  propertyAddress: string
+  listingId: string
+  status: string // e.g., "failed", "needs_manual"
+  dashboardUrl: string
+  errorMessage?: string
+}
+
+// Credit balance notification data types
+export interface LowCreditBalanceData {
+  agentName: string
+  currentBalance: number
+  threshold: number // The threshold that triggered the notification
+  rewardsUrl: string
+}
+
+// Review request notification data types
+export interface ReviewRequestData {
+  agentName: string
+  listingAddress: string
+  deliveredAt: string
+  photoCount: number
+  videoCount?: number
+  reviewUrl: string // Google/Facebook/Yelp review link
+  portalUrl: string // Link to view their delivered photos
+  photographerName?: string
 }

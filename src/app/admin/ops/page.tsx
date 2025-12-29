@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
+import { OpsMapSection } from '@/components/admin/ops/OpsMapSection'
 
 const statusColumns = [
   { key: 'scheduled', label: 'Scheduled', color: 'bg-blue-500' },
@@ -143,6 +144,9 @@ export default async function OpsPage() {
           </p>
         </div>
       </div>
+
+      {/* Map View Toggle */}
+      <OpsMapSection listings={listings || []} />
 
       {/* Kanban Board */}
       <div className="overflow-x-auto pb-4">

@@ -14,6 +14,13 @@ import type {
   BookingConfirmedData,
   PaymentReceivedData,
   StatusUpdateData,
+  SellerScheduleRequestData,
+  SellerMediaReadyData,
+  ScheduleConfirmedData,
+  IntegrationCompleteData,
+  IntegrationFailedData,
+  LowCreditBalanceData,
+  ReviewRequestData,
 } from './types'
 
 export * from './types'
@@ -75,6 +82,20 @@ function getEmailTemplate(
       return templates.paymentReceivedEmail(data as PaymentReceivedData)
     case 'status_update':
       return templates.statusUpdateEmail(data as StatusUpdateData)
+    case 'seller_schedule_request':
+      return templates.sellerScheduleRequestEmail(data as SellerScheduleRequestData)
+    case 'seller_media_ready':
+      return templates.sellerMediaReadyEmail(data as SellerMediaReadyData)
+    case 'schedule_confirmed':
+      return templates.scheduleConfirmedEmail(data as ScheduleConfirmedData)
+    case 'integration_complete':
+      return templates.integrationCompleteEmail(data as IntegrationCompleteData)
+    case 'integration_failed':
+      return templates.integrationFailedEmail(data as IntegrationFailedData)
+    case 'low_credit_balance':
+      return templates.lowCreditBalanceEmail(data as LowCreditBalanceData)
+    case 'review_request':
+      return templates.reviewRequestEmail(data as ReviewRequestData)
     default:
       console.warn(`No email template for notification type: ${type}`)
       return null
@@ -95,6 +116,20 @@ function getSMSTemplate(
       return templates.smsTemplates.qcComplete(data as QCCompleteData)
     case 'booking_confirmed':
       return templates.smsTemplates.bookingConfirmed(data as BookingConfirmedData)
+    case 'seller_schedule_request':
+      return templates.smsTemplates.sellerScheduleRequest(data as SellerScheduleRequestData)
+    case 'seller_media_ready':
+      return templates.smsTemplates.sellerMediaReady(data as SellerMediaReadyData)
+    case 'schedule_confirmed':
+      return templates.smsTemplates.scheduleConfirmed(data as ScheduleConfirmedData)
+    case 'integration_complete':
+      return templates.smsTemplates.integrationComplete(data as IntegrationCompleteData)
+    case 'integration_failed':
+      return templates.smsTemplates.integrationFailed(data as IntegrationFailedData)
+    case 'low_credit_balance':
+      return templates.smsTemplates.lowCreditBalance(data as LowCreditBalanceData)
+    case 'review_request':
+      return templates.smsTemplates.reviewRequest(data as ReviewRequestData)
     default:
       // Not all notification types have SMS templates
       return null
@@ -182,6 +217,96 @@ export async function notifyStatusUpdate(
     type: 'status_update',
     recipient,
     channel: 'email',
+    data,
+  })
+}
+
+// Seller notification convenience functions
+
+export async function notifySellerScheduleRequest(
+  recipient: { email: string; phone?: string; name: string },
+  data: SellerScheduleRequestData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'seller_schedule_request',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+export async function notifySellerMediaReady(
+  recipient: { email: string; phone?: string; name: string },
+  data: SellerMediaReadyData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'seller_media_ready',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+export async function notifyScheduleConfirmed(
+  recipient: { email: string; phone?: string; name: string },
+  data: ScheduleConfirmedData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'schedule_confirmed',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+// Integration notification convenience functions
+
+export async function notifyIntegrationComplete(
+  recipient: { email: string; phone?: string; name: string },
+  data: IntegrationCompleteData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'integration_complete',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+export async function notifyIntegrationFailed(
+  recipient: { email: string; phone?: string; name: string },
+  data: IntegrationFailedData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'integration_failed',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+// Credit balance notification convenience function
+export async function notifyLowCreditBalance(
+  recipient: { email: string; phone?: string; name: string },
+  data: LowCreditBalanceData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'low_credit_balance',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
+    data,
+  })
+}
+
+// Review request notification convenience function
+export async function notifyReviewRequest(
+  recipient: { email: string; phone?: string; name: string },
+  data: ReviewRequestData
+): Promise<NotificationResult[]> {
+  return sendNotification({
+    type: 'review_request',
+    recipient,
+    channel: recipient.phone ? 'both' : 'email',
     data,
   })
 }

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Building, ExternalLink, Eye, MapPin, Users, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ShareButton } from '@/components/dashboard/ShareButton'
 
 export default async function ListingsPage() {
   const supabase = await createClient()
@@ -215,9 +216,14 @@ export default async function ListingsPage() {
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/property/${listing.id}`} target="_blank">
                         <ExternalLink className="mr-1 h-4 w-4" />
-                        Property Page
+                        Property
                       </Link>
                     </Button>
+                    <ShareButton
+                      listingId={listing.id}
+                      agentId={agent.id}
+                      propertyAddress={`${listing.address}, ${listing.city}`}
+                    />
                   </div>
                 </div>
               </div>

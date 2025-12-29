@@ -253,7 +253,7 @@ export default function DevelopersPage() {
                 className="bg-white text-black hover:bg-white/90 text-base px-8 h-12"
                 asChild
               >
-                <Link href="/developers/keys">
+                <Link href="/developers/login">
                   Get Free API Key <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -768,7 +768,7 @@ export default function DevelopersPage() {
                 className="bg-white text-black hover:bg-white/90 text-base px-8 h-12"
                 asChild
               >
-                <Link href="/developers/keys">
+                <Link href="/developers/login">
                   Get Free API Key <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

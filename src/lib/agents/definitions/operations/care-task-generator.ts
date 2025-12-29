@@ -6,6 +6,7 @@ import { generateWithAI } from '@/lib/ai/client'
 import type { AgentExecutionContext, AgentExecutionResult } from '../../types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
+import { resend } from '@/lib/email/resend'
 
 interface CareTaskInput {
   listing_id: string
@@ -73,7 +74,7 @@ async function generateCallScript(
     name: string
     orderCount: number
   }
-): Promise<CallScriptOutput> {
+): Promise<{ script: CallScriptOutput; tokensUsed: number }> {
   const propertyDetails = `${listing.beds || '?'} bed, ${listing.baths || '?'} bath${
     listing.sqft ? `, ${listing.sqft.toLocaleString()} sqft` : ''
   }`
@@ -105,11 +106,11 @@ Respond with ONLY valid JSON in the exact format specified above.`
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as CallScriptOutput
-    return parsed
+    return { script: parsed, tokensUsed: response.tokensUsed }
   } catch (error) {
     // Fallback script if AI parsing fails
     console.error('Failed to parse AI response, using fallback script:', error)
-    return generateFallbackScript(listing, agent)
+    return { script: generateFallbackScript(listing, agent), tokensUsed: response.tokensUsed }
   }
 }
 
@@ -221,7 +222,7 @@ async function execute(
     }
 
     // 4. Generate personalized call script
-    const callScript = await generateCallScript(
+    const { script: callScript, tokensUsed } = await generateCallScript(
       {
         address: `${listing.address}, ${listing.city || ''} ${listing.state || ''}`.trim(),
         beds: listing.beds || undefined,
@@ -266,7 +267,53 @@ async function execute(
       }
     }
 
-    // 6. Return success with task details
+    // 6. Send email notification to VA team
+    let emailSent = false
+    try {
+      const dueTime = careTask.due_at
+        ? new Date(careTask.due_at).toLocaleString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })
+        : 'ASAP'
+
+      await resend.emails.send({
+        from: 'Aerial Shots Media <notifications@aerialshots.media>',
+        to: 'care@aerialshots.media', // VA team email
+        subject: `New Care Task: Follow-up call for ${agent.name}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1a1a1a; margin-bottom: 20px;">New Delivery Follow-up Task</h2>
+
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <p style="margin: 0 0 8px 0;"><strong>Agent:</strong> ${agent.name}</p>
+              <p style="margin: 0 0 8px 0;"><strong>Phone:</strong> <a href="tel:${agent.phone}">${agent.phone || 'Not available'}</a></p>
+              <p style="margin: 0 0 8px 0;"><strong>Property:</strong> ${listing.address}</p>
+              <p style="margin: 0 0 8px 0;"><strong>Due:</strong> ${dueTime}</p>
+              <p style="margin: 0;"><strong>Client Type:</strong> ${(orderCount || 1) > 1 ? '⭐ Repeat Client' : 'First Order'}</p>
+            </div>
+
+            <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <h3 style="color: #1e40af; margin: 0 0 12px 0;">Call Script</h3>
+              <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; color: #1e3a5f; line-height: 1.6;">${callScript.fullScript}</pre>
+            </div>
+
+            <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+              <a href="https://portal.aerialshots.media/admin/care/tasks/${careTask.id}" style="color: #3b82f6;">View in Admin Portal</a>
+            </p>
+          </div>
+        `,
+      })
+      emailSent = true
+    } catch (emailError) {
+      console.error('Failed to send care task notification email:', emailError)
+      // Don't fail the task creation if email fails
+    }
+
+    // 7. Return success with task details
     return {
       success: true,
       output: {
@@ -278,8 +325,9 @@ async function execute(
         dueAt: careTask.due_at,
         isRepeatClient: (orderCount || 1) > 1,
         orderCount: orderCount || 1,
+        emailSent,
       },
-      tokensUsed: 0, // Will be filled in by the AI generation
+      tokensUsed,
     }
   } catch (error) {
     console.error('Care task generator error:', error)

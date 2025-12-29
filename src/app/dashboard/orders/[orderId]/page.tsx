@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/pricing/config'
 import { toDollars } from '@/lib/payments/stripe'
+import { OrderMessages } from '@/components/dashboard/OrderMessages'
 
 // Status badge colors
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
@@ -65,7 +66,7 @@ export default async function OrderDetailPage({
   // Get agent
   const { data: agent } = await supabase
     .from('agents')
-    .select('id')
+    .select('id, name')
     .eq('email', user.email!)
     .single()
 
@@ -91,6 +92,17 @@ export default async function OrderDetailPage({
     .select('*')
     .eq('order_id', orderId)
     .order('created_at', { ascending: false })
+
+  // Get client messages if order has a listing
+  let clientMessages: any[] = []
+  if (order.listing_id) {
+    const { data: messages } = await supabase
+      .from('client_messages')
+      .select('*')
+      .eq('listing_id', order.listing_id)
+      .order('created_at', { ascending: true })
+    clientMessages = messages || []
+  }
 
   const status = STATUS_STYLES[order.status] || STATUS_STYLES.pending
   const services = (order.services as any[]) || []
@@ -267,6 +279,13 @@ export default async function OrderDetailPage({
               </div>
             </div>
           )}
+
+          {/* Client Messages */}
+          <OrderMessages
+            listingId={order.listing_id}
+            messages={clientMessages}
+            agentName={agent.name}
+          />
         </div>
 
         {/* Sidebar */}

@@ -1,5 +1,9 @@
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createBrowserClient } from '@supabase/ssr'
+import { notifyLowCreditBalance } from '@/lib/notifications'
+
+// Low balance thresholds - agents get notified at these levels
+export const LOW_BALANCE_THRESHOLDS = [50, 25, 10] as const
 
 // Credit transaction types (unified)
 export type CreditTransactionType =
@@ -22,11 +26,12 @@ export type CreditTransactionType =
   // Subscription types
   | 'subscription_credit'
   | 'subscription_bonus'
-  // Admin types
+  // Admin/System types
   | 'adjustment'
   | 'expiry'
   | 'refund'
   | 'migration'
+  | 'low_balance_alert' // Used to track when low balance notifications are sent
 
 // Credit costs/earnings
 export const creditAmounts: Record<CreditTransactionType, number> = {
@@ -47,11 +52,12 @@ export const creditAmounts: Record<CreditTransactionType, number> = {
   storywork_basic_story: -50,
   storywork_voice_story: -60,
   storywork_carousel: -75,
-  // Admin
+  // Admin/System
   adjustment: 0,
   expiry: 0,
   refund: 0,
   migration: 0,
+  low_balance_alert: 0, // No credits involved, just tracking
 }
 
 export interface CreditTransaction {
@@ -199,15 +205,17 @@ export class ServerCreditService {
       return { success: false, newBalance: 0, error: 'Agent not found' }
     }
 
-    if ((agent.credit_balance || 0) < amount) {
+    const previousBalance = agent.credit_balance || 0
+
+    if (previousBalance < amount) {
       return {
         success: false,
-        newBalance: agent.credit_balance || 0,
+        newBalance: previousBalance,
         error: 'Insufficient credits',
       }
     }
 
-    const newBalance = (agent.credit_balance || 0) - amount
+    const newBalance = previousBalance - amount
 
     // Update balance and log transaction
     const [updateResult, insertResult] = await Promise.all([
@@ -223,12 +231,74 @@ export class ServerCreditService {
     if (updateResult.error || insertResult.error) {
       return {
         success: false,
-        newBalance: agent.credit_balance || 0,
+        newBalance: previousBalance,
         error: 'Failed to update credits',
       }
     }
 
+    // Check if balance crossed a low threshold and send notification
+    this.checkLowBalance(agentId, previousBalance, newBalance).catch((err) =>
+      console.error('Low balance check error:', err)
+    )
+
     return { success: true, newBalance }
+  }
+
+  // Check if balance crossed a low threshold after spending
+  async checkLowBalance(
+    agentId: string,
+    previousBalance: number,
+    newBalance: number
+  ): Promise<void> {
+    const supabase = await this.getClient()
+
+    // Find if we crossed any threshold
+    for (const threshold of LOW_BALANCE_THRESHOLDS) {
+      if (previousBalance > threshold && newBalance <= threshold) {
+        // Get agent details for notification
+        const { data: agent } = await supabase
+          .from('agents')
+          .select('name, email, phone')
+          .eq('id', agentId)
+          .single()
+
+        if (agent?.email) {
+          // Check if we already sent a low balance notification recently (within 7 days)
+          // We use a specific transaction type to track this
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          const { data: recentNotification } = await supabase
+            .from('credit_transactions')
+            .select('id')
+            .eq('agent_id', agentId)
+            .eq('type', 'low_balance_alert')
+            .gte('created_at', sevenDaysAgo)
+            .limit(1)
+
+          if (!recentNotification || recentNotification.length === 0) {
+            // Send low balance notification
+            await notifyLowCreditBalance(
+              { email: agent.email, phone: agent.phone || undefined, name: agent.name || 'Agent' },
+              {
+                agentName: agent.name || 'Agent',
+                currentBalance: newBalance,
+                threshold,
+                rewardsUrl: 'https://portal.aerialshots.media/dashboard/rewards',
+              }
+            )
+
+            // Log a zero-amount transaction to track the notification
+            await supabase.from('credit_transactions').insert({
+              agent_id: agentId,
+              amount: 0,
+              type: 'low_balance_alert',
+              description: `Low balance alert sent (${newBalance} credits, threshold: ${threshold})`,
+            })
+          }
+        }
+
+        break // Only send one notification per spend event
+      }
+    }
   }
 
   async checkMilestones(agentId: string): Promise<{ milestone?: string; bonus?: number }> {

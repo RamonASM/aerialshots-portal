@@ -1,10 +1,11 @@
 // AI client for generating real estate content
-// Supports both OpenAI and Anthropic
+// Supports both OpenAI and Anthropic with retry logic
 
 interface AIGenerateOptions {
   prompt: string
   maxTokens?: number
   temperature?: number
+  maxRetries?: number
 }
 
 interface AIResponse {
@@ -12,14 +13,59 @@ interface AIResponse {
   tokensUsed: number
 }
 
+/**
+ * Retry helper with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+
+      // Don't retry on non-retryable errors
+      if (lastError.message.includes('Invalid API key') ||
+          lastError.message.includes('Unauthorized') ||
+          lastError.message.includes('No AI API key') ||
+          lastError.message.includes('insufficient_quota') ||
+          lastError.message.includes('billing')) {
+        throw lastError
+      }
+
+      // Use longer delay for rate limit errors
+      const isRateLimit = lastError.message.includes('rate_limit') ||
+                          lastError.message.includes('429') ||
+                          lastError.message.includes('overloaded')
+      const multiplier = isRateLimit ? 3 : 1
+
+      // Calculate delay with exponential backoff + jitter
+      const delay = (baseDelayMs * Math.pow(2, attempt) + Math.random() * 500) * multiplier
+
+      if (attempt < maxRetries - 1) {
+        const reason = isRateLimit ? 'rate limited' : 'failed'
+        console.log(`AI API call ${reason}, retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  throw lastError || new Error('Max retries exceeded')
+}
+
 export async function generateWithAI(options: AIGenerateOptions): Promise<AIResponse> {
-  const { prompt, maxTokens = 1000, temperature = 0.7 } = options
+  const { prompt, maxTokens = 1000, temperature = 0.7, maxRetries = 3 } = options
 
   // Try Anthropic first, fallback to OpenAI
   if (process.env.ANTHROPIC_API_KEY) {
-    return generateWithAnthropic(prompt, maxTokens, temperature)
+    return withRetry(() => generateWithAnthropic(prompt, maxTokens, temperature), maxRetries)
   } else if (process.env.OPENAI_API_KEY) {
-    return generateWithOpenAI(prompt, maxTokens, temperature)
+    return withRetry(() => generateWithOpenAI(prompt, maxTokens, temperature), maxRetries)
   } else {
     throw new Error('No AI API key configured')
   }

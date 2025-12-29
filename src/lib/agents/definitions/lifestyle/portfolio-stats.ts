@@ -180,7 +180,7 @@ function calculateStats(listings: Array<{
 async function generatePortfolioSummary(
   stats: PortfolioStats,
   agentName: string
-): Promise<string> {
+): Promise<{ summary: string; tokensUsed: number }> {
   const topPropertyType = Object.entries(stats.propertyTypes)
     .sort((a, b) => b[1] - a[1])[0]
 
@@ -208,11 +208,11 @@ Generate a compelling portfolio summary that positions ${agentName} as an expert
       temperature: 0.7,
     })
 
-    return response.content.trim()
+    return { summary: response.content.trim(), tokensUsed: response.tokensUsed }
   } catch (error) {
     console.error('Failed to generate portfolio summary:', error)
     // Return a fallback summary
-    return generateFallbackSummary(stats, agentName)
+    return { summary: generateFallbackSummary(stats, agentName), tokensUsed: 0 }
   }
 }
 
@@ -319,8 +319,9 @@ async function execute(
     let tokensUsed = 0
 
     if (portfolioInput.include_summary !== false) {
-      portfolioSummary = await generatePortfolioSummary(stats, agent.name)
-      tokensUsed = 500 // Approximate, actual value from generateWithAI
+      const summaryResult = await generatePortfolioSummary(stats, agent.name)
+      portfolioSummary = summaryResult.summary
+      tokensUsed = summaryResult.tokensUsed
     }
 
     // 5. Return complete portfolio data

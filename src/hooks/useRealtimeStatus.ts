@@ -253,3 +253,409 @@ export function useRealtimeQCQueue(options: {
     isConnected,
   }
 }
+
+/**
+ * Hook for subscribing to order changes
+ */
+export function useRealtimeOrders(options: {
+  orderId?: string
+  agentId?: string
+  onInsert?: (order: unknown) => void
+  onUpdate?: (order: unknown) => void
+  enabled?: boolean
+} = {}) {
+  const { orderId, agentId, onInsert, onUpdate, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<unknown>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    let filter: string | undefined
+    if (orderId) {
+      filter = `id=eq.${orderId}`
+    } else if (agentId) {
+      filter = `agent_id=eq.${agentId}`
+    }
+
+    const channel = supabase
+      .channel(`orders-${orderId || agentId || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter,
+        },
+        (payload) => {
+          setLastUpdate(payload.new)
+          onInsert?.(payload.new)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter,
+        },
+        (payload) => {
+          setLastUpdate(payload.new)
+          onUpdate?.(payload.new)
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, orderId, agentId, onInsert, onUpdate])
+
+  return { isConnected, lastUpdate }
+}
+
+/**
+ * Hook for subscribing to media asset changes
+ */
+export function useRealtimeMediaAssets(options: {
+  listingId?: string
+  onInsert?: (asset: unknown) => void
+  onUpdate?: (asset: unknown) => void
+  onDelete?: (asset: unknown) => void
+  enabled?: boolean
+} = {}) {
+  const { listingId, onInsert, onUpdate, onDelete, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [assetCount, setAssetCount] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const filter = listingId ? `listing_id=eq.${listingId}` : undefined
+
+    const channel = supabase
+      .channel(`media-assets-${listingId || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'media_assets',
+          filter,
+        },
+        (payload) => {
+          setAssetCount((c) => c + 1)
+          onInsert?.(payload.new)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'media_assets',
+          filter,
+        },
+        (payload) => {
+          onUpdate?.(payload.new)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'media_assets',
+          filter,
+        },
+        (payload) => {
+          setAssetCount((c) => Math.max(0, c - 1))
+          onDelete?.(payload.old)
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, listingId, onInsert, onUpdate, onDelete])
+
+  return { isConnected, assetCount }
+}
+
+/**
+ * Hook for subscribing to client messages
+ */
+export function useRealtimeMessages(options: {
+  listingId?: string
+  shareToken?: string
+  onNewMessage?: (message: unknown) => void
+  enabled?: boolean
+} = {}) {
+  const { listingId, shareToken, onNewMessage, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    let filter: string | undefined
+    if (listingId) {
+      filter = `listing_id=eq.${listingId}`
+    }
+
+    const channel = supabase
+      .channel(`messages-${listingId || shareToken || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'client_messages',
+          filter,
+        },
+        (payload) => {
+          setUnreadCount((c) => c + 1)
+          onNewMessage?.(payload.new)
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, listingId, shareToken, onNewMessage])
+
+  return { isConnected, unreadCount, clearUnread: () => setUnreadCount(0) }
+}
+
+/**
+ * Hook for subscribing to job task changes
+ */
+export function useRealtimeJobTasks(options: {
+  listingId?: string
+  assigneeId?: string
+  onTaskChange?: (task: unknown, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
+  enabled?: boolean
+} = {}) {
+  const { listingId, assigneeId, onTaskChange, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [pendingTasks, setPendingTasks] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    let filter: string | undefined
+    if (listingId) {
+      filter = `listing_id=eq.${listingId}`
+    } else if (assigneeId) {
+      filter = `assignee_id=eq.${assigneeId}`
+    }
+
+    const channel = supabase
+      .channel(`job-tasks-${listingId || assigneeId || 'all'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'job_tasks',
+          filter,
+        },
+        (payload) => {
+          setPendingTasks((c) => c + 1)
+          onTaskChange?.(payload.new, 'INSERT')
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'job_tasks',
+          filter,
+        },
+        (payload) => {
+          const task = payload.new as { status?: string }
+          if (task.status === 'completed') {
+            setPendingTasks((c) => Math.max(0, c - 1))
+          }
+          onTaskChange?.(payload.new, 'UPDATE')
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'job_tasks',
+          filter,
+        },
+        (payload) => {
+          setPendingTasks((c) => Math.max(0, c - 1))
+          onTaskChange?.(payload.old, 'DELETE')
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, listingId, assigneeId, onTaskChange])
+
+  return { isConnected, pendingTasks }
+}
+
+/**
+ * Hook for subscribing to notification log changes
+ */
+export function useRealtimeNotificationLogs(options: {
+  onNewNotification?: (notification: unknown) => void
+  enabled?: boolean
+} = {}) {
+  const { onNewNotification, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const channel = supabase
+      .channel('notification-logs')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notification_logs',
+        },
+        (payload) => {
+          setCount((c) => c + 1)
+          onNewNotification?.(payload.new)
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, onNewNotification])
+
+  return { isConnected, count }
+}
+
+/**
+ * Generic hook for subscribing to any table
+ */
+export function useRealtimeTable<T = unknown>(options: {
+  table: string
+  filter?: string
+  events?: ('INSERT' | 'UPDATE' | 'DELETE')[]
+  onChange?: (data: T, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
+  enabled?: boolean
+}) {
+  const { table, filter, events = ['INSERT', 'UPDATE', 'DELETE'], onChange, enabled = true } = options
+  const [isConnected, setIsConnected] = useState(false)
+  const [lastData, setLastData] = useState<T | null>(null)
+  const [lastEventType, setLastEventType] = useState<'INSERT' | 'UPDATE' | 'DELETE' | null>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    let channel = supabase.channel(`${table}-${filter || 'all'}`)
+
+    // Subscribe to INSERT events if requested
+    if (events.includes('INSERT')) {
+      channel = channel.on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table, filter },
+        (payload) => {
+          const data = payload.new as T
+          setLastData(data)
+          setLastEventType('INSERT')
+          onChange?.(data, 'INSERT')
+        }
+      )
+    }
+
+    // Subscribe to UPDATE events if requested
+    if (events.includes('UPDATE')) {
+      channel = channel.on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table, filter },
+        (payload) => {
+          const data = payload.new as T
+          setLastData(data)
+          setLastEventType('UPDATE')
+          onChange?.(data, 'UPDATE')
+        }
+      )
+    }
+
+    // Subscribe to DELETE events if requested
+    if (events.includes('DELETE')) {
+      channel = channel.on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table, filter },
+        (payload) => {
+          const data = payload.old as T
+          setLastData(data)
+          setLastEventType('DELETE')
+          onChange?.(data, 'DELETE')
+        }
+      )
+    }
+
+    channel.subscribe((status) => {
+      setIsConnected(status === 'SUBSCRIBED')
+    })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [enabled, table, filter, events.join(','), onChange])
+
+  return { isConnected, lastData, lastEventType }
+}

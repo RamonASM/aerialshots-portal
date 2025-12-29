@@ -100,7 +100,7 @@ async function generateNeighborhoodSummary(
     }
     events: EventResult[]
   }
-): Promise<string> {
+): Promise<{ summary: string; tokensUsed: number }> {
   // Extract highlights from the data
   const topDining = data.nearbyPlaces.dining?.slice(0, 3) || []
   const topShopping = data.nearbyPlaces.shopping?.slice(0, 2) || []
@@ -147,10 +147,10 @@ Generate a 2-3 paragraph neighborhood summary now. Return ONLY the narrative tex
       temperature: 0.7,
     })
 
-    return response.content.trim()
+    return { summary: response.content.trim(), tokensUsed: response.tokensUsed }
   } catch (error) {
     console.error('Error generating neighborhood summary:', error)
-    return generateFallbackSummary(location, data)
+    return { summary: generateFallbackSummary(location, data), tokensUsed: 0 }
   }
 }
 
@@ -292,7 +292,7 @@ async function execute(context: AgentExecutionContext): Promise<AgentExecutionRe
     }))
 
     // Generate AI summary
-    const neighborhoodSummary = await generateNeighborhoodSummary(
+    const summaryResult = await generateNeighborhoodSummary(
       { city, state },
       {
         walkScore: walkScoreData?.walkScore,
@@ -313,7 +313,7 @@ async function execute(context: AgentExecutionContext): Promise<AgentExecutionRe
       bikeScoreDescription: walkScoreData?.bikeScoreDescription,
       nearbyPlaces,
       upcomingEvents: events,
-      neighborhoodSummary,
+      neighborhoodSummary: summaryResult.summary,
       researchedAt: new Date().toISOString(),
     }
 
@@ -341,7 +341,7 @@ async function execute(context: AgentExecutionContext): Promise<AgentExecutionRe
     return {
       success: true,
       output: output as any,
-      tokensUsed: 0, // Will be filled by AI generation
+      tokensUsed: summaryResult.tokensUsed,
     }
   } catch (error) {
     console.error('Neighborhood data agent error:', error)

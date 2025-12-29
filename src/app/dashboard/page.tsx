@@ -14,6 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -87,6 +88,25 @@ export default async function DashboardPage() {
     .eq('referrer_id', agent.id)
     .gte('created_at', thisMonthStart)
 
+  // Get unread messages count (messages on agent's listings that are from sellers)
+  const { data: agentListings } = await supabase
+    .from('listings')
+    .select('id')
+    .eq('agent_id', agent.id)
+
+  const listingIds = agentListings?.map(l => l.id) || []
+
+  let unreadMessagesCount = 0
+  if (listingIds.length > 0) {
+    const { count } = await supabase
+      .from('client_messages')
+      .select('*', { count: 'exact', head: true })
+      .in('listing_id', listingIds)
+      .eq('sender_type', 'seller')
+      .is('read_at', null)
+    unreadMessagesCount = count ?? 0
+  }
+
   // Calculate trends
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0
@@ -127,6 +147,14 @@ export default async function DashboardPage() {
       href: '/dashboard/rewards',
       trend: null,
     },
+    {
+      name: 'Messages',
+      value: unreadMessagesCount,
+      icon: MessageSquare,
+      href: '/dashboard/orders',
+      trend: null,
+      highlight: unreadMessagesCount > 0,
+    },
   ]
 
   const profileItems = [
@@ -154,16 +182,23 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((stat) => (
           <Link key={stat.name} href={stat.href}>
-            <Card variant="interactive" className="h-full">
+            <Card variant="interactive" className={`h-full ${stat.highlight ? 'ring-1 ring-blue-500/50' : ''}`}>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0077ff]/10">
-                    <stat.icon className="h-5 w-5 text-[#0077ff]" />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.highlight ? 'bg-blue-500' : 'bg-[#0077ff]/10'}`}>
+                    <stat.icon className={`h-5 w-5 ${stat.highlight ? 'text-white' : 'text-[#0077ff]'}`} />
                   </div>
-                  <ArrowRight className="h-5 w-5 text-[#636366] group-hover:text-white transition-colors" />
+                  {stat.highlight && (
+                    <span className="px-2 py-0.5 text-[11px] font-medium bg-blue-500 text-white rounded-full">
+                      New
+                    </span>
+                  )}
+                  {!stat.highlight && (
+                    <ArrowRight className="h-5 w-5 text-[#636366] group-hover:text-white transition-colors" />
+                  )}
                 </div>
                 <p className="mt-4 text-[32px] font-semibold tracking-tight text-white">
                   {stat.value}

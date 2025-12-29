@@ -329,3 +329,101 @@ export async function sendOrderNotificationEmail({
 
   return data
 }
+
+/**
+ * Send low credit balance notification to agent
+ */
+export async function sendLowBalanceEmail({
+  to,
+  agentName,
+  currentBalance,
+  threshold,
+}: {
+  to: string
+  agentName: string
+  currentBalance: number
+  threshold: number
+}) {
+  const firstName = agentName.split(' ')[0]
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `Low Credit Balance Alert - ${currentBalance} credits remaining`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0;">Aerial Shots Media</h1>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 32px;">
+              <div style="width: 64px; height: 64px; background-color: #fef3c7; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">&#9888;&#65039;</span>
+              </div>
+              <h2 style="color: #171717; font-size: 22px; font-weight: 600; margin: 0 0 8px 0;">
+                Low Credit Balance
+              </h2>
+              <p style="color: #525252; font-size: 16px; margin: 0;">
+                Hi ${firstName}, your credit balance is running low.
+              </p>
+            </div>
+
+            <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+              <p style="color: #92400e; font-size: 14px; margin: 0 0 8px 0; font-weight: 500;">Current Balance</p>
+              <p style="color: #78350f; font-size: 36px; font-weight: 700; margin: 0;">${currentBalance}</p>
+              <p style="color: #92400e; font-size: 12px; margin: 8px 0 0 0;">credits remaining</p>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="color: #171717; font-size: 14px; font-weight: 600; margin: 0 0 16px 0;">Credit Packages</h3>
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #525252;">100 Credits</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 600;">$25</td>
+                </tr>
+                <tr style="background: #f0f9ff;">
+                  <td style="padding: 8px; color: #0369a1; font-weight: 500;">250 Credits <span style="background: #0ea5e9; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">POPULAR</span></td>
+                  <td style="padding: 8px; color: #0c4a6e; text-align: right; font-weight: 600;">$50</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #525252;">500 Credits</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 600;">$85</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #525252;">1000 Credits</td>
+                  <td style="padding: 8px 0; color: #171717; text-align: right; font-weight: 600;">$150</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <a href="https://portal.aerialshots.media/dashboard/rewards" style="display: inline-block; background: #3b82f6; color: white; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 8px;">
+                Purchase Credits
+              </a>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
+
+            <p style="color: #a3a3a3; font-size: 12px; margin: 0; text-align: center;">
+              You're receiving this because your balance dropped below ${threshold} credits.<br>
+              Manage notifications in your <a href="https://portal.aerialshots.media/dashboard/settings" style="color: #3b82f6;">account settings</a>.
+            </p>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send low balance email:', error)
+  }
+
+  return data
+}

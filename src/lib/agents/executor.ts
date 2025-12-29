@@ -9,6 +9,7 @@ import {
   resourceNotFound,
   externalServiceError,
 } from '@/lib/utils/errors'
+import { agentLogger, formatError } from '@/lib/logger'
 import type {
   AgentExecutionContext,
   AgentExecutionResult,
@@ -21,7 +22,7 @@ const DEFAULT_CONFIG: AgentConfig = {
   maxTokens: 1000,
   temperature: 0.7,
   timeout: 30000,
-  retryAttempts: 1,
+  retryAttempts: 3,
 }
 
 /**
@@ -53,7 +54,7 @@ export async function executeAgent(
       createError || { message: 'Unknown error', code: 'UNKNOWN' },
       'ai_agent_executions insert'
     )
-    console.error('Failed to create execution record:', error)
+    agentLogger.error({ error: formatError(error), agentSlug: request.agentSlug }, 'Failed to create execution record')
 
     return {
       success: false,
@@ -122,7 +123,7 @@ export async function executeAgent(
     } catch (updateError) {
       // Log update failure but still return the execution result
       // The execution itself succeeded/failed, we just couldn't record it
-      console.error('Failed to update execution record after completion:', updateError)
+      agentLogger.error({ error: formatError(updateError), executionId: execution.id }, 'Failed to update execution record after completion')
     }
 
     return result
@@ -152,20 +153,24 @@ export async function executeAgent(
       })
     } catch (updateError) {
       // Log update failure but continue with error handling
-      console.error('Failed to update execution record after error:', updateError)
+      agentLogger.error({ error: formatError(updateError), executionId: execution.id }, 'Failed to update execution record after error')
     }
 
     // Log the error with appropriate level
     if (error instanceof AppError && error.status < 500) {
       // Client errors (4xx) - log as warning
-      console.warn(`Agent execution failed [${request.agentSlug}]:`, {
+      agentLogger.warn({
+        agentSlug: request.agentSlug,
         code: error.code,
         message: error.message,
         details: error.details,
-      })
+      }, 'Agent execution failed (client error)')
     } else {
       // Server errors (5xx) or unknown errors - log as error
-      console.error(`Agent execution failed [${request.agentSlug}]:`, error)
+      agentLogger.error({
+        agentSlug: request.agentSlug,
+        error: formatError(error),
+      }, 'Agent execution failed (server error)')
     }
 
     return {
@@ -202,6 +207,7 @@ async function executePromptBasedAgent(
       prompt: `${agent.system_prompt}\n\n${userPrompt}`,
       maxTokens: config.maxTokens || DEFAULT_CONFIG.maxTokens,
       temperature: config.temperature || DEFAULT_CONFIG.temperature,
+      maxRetries: config.retryAttempts || DEFAULT_CONFIG.retryAttempts,
     })
 
     // Try to parse as JSON, otherwise return as text
@@ -268,7 +274,7 @@ async function updateExecution(
 
   if (error) {
     const dbError = databaseError(error, 'ai_agent_executions update')
-    console.error('Failed to update execution record:', dbError)
+    agentLogger.error({ error: formatError(dbError), executionId }, 'Failed to update execution record')
     throw dbError
   }
 }

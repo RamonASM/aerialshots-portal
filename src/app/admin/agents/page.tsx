@@ -312,6 +312,12 @@ async function AgentsDashboard() {
             Manage and monitor AI agents for operations, content, and development
           </p>
         </div>
+        <Link href="/admin/agents/workflows">
+          <Button variant="outline" className="gap-2">
+            <Activity className="h-4 w-4" />
+            View Workflows
+          </Button>
+        </Link>
       </div>
 
       {/* Summary Stats */}

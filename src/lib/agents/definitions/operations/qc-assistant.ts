@@ -129,7 +129,7 @@ function getPriorityColor(score: number): 'red' | 'yellow' | 'green' {
 async function analyzePhotos(
   assets: MediaAsset[],
   config: { maxTokens?: number; temperature?: number }
-): Promise<{ issues: QCIssue[]; missingShots: string[]; qualityScore: number }> {
+): Promise<{ issues: QCIssue[]; missingShots: string[]; qualityScore: number; tokensUsed: number }> {
   // Filter to photos only
   const photos = assets.filter(a => a.type === 'image' || a.type === 'photo')
 
@@ -138,6 +138,7 @@ async function analyzePhotos(
       issues: [{ type: 'missing', severity: 'critical', description: 'No photos found in media assets' }],
       missingShots: [],
       qualityScore: 0,
+      tokensUsed: 0,
     }
   }
 
@@ -234,6 +235,7 @@ Quality score should be 0-100 based on completeness and likely quality.`
       issues: analysisResult.issues || [],
       missingShots,
       qualityScore: analysisResult.qualityScore || 70,
+      tokensUsed: response.tokensUsed,
     }
   } catch (error) {
     console.error('Error analyzing photos:', error)
@@ -249,6 +251,7 @@ Quality score should be 0-100 based on completeness and likely quality.`
       ],
       missingShots,
       qualityScore: 50,
+      tokensUsed: 0,
     }
   }
 }
@@ -368,7 +371,7 @@ async function execute(
         photoCount: mediaAssets.filter(a => a.type === 'image' || a.type === 'photo').length,
         listingAddress: listing.address,
       },
-      tokensUsed: 0, // Will be updated by AI calls
+      tokensUsed: photoAnalysis.tokensUsed,
     }
   } catch (error) {
     return {

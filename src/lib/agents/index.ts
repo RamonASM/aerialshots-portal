@@ -87,17 +87,25 @@ export {
 } from './orchestrator'
 
 // Import and register all agent definitions
+// Development
 import './definitions/development/claude-md-updater'
+
+// Operations
 import './definitions/operations/qc-assistant'
 import './definitions/operations/care-task-generator'
 import './definitions/operations/delivery-notifier'
+import './definitions/operations/listing-data-enricher'
+import './definitions/operations/agent-welcome-notifier'
+import './definitions/operations/shoot-scheduler'
+
+// Lifestyle
 import './definitions/lifestyle/portfolio-stats'
 import './definitions/lifestyle/seo-meta'
 import './definitions/lifestyle/neighborhood-data'
+
+// Content
 import './definitions/content/campaign-launcher'
-// Future agent definitions will be imported here:
-// import './definitions/content/listing-description'
-// etc.
+import './definitions/content/template-selector'
 
 // Import and register all workflow definitions
 import './workflows'

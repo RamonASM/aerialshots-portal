@@ -30,6 +30,9 @@ export const stripe = {
   get webhooks() {
     return getStripe().webhooks
   },
+  get checkout() {
+    return getStripe().checkout
+  },
 }
 
 /**

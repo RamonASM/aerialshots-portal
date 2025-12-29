@@ -1,13 +1,15 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { Mail, Loader2, CheckCircle, AlertCircle, Lock } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { createBrowserClient } from '@supabase/ssr'
+import type { Database } from '@/lib/supabase/types'
 
 interface LoginFormData {
   email: string
@@ -15,12 +17,88 @@ interface LoginFormData {
 
 function StaffLoginForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const errorParam = searchParams.get('error')
 
   const [sent, setSent] = useState(false)
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false)
   const [error, setError] = useState<string | null>(
     errorParam === 'auth_failed' ? 'Authentication failed. Please try again.' : null
   )
+
+  // Handle auth callback with tokens in URL fragment
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const hash = window.location.hash
+
+      // Check if we have tokens in the URL fragment
+      if (hash && hash.includes('access_token')) {
+        setIsProcessingAuth(true)
+        console.log('Staff login: Found tokens in hash fragment')
+
+        try {
+          const supabase = createBrowserClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+
+          // Parse the hash
+          const hashParams = new URLSearchParams(hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+
+          if (accessToken && refreshToken) {
+            console.log('Staff login: Setting session...')
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+
+            if (sessionError) {
+              console.error('Staff login: Failed to set session:', sessionError)
+              setError('Authentication failed. Please try again.')
+              setIsProcessingAuth(false)
+              return
+            }
+
+            // Get user to verify
+            const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+            if (userError || !user) {
+              console.error('Staff login: Failed to get user:', userError)
+              setError('Authentication failed. Please try again.')
+              setIsProcessingAuth(false)
+              return
+            }
+
+            console.log('Staff login: Authenticated as', user.email)
+
+            // Redirect to admin
+            router.push('/admin')
+          }
+        } catch (err) {
+          console.error('Staff login: Auth callback error:', err)
+          setError('Authentication failed. Please try again.')
+          setIsProcessingAuth(false)
+        }
+      }
+    }
+
+    handleAuthCallback()
+  }, [router])
+
+  // Show loading state while processing auth
+  if (isProcessingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+        <div className="relative w-full max-w-[400px] rounded-2xl border border-white/[0.08] bg-[#1c1c1e] p-8 text-center">
+          <Loader2 className="mx-auto h-10 w-10 animate-spin text-amber-500" />
+          <h1 className="mt-6 text-[20px] font-semibold text-white">Signing you in...</h1>
+          <p className="mt-2 text-[14px] text-[#a1a1a6]">Please wait</p>
+        </div>
+      </div>
+    )
+  }
 
   const {
     register,

@@ -8,6 +8,13 @@ import type {
   BookingConfirmedData,
   PaymentReceivedData,
   StatusUpdateData,
+  SellerScheduleRequestData,
+  SellerMediaReadyData,
+  ScheduleConfirmedData,
+  IntegrationCompleteData,
+  IntegrationFailedData,
+  LowCreditBalanceData,
+  ReviewRequestData,
 } from './types'
 
 const baseStyles = `
@@ -424,6 +431,439 @@ View dashboard: https://portal.aerialshots.media/dashboard
   }
 }
 
+// Seller Notification Templates
+
+export function sellerScheduleRequestEmail(data: SellerScheduleRequestData): { subject: string; html: string; text: string } {
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">Schedule Your Photo Shoot</h2>
+      <p>Hi ${data.sellerName},</p>
+      <p>${data.agentName} has requested professional photography for your property at <strong>${data.listingAddress}</strong>.</p>
+
+      <p>Please select your available times for the photo shoot by clicking the button below:</p>
+
+      <a href="${data.scheduleUrl}" class="button">Select Available Times</a>
+
+      <div class="highlight-box">
+        <p style="margin: 0; color: #374151;"><strong>What to expect:</strong></p>
+        <ul style="margin: 12px 0 0; padding-left: 20px; color: #6b7280;">
+          <li>The photo shoot typically takes 1-2 hours</li>
+          <li>Please ensure the property is clean and staged</li>
+          <li>Our photographer will arrive at the scheduled time</li>
+          <li>Your photos will be ready within 24-48 hours</li>
+        </ul>
+      </div>
+
+      ${data.agentPhone ? `
+      <p style="color: #737373; font-size: 14px;">Questions? Contact ${data.agentName} at ${data.agentPhone}</p>
+      ` : ''}
+
+      ${data.expiresAt ? `
+      <p style="color: #737373; font-size: 14px;">This link expires on ${data.expiresAt}.</p>
+      ` : ''}
+    </div>
+  `
+
+  const text = `
+Schedule Your Photo Shoot
+
+Hi ${data.sellerName},
+
+${data.agentName} has requested professional photography for your property at ${data.listingAddress}.
+
+Select your available times: ${data.scheduleUrl}
+
+What to expect:
+- The photo shoot typically takes 1-2 hours
+- Please ensure the property is clean and staged
+- Our photographer will arrive at the scheduled time
+- Your photos will be ready within 24-48 hours
+${data.agentPhone ? `\nQuestions? Contact ${data.agentName} at ${data.agentPhone}` : ''}
+${data.expiresAt ? `\nThis link expires on ${data.expiresAt}.` : ''}
+`
+
+  return {
+    subject: `Schedule Photo Shoot: ${data.listingAddress}`,
+    html: wrapTemplate(content, 'Schedule Photo Shoot'),
+    text: text.trim()
+  }
+}
+
+export function sellerMediaReadyEmail(data: SellerMediaReadyData): { subject: string; html: string; text: string } {
+  const { assetSummary } = data
+  const assetList = [
+    assetSummary.photos > 0 ? `${assetSummary.photos} photos` : null,
+    assetSummary.videos > 0 ? `${assetSummary.videos} videos` : null,
+    assetSummary.floorPlans > 0 ? `${assetSummary.floorPlans} floor plans` : null,
+    assetSummary.tours > 0 ? `${assetSummary.tours} 3D tours` : null,
+  ].filter(Boolean).join(', ')
+
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">Your Property Photos Are Ready!</h2>
+      <p>Hi ${data.sellerName},</p>
+      <p>Great news! The professional media for your property at <strong>${data.listingAddress}</strong> is now ready to view.</p>
+
+      <div class="highlight-box">
+        <div class="detail-row">
+          <span class="detail-label">Property</span>
+          <span class="detail-value">${data.listingAddress}</span>
+        </div>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Includes</span>
+          <span class="detail-value">${assetList}</span>
+        </div>
+      </div>
+
+      <p>Click below to view and download your media:</p>
+
+      <a href="${data.portalUrl}" class="button">View Your Photos</a>
+
+      <p style="color: #737373; font-size: 14px;">This media has been provided by ${data.agentName} and can be shared with potential buyers.</p>
+
+      ${data.expiresAt ? `
+      <p style="color: #737373; font-size: 14px;">This link expires on ${data.expiresAt}.</p>
+      ` : ''}
+    </div>
+  `
+
+  const text = `
+Your Property Photos Are Ready!
+
+Hi ${data.sellerName},
+
+The professional media for your property at ${data.listingAddress} is now ready.
+
+Includes: ${assetList}
+
+View and download: ${data.portalUrl}
+
+This media has been provided by ${data.agentName}.
+${data.expiresAt ? `\nThis link expires on ${data.expiresAt}.` : ''}
+`
+
+  return {
+    subject: `Your Photos Are Ready: ${data.listingAddress}`,
+    html: wrapTemplate(content, 'Photos Ready'),
+    text: text.trim()
+  }
+}
+
+export function scheduleConfirmedEmail(data: ScheduleConfirmedData): { subject: string; html: string; text: string } {
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">Photo Shoot Confirmed!</h2>
+      <p>Hi ${data.recipientName},</p>
+      <p>Your photo shoot has been confirmed for the property at <strong>${data.listingAddress}</strong>.</p>
+
+      <div class="highlight-box">
+        <div class="detail-row">
+          <span class="detail-label">Date</span>
+          <span class="detail-value">${data.scheduledDate}</span>
+        </div>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Time</span>
+          <span class="detail-value">${data.scheduledTime}</span>
+        </div>
+      </div>
+
+      ${!data.isAgent ? `
+      <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <strong style="color: #166534;">Preparation Tips:</strong>
+        <ul style="margin: 8px 0 0; padding-left: 20px; color: #15803d;">
+          <li>Turn on all lights throughout the property</li>
+          <li>Open blinds and curtains for natural light</li>
+          <li>Remove personal items and clutter</li>
+          <li>Ensure all beds are made and rooms are tidy</li>
+          <li>Clear countertops and surfaces</li>
+        </ul>
+      </div>
+      ` : `
+      <p>The seller has been notified and will prepare the property for the shoot.</p>
+      `}
+
+      ${data.agentPhone && !data.isAgent ? `
+      <p style="color: #737373; font-size: 14px;">Questions? Contact ${data.agentName} at ${data.agentPhone}</p>
+      ` : ''}
+    </div>
+  `
+
+  const text = `
+Photo Shoot Confirmed!
+
+Hi ${data.recipientName},
+
+Your photo shoot for ${data.listingAddress} has been confirmed.
+
+Date: ${data.scheduledDate}
+Time: ${data.scheduledTime}
+${!data.isAgent ? `
+Preparation Tips:
+- Turn on all lights throughout the property
+- Open blinds and curtains for natural light
+- Remove personal items and clutter
+- Ensure all beds are made and rooms are tidy
+- Clear countertops and surfaces
+` : ''}
+${data.agentPhone && !data.isAgent ? `\nQuestions? Contact ${data.agentName} at ${data.agentPhone}` : ''}
+`
+
+  return {
+    subject: `Photo Shoot Confirmed: ${data.listingAddress}`,
+    html: wrapTemplate(content, 'Shoot Confirmed'),
+    text: text.trim()
+  }
+}
+
+// Integration Notification Templates
+
+export function integrationCompleteEmail(data: IntegrationCompleteData): { subject: string; html: string; text: string } {
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">Integration Complete</h2>
+      <p>Hi ${data.recipientName},</p>
+      <p><strong>${data.integrationName}</strong> for <strong>${data.propertyAddress}</strong> is now ready for review.</p>
+
+      <div class="highlight-box" style="border-left-color: #22c55e;">
+        <div class="detail-row">
+          <span class="detail-label">Property</span>
+          <span class="detail-value">${data.propertyAddress}</span>
+        </div>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Service</span>
+          <span class="detail-value" style="color: #22c55e;">${data.integrationName}</span>
+        </div>
+      </div>
+
+      ${data.message ? `<p>${data.message}</p>` : ''}
+
+      <p>Please review the deliverables and verify quality before marking as approved.</p>
+
+      <a href="https://portal.aerialshots.media${data.dashboardUrl}" class="button" style="background: #22c55e;">Review Now</a>
+    </div>
+  `
+
+  const text = `
+Integration Complete
+
+Hi ${data.recipientName},
+
+${data.integrationName} for ${data.propertyAddress} is now ready for review.
+
+${data.message || ''}
+
+Review at: https://portal.aerialshots.media${data.dashboardUrl}
+`
+
+  return {
+    subject: `Ready for Review: ${data.integrationName} - ${data.propertyAddress}`,
+    html: wrapTemplate(content, 'Integration Complete'),
+    text: text.trim()
+  }
+}
+
+export function integrationFailedEmail(data: IntegrationFailedData): { subject: string; html: string; text: string } {
+  const statusLabels: Record<string, string> = {
+    failed: 'Failed',
+    needs_manual: 'Needs Manual Attention',
+    error: 'Error',
+  }
+  const statusLabel = statusLabels[data.status] || data.status
+
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0; color: #dc2626;">Integration Issue</h2>
+      <p>Hi ${data.recipientName},</p>
+      <p>An integration for <strong>${data.propertyAddress}</strong> requires your attention.</p>
+
+      <div class="highlight-box" style="border-left-color: #dc2626; background: #fef2f2;">
+        <div class="detail-row">
+          <span class="detail-label">Property</span>
+          <span class="detail-value">${data.propertyAddress}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Service</span>
+          <span class="detail-value">${data.integrationName}</span>
+        </div>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Status</span>
+          <span class="detail-value" style="color: #dc2626;">${statusLabel}</span>
+        </div>
+      </div>
+
+      ${data.errorMessage ? `
+      <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 24px 0; border: 1px solid #fecaca;">
+        <strong style="color: #991b1b;">Error Details:</strong>
+        <p style="margin: 8px 0 0; color: #dc2626;">${data.errorMessage}</p>
+      </div>
+      ` : ''}
+
+      <p>Please review the issue and take appropriate action. You may need to:</p>
+      <ul>
+        <li>Retry the integration</li>
+        <li>Process manually</li>
+        <li>Contact the integration provider</li>
+      </ul>
+
+      <a href="https://portal.aerialshots.media${data.dashboardUrl}" class="button" style="background: #dc2626;">View Details</a>
+    </div>
+  `
+
+  const text = `
+Integration Issue
+
+Hi ${data.recipientName},
+
+${data.integrationName} for ${data.propertyAddress} requires attention.
+
+Status: ${statusLabel}
+${data.errorMessage ? `Error: ${data.errorMessage}` : ''}
+
+View details: https://portal.aerialshots.media${data.dashboardUrl}
+`
+
+  return {
+    subject: `Action Required: ${data.integrationName} - ${data.propertyAddress}`,
+    html: wrapTemplate(content, 'Integration Issue'),
+    text: text.trim()
+  }
+}
+
+// Review Request Email Template
+export function reviewRequestEmail(data: ReviewRequestData): { subject: string; html: string; text: string } {
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">How Was Your Experience?</h2>
+      <p>Hi ${data.agentName},</p>
+      <p>We hope you loved the photos from your recent shoot at <strong>${data.listingAddress}</strong>!</p>
+
+      <div class="highlight-box" style="border-left-color: #f59e0b; background: #fffbeb;">
+        <div class="detail-row">
+          <span class="detail-label">Property</span>
+          <span class="detail-value">${data.listingAddress}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Photos Delivered</span>
+          <span class="detail-value">${data.photoCount} professional photos</span>
+        </div>
+        ${data.videoCount ? `
+        <div class="detail-row">
+          <span class="detail-label">Videos</span>
+          <span class="detail-value">${data.videoCount} videos</span>
+        </div>
+        ` : ''}
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Delivered</span>
+          <span class="detail-value">${data.deliveredAt}</span>
+        </div>
+      </div>
+
+      <p style="font-size: 16px; text-align: center; margin: 32px 0 16px;">
+        <strong>Your feedback helps us grow!</strong>
+      </p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${data.reviewUrl}" class="button" style="background: #f59e0b;">
+          Leave a Review
+        </a>
+      </div>
+
+      <p style="color: #737373; font-size: 14px; text-align: center;">
+        It only takes 30 seconds and means the world to our team${data.photographerName ? ` and ${data.photographerName}` : ''}.
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
+
+      <p style="font-size: 14px; color: #737373;">
+        Need to access your photos again?<br>
+        <a href="${data.portalUrl}" style="color: #3b82f6;">View Your Delivery</a>
+      </p>
+    </div>
+  `
+
+  const text = `
+How Was Your Experience?
+
+Hi ${data.agentName},
+
+We hope you loved the photos from your recent shoot at ${data.listingAddress}!
+
+Property: ${data.listingAddress}
+Photos Delivered: ${data.photoCount} professional photos
+${data.videoCount ? `Videos: ${data.videoCount} videos\n` : ''}Delivered: ${data.deliveredAt}
+
+Your feedback helps us grow! Leave a review:
+${data.reviewUrl}
+
+It only takes 30 seconds and means the world to our team${data.photographerName ? ` and ${data.photographerName}` : ''}.
+
+View your delivery: ${data.portalUrl}
+`
+
+  return {
+    subject: `How did we do? Quick review for ${data.listingAddress}`,
+    html: wrapTemplate(content, 'Review Request'),
+    text: text.trim()
+  }
+}
+
+// Low Credit Balance Email Template
+export function lowCreditBalanceEmail(data: LowCreditBalanceData): { subject: string; html: string; text: string } {
+  const content = `
+    <div class="content">
+      <h2 style="margin-top: 0;">Low Credit Balance Alert</h2>
+      <p>Hi ${data.agentName},</p>
+      <p>Your credit balance is running low. Here are your current stats:</p>
+
+      <div class="highlight-box" style="border-left-color: #f59e0b; background: #fffbeb;">
+        <div class="detail-row">
+          <span class="detail-label">Current Balance</span>
+          <span class="detail-value" style="color: #d97706; font-size: 24px;">${data.currentBalance} credits</span>
+        </div>
+        <div class="detail-row" style="border-bottom: none;">
+          <span class="detail-label">Alert Threshold</span>
+          <span class="detail-value">${data.threshold} credits</span>
+        </div>
+      </div>
+
+      <p>Don't miss out on using AI tools, redeeming discounts, or earning referral bonuses. Purchase more credits now to keep your account active.</p>
+
+      <div style="text-align: center;">
+        <a href="${data.rewardsUrl}" class="button" style="background: #f59e0b;">Purchase Credits</a>
+      </div>
+
+      <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <strong style="color: #166534;">Earn Free Credits!</strong>
+        <p style="margin: 8px 0 0; color: #15803d;">
+          Refer other agents to earn 100-300 credits per referral based on their first order type.
+        </p>
+      </div>
+    </div>
+  `
+
+  const text = `
+Low Credit Balance Alert
+
+Hi ${data.agentName},
+
+Your credit balance is running low.
+
+Current Balance: ${data.currentBalance} credits
+Alert Threshold: ${data.threshold} credits
+
+Purchase more credits to continue using AI tools and redeeming rewards:
+${data.rewardsUrl}
+
+Tip: Refer other agents to earn 100-300 free credits per referral!
+`
+
+  return {
+    subject: `Low Credit Balance: ${data.currentBalance} credits remaining`,
+    html: wrapTemplate(content, 'Low Credit Balance'),
+    text: text.trim()
+  }
+}
+
 // SMS Templates (shorter versions)
 export const smsTemplates = {
   photographerAssigned: (data: PhotographerAssignedData) =>
@@ -437,4 +877,25 @@ export const smsTemplates = {
 
   bookingConfirmed: (data: BookingConfirmedData) =>
     `ASM: Booking confirmed for ${data.listingAddress} on ${data.scheduledDate} at ${data.scheduledTime}. Order: ${data.orderId}`,
+
+  sellerScheduleRequest: (data: SellerScheduleRequestData) =>
+    `Hi ${data.sellerName}! Please schedule your photo shoot for ${data.listingAddress}. Click here: ${data.scheduleUrl}`,
+
+  sellerMediaReady: (data: SellerMediaReadyData) =>
+    `Hi ${data.sellerName}! Your photos for ${data.listingAddress} are ready. View them here: ${data.portalUrl}`,
+
+  scheduleConfirmed: (data: ScheduleConfirmedData) =>
+    `Photo shoot confirmed for ${data.listingAddress} on ${data.scheduledDate} at ${data.scheduledTime}.`,
+
+  integrationComplete: (data: IntegrationCompleteData) =>
+    `ASM: ${data.integrationName} ready for ${data.propertyAddress}. Review at portal.aerialshots.media`,
+
+  integrationFailed: (data: IntegrationFailedData) =>
+    `ASM ALERT: ${data.integrationName} issue for ${data.propertyAddress}. Action needed at portal.aerialshots.media`,
+
+  lowCreditBalance: (data: LowCreditBalanceData) =>
+    `ASM: Your credit balance is low (${data.currentBalance} credits). Purchase more at portal.aerialshots.media/dashboard/rewards`,
+
+  reviewRequest: (data: ReviewRequestData) =>
+    `Hi ${data.agentName}! Loved your photos from ${data.listingAddress}? We'd appreciate a quick review: ${data.reviewUrl}`,
 }
