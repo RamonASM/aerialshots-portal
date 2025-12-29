@@ -130,7 +130,8 @@ describe('Rate Limit Middleware', () => {
       }
 
       const result = checkRateLimit(keyData)
-      expect(result.error?.error?.details?.upgradeUrl).toContain('developers/pricing')
+      const details = result.error?.error?.details as { upgradeUrl?: string } | undefined
+      expect(details?.upgradeUrl).toContain('developers/pricing')
     })
 
     it('should handle business tier limits', () => {
