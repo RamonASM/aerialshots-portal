@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireStaff } from '@/lib/middleware/auth'
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/utils/rate-limit'
 import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
+
+// Rate limit: 30 integration orders per minute (prevent duplicate order spam)
+const RATE_LIMIT_CONFIG = { limit: 30, windowSeconds: 60 }
 
 // Valid integration types
 const INTEGRATION_TYPES = ['fotello', 'cubicasa', 'zillow_3d'] as const
@@ -52,6 +57,9 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await createClient()
+
+    // Require staff authentication
+    await requireStaff(supabase)
 
     const { data: listing, error } = await supabase
       .from('listings')
@@ -118,6 +126,11 @@ export async function PATCH(
     const body: UpdateIntegrationBody = await request.json()
     const { integration, status, external_id, error_message, notes } = body
 
+    const supabase = await createClient()
+
+    // Require staff authentication
+    await requireStaff(supabase)
+
     // Validate integration type
     if (!INTEGRATION_TYPES.includes(integration)) {
       return NextResponse.json(
@@ -139,8 +152,6 @@ export async function PATCH(
         { status: 400 }
       )
     }
-
-    const supabase = await createClient()
 
     // Build update object based on integration type
     const updateData: Record<string, unknown> = {
@@ -226,14 +237,30 @@ export async function POST(
     const body = await request.json()
     const { integration } = body
 
+    const supabase = await createClient()
+
+    // Require staff authentication
+    const { user: staffUser } = await requireStaff(supabase)
+
+    // Rate limiting by staff user ID
+    const rateLimitResult = checkRateLimit(`integration-order:${staffUser.id}`, RATE_LIMIT_CONFIG)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        { error: 'Too many integration order requests. Please wait.' },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
+      return response
+    }
+
     if (!INTEGRATION_TYPES.includes(integration)) {
       return NextResponse.json(
         { error: `Invalid integration type. Must be one of: ${INTEGRATION_TYPES.join(', ')}` },
         { status: 400 }
       )
     }
-
-    const supabase = await createClient()
 
     // Get listing details
     const { data: listing, error: listingError } = await supabase

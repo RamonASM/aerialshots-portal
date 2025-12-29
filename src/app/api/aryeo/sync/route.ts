@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getAryeoClient } from '@/lib/integrations/aryeo/client'
+import { requireAryeoClient, isAryeoConfigured } from '@/lib/integrations/aryeo/client'
 import { transformListing, transformMedia, transformAgent } from '@/lib/integrations/aryeo/transformer'
 import type { Database } from '@/lib/supabase/types'
 
@@ -27,7 +27,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const fullSync = body.full_sync === true
 
-    const aryeo = getAryeoClient()
+    // Check if Aryeo is configured
+    if (!isAryeoConfigured()) {
+      return NextResponse.json(
+        { error: 'Aryeo integration not configured. Set ARYEO_API_KEY environment variable.' },
+        { status: 503 }
+      )
+    }
+
+    const aryeo = requireAryeoClient()
     const supabase = createAdminClient()
 
     const stats = {

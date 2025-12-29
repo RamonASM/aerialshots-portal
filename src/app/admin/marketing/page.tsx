@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Mail,
@@ -15,6 +15,7 @@ import {
   AlertCircle,
   TrendingUp,
   Calendar,
+  RefreshCw,
 } from 'lucide-react'
 
 interface CampaignStats {
@@ -30,7 +31,7 @@ interface Campaign {
   id: string
   name: string
   subject: string
-  status: 'draft' | 'scheduled' | 'sending' | 'sent'
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled'
   recipientCount: number
   sentAt?: string
   scheduledAt?: string
@@ -39,60 +40,99 @@ interface Campaign {
   createdAt: string
 }
 
-// Mock data for now - will be replaced with API
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    id: '1',
-    name: 'Holiday Promotion 2024',
-    subject: 'Special Holiday Rates for Real Estate Photography',
-    status: 'sent',
-    recipientCount: 245,
-    sentAt: '2024-12-20T10:00:00Z',
-    openRate: 42.5,
-    clickRate: 12.3,
-    createdAt: '2024-12-18T09:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'New Year Announcement',
-    subject: 'Exciting Updates for 2025 - New Services Available',
-    status: 'scheduled',
-    recipientCount: 312,
-    scheduledAt: '2025-01-02T09:00:00Z',
-    createdAt: '2024-12-27T14:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Drone Services Launch',
-    subject: 'Introducing Our New FAA-Certified Drone Photography',
-    status: 'draft',
-    recipientCount: 0,
-    createdAt: '2024-12-28T08:00:00Z',
-  },
-]
-
-const MOCK_STATS: CampaignStats = {
-  totalCampaigns: 24,
-  totalSent: 5832,
-  totalOpened: 2478,
-  totalClicked: 643,
-  avgOpenRate: 42.5,
-  avgClickRate: 11.0,
+// API response campaign type
+interface APICampaign {
+  id: string
+  name: string
+  subject: string
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled'
+  recipient_count: number
+  sent_at?: string
+  scheduled_at?: string
+  open_rate?: number
+  click_rate?: number
+  created_at: string
+  total_sent?: number
+  total_opened?: number
+  total_clicked?: number
 }
 
 export default function MarketingDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [stats, setStats] = useState<CampaignStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch('/api/admin/marketing/campaigns?limit=5')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns')
+      }
+
+      const data = await response.json()
+
+      // Transform API response to component format
+      const transformedCampaigns: Campaign[] = (data.campaigns || []).map((c: APICampaign) => ({
+        id: c.id,
+        name: c.name,
+        subject: c.subject,
+        status: c.status,
+        recipientCount: c.recipient_count || 0,
+        sentAt: c.sent_at,
+        scheduledAt: c.scheduled_at,
+        openRate: c.open_rate,
+        clickRate: c.click_rate,
+        createdAt: c.created_at,
+      }))
+
+      setCampaigns(transformedCampaigns)
+
+      // Calculate aggregate stats from campaigns
+      const sentCampaigns = (data.campaigns || []).filter((c: APICampaign) => c.status === 'sent')
+      const totalSent = sentCampaigns.reduce((sum: number, c: APICampaign) => sum + (c.total_sent || c.recipient_count || 0), 0)
+      const totalOpened = sentCampaigns.reduce((sum: number, c: APICampaign) => sum + (c.total_opened || 0), 0)
+      const totalClicked = sentCampaigns.reduce((sum: number, c: APICampaign) => sum + (c.total_clicked || 0), 0)
+      const avgOpenRate = sentCampaigns.length > 0
+        ? sentCampaigns.reduce((sum: number, c: APICampaign) => sum + (c.open_rate || 0), 0) / sentCampaigns.length
+        : 0
+      const avgClickRate = sentCampaigns.length > 0
+        ? sentCampaigns.reduce((sum: number, c: APICampaign) => sum + (c.click_rate || 0), 0) / sentCampaigns.length
+        : 0
+
+      setStats({
+        totalCampaigns: data.total || data.campaigns?.length || 0,
+        totalSent,
+        totalOpened,
+        totalClicked,
+        avgOpenRate: Math.round(avgOpenRate * 10) / 10,
+        avgClickRate: Math.round(avgClickRate * 10) / 10,
+      })
+    } catch (err) {
+      console.error('Error fetching campaigns:', err)
+      setError('Failed to load campaigns')
+      // Set empty state on error
+      setCampaigns([])
+      setStats({
+        totalCampaigns: 0,
+        totalSent: 0,
+        totalOpened: 0,
+        totalClicked: 0,
+        avgOpenRate: 0,
+        avgClickRate: 0,
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    // TODO: Replace with API call
-    setTimeout(() => {
-      setCampaigns(MOCK_CAMPAIGNS)
-      setStats(MOCK_STATS)
-      setLoading(false)
-    }, 500)
-  }, [])
+    fetchCampaigns()
+  }, [fetchCampaigns])
 
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
@@ -104,6 +144,10 @@ export default function MarketingDashboard() {
         return 'bg-amber-100 text-amber-700'
       case 'sent':
         return 'bg-green-100 text-green-700'
+      case 'cancelled':
+        return 'bg-red-100 text-red-700'
+      default:
+        return 'bg-neutral-100 text-neutral-700'
     }
   }
 
@@ -117,6 +161,10 @@ export default function MarketingDashboard() {
         return <Send className="h-3.5 w-3.5" />
       case 'sent':
         return <CheckCircle2 className="h-3.5 w-3.5" />
+      case 'cancelled':
+        return <AlertCircle className="h-3.5 w-3.5" />
+      default:
+        return <Mail className="h-3.5 w-3.5" />
     }
   }
 
@@ -146,14 +194,37 @@ export default function MarketingDashboard() {
             Create and manage email campaigns to your agents
           </p>
         </div>
-        <Link
-          href="/admin/marketing/campaigns/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          New Campaign
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchCampaigns}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <Link
+            href="/admin/marketing/campaigns/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Campaign
+          </Link>
+        </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <p>{error}</p>
+          <button
+            onClick={fetchCampaigns}
+            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* Stats Grid */}
       {stats && (

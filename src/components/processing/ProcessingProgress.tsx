@@ -64,13 +64,13 @@ export function ProcessingProgress({
 
   if (progress?.stage === 'completed') {
     return (
-      <div className={`rounded-lg bg-green-50 p-4 ${className}`}>
+      <div className={`rounded-lg bg-[var(--status-success-muted)] border border-[var(--status-success)]/20 p-4 ${className}`}>
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <CheckCircle2 className="h-5 w-5 text-[var(--status-success)]" />
           <div className="flex-1">
-            <p className="font-medium text-green-900">Processing Complete</p>
+            <p className="font-medium text-[var(--status-success)]">Processing Complete</p>
             {progress.metrics?.total_time_ms && (
-              <p className="text-sm text-green-700">
+              <p className="text-sm text-[var(--status-success)]/80">
                 Completed in {(progress.metrics.total_time_ms / 1000).toFixed(1)}s
               </p>
             )}
@@ -82,13 +82,13 @@ export function ProcessingProgress({
 
   if (progress?.stage === 'failed') {
     return (
-      <div className={`rounded-lg bg-red-50 p-4 ${className}`}>
+      <div className={`rounded-lg bg-[var(--status-error-muted)] border border-[var(--status-error)]/20 p-4 ${className}`}>
         <div className="flex items-center gap-3">
-          <XCircle className="h-5 w-5 text-red-600" />
+          <XCircle className="h-5 w-5 text-[var(--status-error)]" />
           <div className="flex-1">
-            <p className="font-medium text-red-900">Processing Failed</p>
+            <p className="font-medium text-[var(--status-error)]">Processing Failed</p>
             {errorMessage && (
-              <p className="text-sm text-red-700">{errorMessage}</p>
+              <p className="text-sm text-[var(--status-error)]/80">{errorMessage}</p>
             )}
           </div>
         </div>
@@ -99,29 +99,29 @@ export function ProcessingProgress({
   if (variant === 'minimal') {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-        <span className="text-sm text-blue-700">{progress?.stageLabel || 'Processing...'}</span>
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span className="text-sm text-primary">{progress?.stageLabel || 'Processing...'}</span>
       </div>
     )
   }
 
   if (variant === 'compact') {
     return (
-      <div className={`rounded-lg bg-blue-50 p-3 ${className}`}>
+      <div className={`rounded-lg bg-[var(--status-info-muted)] border border-primary/20 p-3 ${className}`}>
         <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm font-medium text-primary">
                 {progress?.stageLabel || 'Processing...'}
               </p>
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-primary/80">
                 {Math.round(animatedProgress)}%
               </p>
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-blue-200">
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-primary/20">
               <div
-                className="h-full bg-blue-600 transition-all duration-300"
+                className="h-full bg-primary transition-all duration-300"
                 style={{ width: `${animatedProgress}%` }}
               />
             </div>
@@ -133,27 +133,27 @@ export function ProcessingProgress({
 
   // Full variant with stage indicators
   return (
-    <div className={`rounded-lg border border-blue-200 bg-blue-50 p-4 ${className}`}>
+    <div className={`rounded-lg border border-primary/20 bg-[var(--status-info-muted)] p-4 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-blue-900">HDR Processing</span>
+          <Zap className="h-5 w-5 text-primary" />
+          <span className="font-semibold text-primary">HDR Processing</span>
         </div>
         {progress?.estimatedSecondsRemaining != null && progress.estimatedSecondsRemaining > 0 && (
-          <span className="text-sm text-blue-600">
+          <span className="text-sm text-primary/80">
             ~{Math.ceil(progress.estimatedSecondsRemaining)}s remaining
           </span>
         )}
       </div>
 
       {/* Current stage label */}
-      <p className="mt-2 text-sm text-blue-700">{progress?.stageLabel || 'Initializing...'}</p>
+      <p className="mt-2 text-sm text-primary/80">{progress?.stageLabel || 'Initializing...'}</p>
 
       {/* Progress bar */}
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-200">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-primary/20">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
           style={{ width: `${animatedProgress}%` }}
         />
       </div>
@@ -174,19 +174,19 @@ export function ProcessingProgress({
               key={stage}
               className={`flex flex-col items-center gap-1 ${
                 isComplete
-                  ? 'text-blue-600'
+                  ? 'text-primary'
                   : isCurrent
-                    ? 'text-blue-800'
-                    : 'text-blue-400'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
               }`}
             >
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full ${
                   isComplete
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : isCurrent
-                      ? 'bg-blue-200 text-blue-800'
-                      : 'bg-blue-100 text-blue-400'
+                      ? 'bg-primary/30 text-primary'
+                      : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {isComplete ? (
@@ -205,19 +205,19 @@ export function ProcessingProgress({
 
       {/* Timing metrics if available */}
       {progress?.metrics && Object.keys(progress.metrics).length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-blue-200 pt-3">
+        <div className="mt-4 flex flex-wrap gap-3 border-t border-primary/20 pt-3">
           {progress.metrics.alignment_time_ms != null && (
-            <div className="text-xs text-blue-600">
+            <div className="text-xs text-primary/80">
               Align: {(progress.metrics.alignment_time_ms / 1000).toFixed(1)}s
             </div>
           )}
           {progress.metrics.segmentation_time_ms != null && (
-            <div className="text-xs text-blue-600">
+            <div className="text-xs text-primary/80">
               Segment: {(progress.metrics.segmentation_time_ms / 1000).toFixed(1)}s
             </div>
           )}
           {progress.metrics.fusion_time_ms != null && (
-            <div className="text-xs text-blue-600">
+            <div className="text-xs text-primary/80">
               Fuse: {(progress.metrics.fusion_time_ms / 1000).toFixed(1)}s
             </div>
           )}
@@ -233,7 +233,7 @@ export function ProcessingProgress({
 export function ProcessingBadge({ stage, className = '' }: { stage: ProcessingStage; className?: string }) {
   if (stage === 'completed') {
     return (
-      <span className={`inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 ${className}`}>
+      <span className={`inline-flex items-center gap-1 rounded-full bg-[var(--status-success-muted)] px-2 py-0.5 text-xs font-medium text-[var(--status-success)] ${className}`}>
         <CheckCircle2 className="h-3 w-3" />
         Complete
       </span>
@@ -242,7 +242,7 @@ export function ProcessingBadge({ stage, className = '' }: { stage: ProcessingSt
 
   if (stage === 'failed') {
     return (
-      <span className={`inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 ${className}`}>
+      <span className={`inline-flex items-center gap-1 rounded-full bg-[var(--status-error-muted)] px-2 py-0.5 text-xs font-medium text-[var(--status-error)] ${className}`}>
         <XCircle className="h-3 w-3" />
         Failed
       </span>
@@ -250,7 +250,7 @@ export function ProcessingBadge({ stage, className = '' }: { stage: ProcessingSt
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 ${className}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full bg-[var(--status-info-muted)] px-2 py-0.5 text-xs font-medium text-primary ${className}`}>
       <Loader2 className="h-3 w-3 animate-spin" />
       Processing
     </span>

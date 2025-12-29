@@ -9,23 +9,23 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         // Base styles
-        "h-11 w-full min-w-0 rounded-lg px-4 text-base text-white",
-        // Background & Border
-        "bg-[#1c1c1e] border border-white/[0.08]",
+        "h-11 w-full min-w-0 rounded-lg px-4 text-base text-foreground",
+        // Background & Border - using CSS variable surfaces
+        "bg-muted border border-border",
         // Placeholder
-        "placeholder:text-[#636366]",
-        // Focus state - Apple blue ring
-        "outline-none focus:border-[#0077ff]/50 focus:ring-2 focus:ring-[#0077ff]/20",
+        "placeholder:text-muted-foreground",
+        // Focus state - Apple blue ring (using primary color)
+        "outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20",
         // Transitions
         "transition-all duration-200 ease-out",
         // File input
-        "file:text-white file:inline-flex file:h-8 file:border-0 file:bg-transparent file:text-sm file:font-medium",
+        "file:text-foreground file:inline-flex file:h-8 file:border-0 file:bg-transparent file:text-sm file:font-medium",
         // Disabled
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        // Selection
-        "selection:bg-[#0077ff]/30 selection:text-white",
-        // Invalid state
-        "aria-invalid:border-[#ff453a]/50 aria-invalid:ring-[#ff453a]/20",
+        // Selection (using primary color)
+        "selection:bg-primary/30 selection:text-foreground",
+        // Invalid state (using destructive color)
+        "aria-invalid:border-destructive/50 aria-invalid:ring-destructive/20",
         // Medium screens
         "md:text-sm",
         className

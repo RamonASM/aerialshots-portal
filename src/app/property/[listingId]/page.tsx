@@ -15,6 +15,7 @@ import {
   LeadCaptureForm,
   AgentContactCard,
   MobileContactCTA,
+  PropertyPageTracker,
 } from '@/components/property'
 import {
   LocationScoresCard,
@@ -127,6 +128,9 @@ export default async function PropertyPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Analytics Tracking */}
+      <PropertyPageTracker listingId={listing.id} agentId={listing.agent_id} />
+
       {/* Hero */}
       <PropertyHero
         images={heroImages}

@@ -4,6 +4,7 @@ import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, UserPlu
 import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 import { OpsMapSection } from '@/components/admin/ops/OpsMapSection'
+import { OpsKanbanBoard } from '@/components/admin/ops/OpsKanbanBoard'
 
 const statusColumns = [
   { key: 'scheduled', label: 'Scheduled', color: 'bg-blue-500' },
@@ -148,69 +149,20 @@ export default async function OpsPage() {
       {/* Map View Toggle */}
       <OpsMapSection listings={listings || []} />
 
-      {/* Kanban Board */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex min-w-[1200px] gap-4">
-          {statusColumns.map((column) => (
-            <div
-              key={column.key}
-              className="w-[200px] flex-shrink-0 rounded-lg bg-neutral-100 p-3"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${column.color}`} />
-                  <span className="text-sm font-medium text-neutral-700">
-                    {column.label}
-                  </span>
-                </div>
-                <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-600">
-                  {jobsByStatus[column.key]?.length || 0}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {jobsByStatus[column.key]?.slice(0, 10).map((job) => (
-                  <Link
-                    key={job.id}
-                    href={`/admin/ops/jobs/${job.id}`}
-                    className={`block rounded-lg bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
-                      job.is_rush ? 'border-l-4 border-amber-500' : ''
-                    }`}
-                  >
-                    <p className="text-sm font-medium text-neutral-900 line-clamp-1">
-                      {job.address}
-                    </p>
-                    <p className="mt-0.5 text-xs text-neutral-500">
-                      {job.city}, {job.state}
-                    </p>
-                    {job.scheduled_at && (
-                      <p className="mt-1 text-xs text-neutral-400">
-                        {new Date(job.scheduled_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    )}
-                    {job.is_rush && (
-                      <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
-                        RUSH
-                      </span>
-                    )}
-                  </Link>
-                ))}
-
-                {(jobsByStatus[column.key]?.length || 0) > 10 && (
-                  <p className="text-center text-xs text-neutral-500">
-                    +{(jobsByStatus[column.key]?.length || 0) - 10} more
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Kanban Board with Bulk Selection */}
+      <OpsKanbanBoard
+        jobsByStatus={jobsByStatus as Record<string, Array<{
+          id: string
+          address: string
+          city: string | null
+          state: string | null
+          ops_status: string | null
+          scheduled_at: string | null
+          is_rush: boolean | null
+          agent?: { id: string; name: string } | null
+        }>>}
+        statusColumns={statusColumns}
+      />
 
       {/* Rush Jobs Alert */}
       {rushJobs.length > 0 && (

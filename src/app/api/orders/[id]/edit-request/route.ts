@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/utils/rate-limit'
+
+// Rate limit: 10 edit requests per minute per user
+const RATE_LIMIT_CONFIG = { limit: 10, windowSeconds: 60 }
 
 type EditRequestType =
   | 'photo_retouching'
@@ -121,6 +125,19 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting by user ID
+    const rateLimitResult = checkRateLimit(`edit-request:${user.id}`, RATE_LIMIT_CONFIG)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        { error: 'Too many edit requests. Please wait before submitting more.' },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
+      return response
     }
 
     // Get agent for this user

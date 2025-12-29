@@ -63,9 +63,18 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text()
     const signature = request.headers.get('x-cubicasa-signature') || ''
     const webhookSecret = process.env.CUBICASA_WEBHOOK_SECRET
+    const isProduction = process.env.NODE_ENV === 'production'
 
-    // Verify signature if secret is configured
-    if (webhookSecret && signature) {
+    // SECURITY: Verify webhook signature
+    if (webhookSecret) {
+      // Secret is configured - require valid signature
+      if (!signature) {
+        console.error('Cubicasa webhook signature missing')
+        return NextResponse.json(
+          { error: 'Signature required' },
+          { status: 401 }
+        )
+      }
       const isValid = verifySignature(rawBody, signature, webhookSecret)
       if (!isValid) {
         console.error('Invalid Cubicasa webhook signature')
@@ -74,6 +83,13 @@ export async function POST(request: NextRequest) {
           { status: 401 }
         )
       }
+    } else if (isProduction) {
+      // No secret in production - reject request
+      console.error('CUBICASA_WEBHOOK_SECRET not configured in production')
+      return NextResponse.json(
+        { error: 'Webhook secret not configured' },
+        { status: 500 }
+      )
     }
 
     const payload: CubicasaWebhookPayload = JSON.parse(rawBody)

@@ -125,6 +125,20 @@
   --text-tertiary: #8e8e93;  /* Updated for 4.5:1 contrast ratio */
   --text-quaternary: #636366;
 
+  /* Status colors - for processing states, badges, etc */
+  --status-success: #34c759;
+  --status-success-muted: rgba(52, 199, 89, 0.15);
+  --status-warning: #ff9f0a;
+  --status-warning-muted: rgba(255, 159, 10, 0.15);
+  --status-error: #ff453a;
+  --status-error-muted: rgba(255, 69, 58, 0.15);
+  --status-info: #0077ff;
+  --status-info-muted: rgba(0, 119, 255, 0.15);
+  --status-pending: #8e8e93;
+  --status-pending-muted: rgba(142, 142, 147, 0.15);
+  --status-processing: #af52de;
+  --status-processing-muted: rgba(175, 82, 222, 0.15);
+
   /* Surface levels */
   --surface-0: #000000;
   --surface-1: #0a0a0a;
@@ -245,6 +259,20 @@
   .surface-2 { background-color: var(--surface-2); }
   .surface-3 { background-color: var(--surface-3); }
   .surface-4 { background-color: var(--surface-4); }
+
+  /* Status utilities */
+  .status-success { color: var(--status-success); }
+  .status-success-bg { background-color: var(--status-success-muted); color: var(--status-success); }
+  .status-warning { color: var(--status-warning); }
+  .status-warning-bg { background-color: var(--status-warning-muted); color: var(--status-warning); }
+  .status-error { color: var(--status-error); }
+  .status-error-bg { background-color: var(--status-error-muted); color: var(--status-error); }
+  .status-info { color: var(--status-info); }
+  .status-info-bg { background-color: var(--status-info-muted); color: var(--status-info); }
+  .status-pending { color: var(--status-pending); }
+  .status-pending-bg { background-color: var(--status-pending-muted); color: var(--status-pending); }
+  .status-processing { color: var(--status-processing); }
+  .status-processing-bg { background-color: var(--status-processing-muted); color: var(--status-processing); }
 
   /* Transition utilities */
   .transition-fast {

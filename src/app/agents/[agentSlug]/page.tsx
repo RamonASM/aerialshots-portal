@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { unstable_cache } from 'next/cache'
-import { Building, Calendar, TrendingUp, Phone, Mail, Instagram, ExternalLink } from 'lucide-react'
+import { Building, Calendar, TrendingUp, Phone, Mail, Instagram, ExternalLink, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ShareButton } from '@/components/ui/share-button'
 import { InstagramFeed, InstagramFeedPlaceholder } from '@/components/instagram'
+import { LocationScoresCard, ThemeParksSection, CommuteSection } from '@/components/life-here'
+import { getLifeHereData } from '@/lib/queries/life-here'
 import type { Metadata } from 'next'
 import type { Database } from '@/lib/supabase/types'
 import { CACHE_REVALIDATION, CACHE_TAGS } from '@/lib/utils/cache'
@@ -105,10 +108,33 @@ const getAgentPortfolioData = unstable_cache(
       ?.map((p) => p.instagram_permalink)
       .filter((url): url is string => !!url) || []
 
+    // Calculate representative coordinates from listings (agent's territory)
+    const listingsWithCoords = listings.filter(
+      (l) => l.lat !== null && l.lng !== null
+    )
+    let territoryCoords: { lat: number; lng: number } | null = null
+    if (listingsWithCoords.length > 0) {
+      const avgLat = listingsWithCoords.reduce((sum, l) => sum + (l.lat || 0), 0) / listingsWithCoords.length
+      const avgLng = listingsWithCoords.reduce((sum, l) => sum + (l.lng || 0), 0) / listingsWithCoords.length
+      territoryCoords = { lat: avgLat, lng: avgLng }
+    }
+
+    // Determine primary city from listings for commute display
+    const cityCounts: Record<string, number> = {}
+    for (const listing of listings) {
+      if (listing.city) {
+        cityCounts[listing.city] = (cityCounts[listing.city] || 0) + 1
+      }
+    }
+    const primaryCity = Object.entries(cityCounts)
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || null
+
     return {
       agent,
       listings,
       publishedPostUrls,
+      territoryCoords,
+      primaryCity,
     }
   },
   ['agent-portfolio'],
@@ -126,7 +152,7 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
     notFound()
   }
 
-  const { agent, listings, publishedPostUrls } = portfolioData
+  const { agent, listings, publishedPostUrls, territoryCoords, primaryCity } = portfolioData
 
   const activeListings = listings.filter((l) => l.status === 'active')
   const soldListings = listings.filter((l) => l.status === 'sold')
@@ -302,6 +328,31 @@ export default async function AgentPortfolioPage({ params }: PageProps) {
           </div>
         )}
 
+        {/* Area Insights - Life Here Integration */}
+        {territoryCoords && (
+          <section className="mt-12 pt-12 border-t border-white/[0.08]">
+            <div className="flex items-center gap-2 mb-6">
+              <MapPin className="h-5 w-5 text-[#0077ff]" />
+              <h2 className="text-[22px] font-semibold text-white">
+                {primaryCity ? `${primaryCity} Area Insights` : 'Area Insights'}
+              </h2>
+            </div>
+            <Suspense fallback={
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-32 rounded-xl bg-[#1c1c1e] animate-pulse" />
+                ))}
+              </div>
+            }>
+              <AgentAreaInsights
+                lat={territoryCoords.lat}
+                lng={territoryCoords.lng}
+                cityName={primaryCity || 'this area'}
+              />
+            </Suspense>
+          </section>
+        )}
+
         {/* Instagram Section */}
         {(agent.instagram_url || publishedPostUrls.length > 0) && (
           <section className="mt-12 pt-12 border-t border-white/[0.08]">
@@ -397,5 +448,56 @@ function ListingCard({
         </div>
       </div>
     </Link>
+  )
+}
+
+/**
+ * Async component for fetching and displaying Life Here area insights
+ * Uses streaming to load data without blocking the page
+ */
+async function AgentAreaInsights({
+  lat,
+  lng,
+  cityName,
+}: {
+  lat: number
+  lng: number
+  cityName: string
+}) {
+  const lifeHereData = await getLifeHereData(lat, lng, cityName)
+
+  // If no meaningful data, don't render anything
+  if (!lifeHereData.scores && lifeHereData.themeparks.length === 0 && !lifeHereData.commute) {
+    return null
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Location Scores */}
+      {lifeHereData.scores && (
+        <LocationScoresCard
+          lifeHereScore={lifeHereData.scores.lifeHereScore}
+          diningScore={lifeHereData.scores.dining}
+          convenienceScore={lifeHereData.scores.convenience}
+          lifestyleScore={lifeHereData.scores.lifestyle}
+          commuteScore={lifeHereData.scores.commute}
+        />
+      )}
+
+      {/* Theme Parks (Central FL feature) */}
+      {lifeHereData.themeparks.length > 0 && (
+        <ThemeParksSection parks={lifeHereData.themeparks} />
+      )}
+
+      {/* Commute Info */}
+      {lifeHereData.commute && (
+        <CommuteSection
+          airports={lifeHereData.commute.airports}
+          beaches={lifeHereData.commute.beaches}
+          destinations={lifeHereData.commute.destinations}
+          summary={lifeHereData.commute.summary}
+        />
+      )}
+    </div>
   )
 }

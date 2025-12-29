@@ -11,6 +11,20 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
 }))
 
+// Mock auth middleware
+vi.mock('@/lib/middleware/auth', () => ({
+  requireStaff: vi.fn(() => Promise.resolve({
+    user: { id: 'test-user-id', email: 'staff@aerialshots.media' },
+    staff: { id: 'test-staff-id', email: 'staff@aerialshots.media', role: 'admin' },
+  })),
+}))
+
+// Mock rate limiting
+vi.mock('@/lib/utils/rate-limit', () => ({
+  checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 29, resetTime: Date.now() + 60000, current: 1 })),
+  getRateLimitHeaders: vi.fn(() => ({})),
+}))
+
 // Helper to create mock request
 function createMockRequest(
   method: string,

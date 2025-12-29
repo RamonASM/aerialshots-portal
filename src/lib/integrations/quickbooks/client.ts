@@ -29,8 +29,16 @@ const QBO_PRODUCTION_BASE = 'https://quickbooks.api.intuit.com'
 const QBO_AUTH_BASE = 'https://appcenter.intuit.com/connect/oauth2'
 
 // Environment configuration
-const isProduction = process.env.QUICKBOOKS_ENVIRONMENT === 'production'
-const apiBase = isProduction ? QBO_PRODUCTION_BASE : QBO_SANDBOX_BASE
+const qbEnvironment = process.env.QUICKBOOKS_ENVIRONMENT
+const isNodeProduction = process.env.NODE_ENV === 'production'
+const isQBProduction = qbEnvironment === 'production'
+
+// SECURITY: Warn if NODE_ENV=production but QUICKBOOKS_ENVIRONMENT is not explicitly set
+if (isNodeProduction && !qbEnvironment) {
+  console.warn('[QuickBooks] QUICKBOOKS_ENVIRONMENT not set in production - defaulting to sandbox. Set to "production" for live invoices.')
+}
+
+const apiBase = isQBProduction ? QBO_PRODUCTION_BASE : QBO_SANDBOX_BASE
 
 interface QuickBooksConfig {
   clientId: string

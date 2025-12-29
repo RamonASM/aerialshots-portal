@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextResponse } from 'next/server'
 import { checkRateLimit, addRateLimitHeaders, getUsageStats, cleanupRateLimitStore } from './rate-limit'
 import type { ApiKeyData } from '../types'

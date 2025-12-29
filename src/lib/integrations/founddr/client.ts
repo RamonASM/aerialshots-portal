@@ -27,12 +27,22 @@ const DEFAULT_TIMEOUT = 30000 // 30 seconds
 const DEFAULT_POLL_INTERVAL = 2000 // 2 seconds
 const DEFAULT_MAX_WAIT = 300000 // 5 minutes
 
+// Check if running in production
+const isProduction = process.env.NODE_ENV === 'production'
+
 export class FoundDRClient {
   private config: Required<FoundDRConfig>
 
   constructor(config?: Partial<FoundDRConfig>) {
+    const apiUrl = config?.apiUrl || process.env.FOUNDDR_API_URL || ''
+
+    // SECURITY: Require explicit URL in production - never default to localhost
+    if (isProduction && !apiUrl) {
+      console.warn('[FoundDR] FOUNDDR_API_URL not configured - FoundDR integration disabled in production')
+    }
+
     this.config = {
-      apiUrl: config?.apiUrl || process.env.FOUNDDR_API_URL || 'http://localhost:8000',
+      apiUrl: apiUrl || (isProduction ? '' : 'http://localhost:8000'),
       apiSecret: config?.apiSecret || process.env.FOUNDDR_API_SECRET || '',
       webhookUrl: config?.webhookUrl || process.env.FOUNDDR_WEBHOOK_URL || '',
       timeout: config?.timeout || DEFAULT_TIMEOUT,
@@ -41,9 +51,17 @@ export class FoundDRClient {
 
   /**
    * Check if FoundDR is configured
+   * Returns false if URL is empty or localhost in production
    */
   isConfigured(): boolean {
-    return !!(this.config.apiUrl && this.config.apiSecret)
+    if (!this.config.apiUrl || !this.config.apiSecret) {
+      return false
+    }
+    // Reject localhost URLs in production
+    if (isProduction && this.config.apiUrl.includes('localhost')) {
+      return false
+    }
+    return true
   }
 
   /**

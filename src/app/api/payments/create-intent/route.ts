@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { stripe, toCents } from '@/lib/payments/stripe'
 import { z } from 'zod'
@@ -9,8 +10,24 @@ const PaymentIntentSchema = z.object({
   email: z.string().email('Invalid email format').optional(),
   name: z.string().max(200).optional(),
   orderId: z.string().uuid().optional(),
+  idempotencyKey: z.string().max(255).optional(),
   metadata: z.record(z.string(), z.string()).optional().default({}),
 })
+
+/**
+ * Generate idempotency key for Stripe payment intents
+ * Prevents duplicate payments from retry requests
+ */
+function generateIdempotencyKey(userId: string, orderId?: string, amount?: number): string {
+  if (orderId) {
+    // Use order ID for deterministic key
+    return `pi_${orderId}`
+  }
+  // Fallback: hash of user + amount + timestamp (hour granularity)
+  const hourTimestamp = Math.floor(Date.now() / 3600000)
+  const data = `${userId}-${amount}-${hourTimestamp}`
+  return `pi_${crypto.createHash('sha256').update(data).digest('hex').slice(0, 24)}`
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,24 +51,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: errors }, { status: 400 })
     }
 
-    const { amount, email, name, orderId, metadata } = parseResult.data
+    const { amount, email, name, orderId, idempotencyKey: providedKey, metadata } = parseResult.data
 
-    // Create payment intent with user tracking
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: toCents(amount),
-      currency: 'usd',
-      automatic_payment_methods: {
-        enabled: true,
+    // Generate idempotency key to prevent duplicate payments
+    const idempotencyKey = providedKey || generateIdempotencyKey(user.id, orderId, amount)
+
+    // Create payment intent with user tracking and idempotency
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: toCents(amount),
+        currency: 'usd',
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        receipt_email: email,
+        metadata: {
+          order_id: orderId || '',
+          customer_name: name || '',
+          user_id: user.id,
+          user_email: user.email || '',
+          ...metadata,
+        },
       },
-      receipt_email: email,
-      metadata: {
-        order_id: orderId || '',
-        customer_name: name || '',
-        user_id: user.id,
-        user_email: user.email || '',
-        ...metadata,
-      },
-    })
+      {
+        idempotencyKey,
+      }
+    )
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,

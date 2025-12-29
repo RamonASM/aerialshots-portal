@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
+  Download,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -107,6 +108,77 @@ export default function RevenueAnalyticsPage() {
     ? Math.max(...stats.revenueByPhotographer.map((p) => p.revenue))
     : 1
 
+  // Export to CSV
+  const exportToCSV = useCallback(() => {
+    if (!stats) return
+
+    const rows: string[][] = []
+
+    // Summary section
+    rows.push(['Revenue Report - ' + year])
+    rows.push([])
+    rows.push(['Summary Metrics'])
+    rows.push(['Total Revenue', formatCurrency(stats.totalRevenue)])
+    rows.push(['This Month', formatCurrency(stats.revenueThisMonth)])
+    rows.push(['Last Month', formatCurrency(stats.revenueLastMonth)])
+    rows.push(['Growth', formatPercent(stats.revenueGrowth)])
+    rows.push(['Average Order Value', formatCurrency(stats.averageOrderValue)])
+    rows.push(['Projected Monthly', formatCurrency(stats.projectedMonthlyRevenue)])
+    rows.push([])
+
+    // Monthly revenue
+    rows.push(['Monthly Revenue'])
+    rows.push(['Month', 'Revenue', 'Jobs'])
+    stats.revenueByMonth.forEach(month => {
+      rows.push([month.month, formatCurrency(month.revenue), String(month.jobs)])
+    })
+    rows.push([])
+
+    // Revenue by photographer
+    rows.push(['Revenue by Photographer'])
+    rows.push(['Name', 'Revenue', 'Jobs', 'Avg Per Job'])
+    stats.revenueByPhotographer.forEach(p => {
+      rows.push([p.name, formatCurrency(p.revenue), String(p.jobs), formatCurrency(p.avgPerJob)])
+    })
+    rows.push([])
+
+    // Revenue by service
+    rows.push(['Revenue by Service'])
+    rows.push(['Service', 'Revenue', 'Count'])
+    stats.revenueByService.forEach(s => {
+      rows.push([s.service, formatCurrency(s.revenue), String(s.count)])
+    })
+    rows.push([])
+
+    // Top agents
+    rows.push(['Top Spending Agents'])
+    rows.push(['Name', 'Company', 'Total Spend', 'Order Count'])
+    stats.topAgents.forEach(a => {
+      rows.push([a.name, a.company || '', formatCurrency(a.totalSpend), String(a.orderCount)])
+    })
+
+    // Convert to CSV string
+    const csv = rows.map(row =>
+      row.map(cell =>
+        // Escape quotes and wrap in quotes if contains comma
+        cell.includes(',') || cell.includes('"')
+          ? `"${cell.replace(/"/g, '""')}"`
+          : cell
+      ).join(',')
+    ).join('\n')
+
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `revenue-report-${year}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [stats, year])
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -131,6 +203,10 @@ export default function RevenueAnalyticsPage() {
               </option>
             ))}
           </select>
+          <Button variant="outline" size="sm" onClick={exportToCSV} disabled={!stats}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
           <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh

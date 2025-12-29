@@ -4,29 +4,29 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const cardVariants = cva(
-  "flex flex-col gap-6 rounded-2xl text-white transition-all duration-200",
+  "flex flex-col gap-6 rounded-2xl text-card-foreground transition-all duration-200",
   {
     variants: {
       variant: {
         // Default - Elevated surface
         default:
-          "bg-[#0a0a0a] border border-white/[0.08]",
+          "bg-card border border-border",
 
         // Glass - Frosted glass effect
         glass:
-          "bg-[#1c1c1e]/72 backdrop-blur-xl border border-white/[0.08]",
+          "bg-muted/72 backdrop-blur-xl border border-border",
 
         // Glass Light - Subtle glass
         "glass-light":
-          "bg-white/5 backdrop-blur-sm border border-white/[0.08]",
+          "bg-secondary backdrop-blur-sm border border-border",
 
         // Elevated - Higher surface level
         elevated:
-          "bg-[#141414] border border-white/[0.08] shadow-xl shadow-black/20",
+          "bg-popover border border-border shadow-xl shadow-black/20",
 
         // Interactive - With hover state
         interactive:
-          "bg-[#0a0a0a] border border-white/[0.08] hover:border-white/[0.16] hover:bg-[#141414] cursor-pointer",
+          "bg-card border border-border hover:border-ring/50 hover:bg-popover cursor-pointer",
 
         // Ghost - Minimal
         ghost:
@@ -70,7 +70,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold text-white", className)}
+      className={cn("leading-none font-semibold text-card-foreground", className)}
       {...props}
     />
   )
@@ -80,7 +80,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-[#a1a1a6] text-sm", className)}
+      className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
   )

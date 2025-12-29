@@ -126,14 +126,18 @@ describe('API Key Middleware', () => {
 
     it('should accept RapidAPI proxy requests', async () => {
       const request = new NextRequest('https://api.example.com/v1/location/overview', {
-        headers: { 'X-RapidAPI-Key': 'rapid-api-key-123' },
+        headers: {
+          'X-RapidAPI-Key': 'rapid-api-key-123',
+          'X-RapidAPI-User': 'testuser',
+          'X-RapidAPI-Subscription': 'pro',
+        },
       })
 
       const result = await validateApiKey(request)
 
       expect(result.valid).toBe(true)
       if (result.valid) {
-        expect(result.keyData.id).toBe('rapidapi')
+        expect(result.keyData.id).toBe('rapidapi-testuser')
         expect(result.keyData.tier).toBe('pro')
       }
     })

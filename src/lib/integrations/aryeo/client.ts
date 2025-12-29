@@ -213,13 +213,39 @@ export class AryeoClient {
 // Singleton instance
 let aryeoClient: AryeoClient | null = null
 
-export function getAryeoClient(): AryeoClient {
+/**
+ * Check if Aryeo integration is configured
+ */
+export function isAryeoConfigured(): boolean {
+  return !!process.env.ARYEO_API_KEY
+}
+
+/**
+ * Get the Aryeo client instance
+ * Returns null if ARYEO_API_KEY is not configured (graceful degradation)
+ * Use isAryeoConfigured() to check before calling if you need to handle the unconfigured case
+ */
+export function getAryeoClient(): AryeoClient | null {
+  const apiKey = process.env.ARYEO_API_KEY
+  if (!apiKey) {
+    console.warn('ARYEO_API_KEY not configured - Aryeo integration disabled')
+    return null
+  }
+
   if (!aryeoClient) {
-    const apiKey = process.env.ARYEO_API_KEY
-    if (!apiKey) {
-      throw new Error('ARYEO_API_KEY environment variable is not set')
-    }
     aryeoClient = new AryeoClient({ apiKey })
   }
   return aryeoClient
+}
+
+/**
+ * Get the Aryeo client instance, throwing if not configured
+ * Use this when Aryeo integration is required (e.g., webhook handlers)
+ */
+export function requireAryeoClient(): AryeoClient {
+  const client = getAryeoClient()
+  if (!client) {
+    throw new Error('ARYEO_API_KEY environment variable is not set')
+  }
+  return client
 }

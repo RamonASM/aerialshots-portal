@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getListingById, organizeMediaByCategory, getCategoryInfo } from '@/lib/queries/listings'
-import { DeliveryHeader, MediaSection, DownloadAllButton } from '@/components/delivery'
+import { DeliveryHeader, MediaSection, DownloadAllButton, DeliveryPageTracker } from '@/components/delivery'
 import { LaunchCampaignButton } from '@/components/campaigns'
 import { ShareButton } from '@/components/ui/share-button'
 import type { Metadata } from 'next'
@@ -54,6 +54,9 @@ export default async function DeliveryPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Analytics Tracking */}
+      <DeliveryPageTracker listingId={listing.id} agentId={listing.agent_id} />
+
       <DeliveryHeader listing={listing} agent={listing.agent} />
 
       {/* Actions Bar */}

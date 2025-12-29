@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getRateLimitHeaders } from '@/lib/utils/rate-limit'
 import {
   generateInvoicePDF,
   formatOrderForInvoice,
   InvoiceTemplate,
 } from '@/lib/pdf/invoice-generator'
+
+// Rate limit: 20 PDF generations per minute (prevent DOS via CPU-intensive generation)
+const RATE_LIMIT_CONFIG = { limit: 20, windowSeconds: 60 }
 
 // GET - Download invoice PDF for a generated invoice or order
 export async function GET(
@@ -22,6 +26,19 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting by user ID (PDF generation is CPU-intensive)
+    const rateLimitResult = checkRateLimit(`invoice-pdf:${user.id}`, RATE_LIMIT_CONFIG)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        { error: 'Too many PDF requests. Please wait before generating more.' },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
+      return response
     }
 
     // Try to find a generated invoice first
@@ -180,6 +197,19 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting by user ID (PDF generation is CPU-intensive)
+    const rateLimitResult = checkRateLimit(`invoice-pdf:${user.id}`, RATE_LIMIT_CONFIG)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        { error: 'Too many PDF requests. Please wait before generating more.' },
+        { status: 429 }
+      )
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
+      return response
     }
 
     // Check if user is staff

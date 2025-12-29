@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleProcessingComplete(
-  supabase: any,
+  supabase: ReturnType<typeof createAdminClient>,
   payload: FoundDRWebhookPayload,
-  processingJob: any,
+  processingJob: ProcessingJobRow | null,
   listingId?: string
 ) {
   const now = new Date().toISOString()
@@ -104,7 +104,7 @@ async function handleProcessingComplete(
         output_key: payload.output_key,
         completed_at: now,
         processing_time_ms: payload.metrics?.total_time_ms,
-        metrics: payload.metrics || {},
+        metrics: JSON.parse(JSON.stringify(payload.metrics || {})),
         webhook_received_at: now,
       })
       .eq('id', processingJob.id)
@@ -162,21 +162,29 @@ async function handleProcessingComplete(
 }
 
 async function handleProcessingFailed(
-  supabase: any,
+  supabase: ReturnType<typeof createAdminClient>,
   payload: FoundDRWebhookPayload,
-  processingJob: any,
+  processingJob: ProcessingJobRow | null,
   listingId?: string
 ) {
   const now = new Date().toISOString()
+  const MAX_RETRIES = 3
+
+  // Calculate retry count
+  const currentRetryCount = processingJob?.retry_count || 0
+  const shouldAutoRetry = currentRetryCount < MAX_RETRIES
 
   // Update processing_jobs record
+  // Note: pending_retry is a custom status not in generated types
   if (processingJob) {
     await supabase
       .from('processing_jobs')
       .update({
-        status: 'failed',
+        status: (shouldAutoRetry ? 'pending_retry' : 'failed') as 'failed',
         error_message: payload.error_message,
         webhook_received_at: now,
+        retry_count: currentRetryCount + 1,
+        last_failed_at: now,
       })
       .eq('id', processingJob.id)
   }
@@ -187,36 +195,61 @@ async function handleProcessingFailed(
       .from('media_assets')
       .update({
         qc_status: 'pending', // Reset to pending so they can be retried
-        qc_notes: `HDR processing failed: ${payload.error_message}`,
+        qc_notes: `HDR processing failed (attempt ${currentRetryCount + 1}/${MAX_RETRIES}): ${payload.error_message}`,
       })
       .in('id', payload.media_asset_ids)
   }
 
-  // Update listing status back to staged
-  if (listingId) {
+  // Update listing status back to staged only if we've exhausted retries
+  if (listingId && !shouldAutoRetry) {
     await supabase
       .from('listings')
       .update({ ops_status: 'staged' })
       .eq('id', listingId)
+  }
 
-    // Log event
+  // Log event
+  if (listingId) {
     await supabase.from('job_events').insert({
       listing_id: listingId,
-      event_type: 'hdr_processing_failed',
+      event_type: shouldAutoRetry ? 'hdr_processing_retry_scheduled' : 'hdr_processing_failed',
       new_value: {
         founddr_job_id: payload.founddr_job_id,
         error_message: payload.error_message,
+        retry_count: currentRetryCount + 1,
+        max_retries: MAX_RETRIES,
+        will_retry: shouldAutoRetry,
       },
       actor_type: 'system',
     })
   }
 
-  webhookLogger.error({
-    source: 'founddr',
-    jobId: payload.founddr_job_id,
-    listingId,
-    errorMessage: payload.error_message,
-  }, 'HDR processing failed')
+  if (shouldAutoRetry) {
+    webhookLogger.warn({
+      source: 'founddr',
+      jobId: payload.founddr_job_id,
+      listingId,
+      errorMessage: payload.error_message,
+      retryCount: currentRetryCount + 1,
+      maxRetries: MAX_RETRIES,
+    }, 'HDR processing failed, will retry')
+  } else {
+    webhookLogger.error({
+      source: 'founddr',
+      jobId: payload.founddr_job_id,
+      listingId,
+      errorMessage: payload.error_message,
+      retryCount: currentRetryCount + 1,
+    }, 'HDR processing failed, max retries exhausted')
+  }
+}
+
+interface ProcessingJobRow {
+  id: string
+  listing_id: string | null
+  founddr_job_id: string | null
+  retry_count?: number
+  [key: string]: unknown
 }
 
 /**

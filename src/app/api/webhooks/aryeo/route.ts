@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getAryeoClient } from '@/lib/integrations/aryeo/client'
+import { requireAryeoClient, isAryeoConfigured } from '@/lib/integrations/aryeo/client'
 import {
   transformListing,
   transformMedia,
@@ -142,7 +142,7 @@ async function handleOrderCreated(payload: WebhookPayload) {
   const orderId = payload.data.order_id
   if (!orderId) return
 
-  const aryeo = getAryeoClient()
+  const aryeo = requireAryeoClient()
   const supabase = createAdminClient()
 
   // Fetch full order details from Aryeo
@@ -207,7 +207,7 @@ async function handleOrderFulfilled(payload: WebhookPayload) {
   const listingId = payload.data.listing_id
   if (!orderId) return
 
-  const aryeo = getAryeoClient()
+  const aryeo = requireAryeoClient()
   const supabase = createAdminClient()
 
   // Fetch full order with listing details
@@ -293,7 +293,7 @@ async function handleOrderPaid(payload: WebhookPayload) {
   const orderId = payload.data.order_id
   if (!orderId) return
 
-  const aryeo = getAryeoClient()
+  const aryeo = requireAryeoClient()
   const supabase = createAdminClient()
 
   const order = await aryeo.getOrderWithDetails(orderId)
@@ -432,8 +432,8 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-aryeo-signature')
     const webhookSecret = process.env.ARYEO_WEBHOOK_SECRET
 
-    // Verify signature if secret is configured
-    if (webhookSecret && !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+    // SECURITY: Always verify signature - function handles missing secret appropriately
+    if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
@@ -460,12 +460,15 @@ export async function POST(request: NextRequest) {
     if (result.success) {
       return NextResponse.json({ status: 'ok', message: result.message })
     } else {
-      // Return 200 to prevent Zapier retries for handled errors
+      // Return 500 for processing errors to allow legitimate retries
       // The error is logged in webhook_events for manual review
-      return NextResponse.json({
-        status: 'error',
-        message: result.message,
-      })
+      return NextResponse.json(
+        {
+          status: 'error',
+          message: result.message,
+        },
+        { status: 500 }
+      )
     }
   } catch (error) {
     console.error('Webhook processing error:', error)
