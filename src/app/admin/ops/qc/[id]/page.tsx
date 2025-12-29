@@ -4,24 +4,23 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft,
-  CheckCircle,
-  XCircle,
-  Clock,
   Check,
-  X,
+  CheckCircle,
+  Clock,
   Send,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { QCReviewClient } from '@/components/qc/QCReviewClient'
+import { notifyDeliveryReady } from '@/lib/notifications'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-async function approvePhoto(formData: FormData) {
+async function approvePhoto(assetId: string, listingId: string) {
   'use server'
 
-  const assetId = formData.get('assetId') as string
-  const listingId = formData.get('listingId') as string
   const supabase = await createClient()
 
   await supabase
@@ -32,12 +31,9 @@ async function approvePhoto(formData: FormData) {
   revalidatePath(`/admin/ops/qc/${listingId}`)
 }
 
-async function rejectPhoto(formData: FormData) {
+async function rejectPhoto(assetId: string, listingId: string, notes?: string) {
   'use server'
 
-  const assetId = formData.get('assetId') as string
-  const listingId = formData.get('listingId') as string
-  const notes = formData.get('notes') as string
   const supabase = await createClient()
 
   await supabase
@@ -69,6 +65,14 @@ async function markDelivered(formData: FormData) {
   const listingId = formData.get('listingId') as string
   const supabase = await createClient()
 
+  // Get listing and agent info before updating
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('address, agent_id')
+    .eq('id', listingId)
+    .single()
+
+  // Update listing status
   await supabase
     .from('listings')
     .update({
@@ -77,6 +81,7 @@ async function markDelivered(formData: FormData) {
     })
     .eq('id', listingId)
 
+  // Log the delivery event
   await supabase.from('job_events').insert({
     listing_id: listingId,
     event_type: 'delivered',
@@ -84,8 +89,33 @@ async function markDelivered(formData: FormData) {
     actor_type: 'staff',
   })
 
-  // TODO: Create care task for post-delivery call
-  // TODO: Send delivery notification to agent
+  // Send delivery notification to agent
+  if (listing?.agent_id) {
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('name, email')
+      .eq('id', listing.agent_id)
+      .single()
+
+    if (agent?.email) {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://portal.aerialshots.media'
+      const deliveryUrl = `${baseUrl}/delivery/${listingId}`
+
+      try {
+        await notifyDeliveryReady(
+          { email: agent.email, name: agent.name || 'Agent' },
+          {
+            agentName: agent.name || 'Agent',
+            listingAddress: listing.address || 'Your property',
+            deliveryUrl,
+          }
+        )
+      } catch (notifyError) {
+        // Log but don't fail the delivery if notification fails
+        console.error('Failed to send delivery notification:', notifyError)
+      }
+    }
+  }
 
   redirect('/admin/ops/qc')
 }
@@ -226,100 +256,27 @@ export default async function QCDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Photo Grid */}
+      {/* Photo Grid with Full-screen Viewer */}
       <div className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h2 className="mb-4 font-semibold text-neutral-900">Photos</h2>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {photos.map((photo) => (
-            <div
-              key={photo.id}
-              className={`relative overflow-hidden rounded-lg border-2 ${
-                photo.qc_status === 'approved'
-                  ? 'border-green-500'
-                  : photo.qc_status === 'rejected'
-                    ? 'border-red-500'
-                    : 'border-neutral-200'
-              }`}
-            >
-              <div className="aspect-square">
-                <img
-                  src={photo.aryeo_url}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              {/* Status Badge */}
-              <div
-                className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full ${
-                  photo.qc_status === 'approved'
-                    ? 'bg-green-500 text-white'
-                    : photo.qc_status === 'rejected'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-neutral-100 text-neutral-500'
-                }`}
-              >
-                {photo.qc_status === 'approved' ? (
-                  <Check className="h-4 w-4" />
-                ) : photo.qc_status === 'rejected' ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Clock className="h-3 w-3" />
-                )}
-              </div>
-
-              {/* Category */}
-              {photo.category && (
-                <div className="absolute left-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white">
-                  {photo.category}
-                </div>
-              )}
-
-              {/* Actions for pending photos */}
-              {photo.qc_status === 'pending' && (
-                <div className="flex border-t border-neutral-100">
-                  <form action={approvePhoto} className="flex-1">
-                    <input type="hidden" name="assetId" value={photo.id} />
-                    <input type="hidden" name="listingId" value={id} />
-                    <button
-                      type="submit"
-                      className="flex w-full items-center justify-center gap-1 bg-green-50 py-2 text-green-600 transition-colors hover:bg-green-100"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="text-sm">Approve</span>
-                    </button>
-                  </form>
-                  <form action={rejectPhoto} className="flex-1 border-l border-neutral-100">
-                    <input type="hidden" name="assetId" value={photo.id} />
-                    <input type="hidden" name="listingId" value={id} />
-                    <input type="hidden" name="notes" value="" />
-                    <button
-                      type="submit"
-                      className="flex w-full items-center justify-center gap-1 bg-red-50 py-2 text-red-600 transition-colors hover:bg-red-100"
-                    >
-                      <XCircle className="h-4 w-4" />
-                      <span className="text-sm">Reject</span>
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* Rejection notes */}
-              {photo.qc_status === 'rejected' && photo.qc_notes && (
-                <div className="bg-red-50 p-2 text-xs text-red-600">
-                  {photo.qc_notes}
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold text-neutral-900">Photos</h2>
+          <p className="text-sm text-neutral-500">
+            Click any photo for full-screen review with keyboard shortcuts
+          </p>
         </div>
 
-        {photos.length === 0 && (
-          <p className="py-8 text-center text-neutral-500">
-            No photos have been uploaded yet.
-          </p>
-        )}
+        <QCReviewClient
+          listingId={id}
+          photos={photos}
+          onApprove={async (assetId) => {
+            'use server'
+            await approvePhoto(assetId, id)
+          }}
+          onReject={async (assetId, notes) => {
+            'use server'
+            await rejectPhoto(assetId, id, notes)
+          }}
+        />
       </div>
     </div>
   )
