@@ -106,6 +106,11 @@ import './definitions/lifestyle/neighborhood-data'
 // Content
 import './definitions/content/campaign-launcher'
 import './definitions/content/template-selector'
+import './definitions/content/video-creator'
+import './definitions/content/content-writer'
+
+// Operations (Expert Agents)
+import './definitions/operations/image-enhancer'
 
 // Import and register all workflow definitions
 import './workflows'

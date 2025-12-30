@@ -17,10 +17,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cdn.aryeo.com',
-      },
-      {
-        protocol: 'https',
         hostname: 'images.unsplash.com',
       },
     ],

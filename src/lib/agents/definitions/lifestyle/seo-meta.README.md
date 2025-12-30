@@ -135,26 +135,26 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     "description": "Discover this beautiful 2,400 sqft home in the heart of Cherry Creek. Features include gourmet kitchen, open floor plan, and breathtaking mountain views.",
     "images": [
       {
-        "url": "https://cdn.aryeo.com/listings/hero.jpg",
+        "url": "https://storage.aerialshots.media/listings/hero.jpg",
         "width": 1200,
         "height": 630
       }
     ],
     "type": "website",
-    "url": "https://portal.aerialshots.media/property/abc123"
+    "url": "https://app.aerialshots.media/property/abc123"
   },
   "twitter": {
     "card": "summary_large_image",
     "title": "3BR Modern Home in Cherry Creek | $750K",
     "description": "Stunning 2,400 sqft home with mountain views in Cherry Creek, Denver.",
-    "images": ["https://cdn.aryeo.com/listings/hero.jpg"]
+    "images": ["https://storage.aerialshots.media/listings/hero.jpg"]
   },
   "jsonLd": {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
     "name": "123 Main St, Denver, CO",
     "description": "Beautiful 3-bedroom, 2-bathroom home...",
-    "url": "https://portal.aerialshots.media/property/abc123",
+    "url": "https://app.aerialshots.media/property/abc123",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "123 Main St",
@@ -174,7 +174,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
       "price": "750000",
       "priceCurrency": "USD"
     },
-    "image": "https://cdn.aryeo.com/listings/hero.jpg"
+    "image": "https://storage.aerialshots.media/listings/hero.jpg"
   }
 }
 ```

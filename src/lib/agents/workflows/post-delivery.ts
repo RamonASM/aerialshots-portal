@@ -105,7 +105,88 @@ const postDeliveryWorkflow: WorkflowDefinition = {
       },
     },
 
-    // Step 5: Campaign Launcher - Auto-launch marketing (conditional)
+    // Step 5: Video Creator - Create slideshow and social reel
+    {
+      agentSlug: 'video-creator',
+      parallel: 'content-gen',
+      required: false,
+      condition: async (context: WorkflowContext): Promise<boolean> => {
+        // Only create videos if we have at least 3 photos
+        const photos = context.triggerData?.photos || context.sharedContext.photos as string[] | undefined
+        return !!(photos && Array.isArray(photos) && photos.length >= 3)
+      },
+      inputMapper: async (context: WorkflowContext) => {
+        const photos = (context.triggerData?.photos || context.sharedContext.photos || []) as string[]
+        return {
+          listingId: context.listingId,
+          photos: photos,
+          videoType: 'slideshow',
+          aspectRatio: '16:9',
+          transition: 'kenburns',
+          outputFormat: 'mp4',
+        }
+      },
+      onComplete: async (result, context) => {
+        if (result.success && result.output) {
+          const output = result.output as Record<string, unknown>
+          context.sharedContext.slideshowVideo = {
+            videoPath: output.videoPath as string,
+            videoUrl: output.videoUrl as string,
+            thumbnailPath: output.thumbnailPath as string,
+            durationSeconds: output.durationSeconds as number,
+          }
+          console.log(`Slideshow video created: ${output.durationSeconds}s`)
+        }
+      },
+    },
+
+    // Step 6: Content Writer - Generate descriptions and social captions
+    {
+      agentSlug: 'content-writer',
+      parallel: 'content-gen',
+      required: false,
+      inputMapper: async (context: WorkflowContext) => {
+        const listingData = (context.sharedContext.listingData || context.triggerData?.listing || {}) as Record<string, unknown>
+
+        const property = {
+          address: (listingData.address || context.triggerData?.address || '') as string,
+          city: (listingData.city || context.triggerData?.city || '') as string,
+          state: (listingData.state || context.triggerData?.state || 'FL') as string,
+          beds: (listingData.beds || context.triggerData?.beds || 0) as number,
+          baths: (listingData.baths || context.triggerData?.baths || 0) as number,
+          sqft: (listingData.sqft || context.triggerData?.sqft || 0) as number,
+          price: listingData.price || context.triggerData?.price,
+          propertyType: listingData.propertyType || context.triggerData?.propertyType,
+          features: (listingData.features || context.triggerData?.features || []) as string[],
+          agentName: context.triggerData?.agentName as string | undefined,
+        }
+
+        const neighborhood = context.sharedContext.neighborhoodData || undefined
+
+        return {
+          listingId: context.listingId,
+          property,
+          neighborhood,
+          contentTypes: ['description', 'social'],
+          descriptionStyles: ['professional', 'warm', 'luxury'],
+          socialPlatforms: ['instagram', 'facebook', 'tiktok'],
+          agentName: property.agentName || 'Your Agent',
+        }
+      },
+      onComplete: async (result, context) => {
+        if (result.success && result.output) {
+          const output = result.output as Record<string, unknown>
+          context.sharedContext.generatedContent = {
+            descriptions: output.descriptions,
+            socialCaptions: output.socialCaptions,
+            generatedAt: output.generatedAt,
+          }
+          console.log(`Generated ${output.totalItemsGenerated || 0} content items`)
+        }
+      },
+    },
+
+    // Step 7: Campaign Launcher - Auto-launch marketing (conditional)
     {
       agentSlug: 'campaign-launcher',
       required: false,
@@ -125,12 +206,22 @@ const postDeliveryWorkflow: WorkflowDefinition = {
         return shouldLaunch
       },
       inputMapper: async (context: WorkflowContext) => {
+        const slideshowVideo = context.sharedContext.slideshowVideo as Record<string, unknown> | undefined
+        const generatedContent = context.sharedContext.generatedContent as Record<string, unknown> | undefined
+
         return {
           listingId: context.listingId,
           campaignId: context.campaignId,
           carouselUrls: context.triggerData?.carouselUrls || [],
           preferences: context.triggerData?.campaignPreferences || {},
           autoSchedule: true,
+          // Pass generated content and video URLs from previous steps
+          videoUrls: slideshowVideo ? {
+            slideshow: slideshowVideo.videoUrl,
+            thumbnail: slideshowVideo.thumbnailPath,
+          } : undefined,
+          generatedDescriptions: generatedContent?.descriptions,
+          socialCaptions: generatedContent?.socialCaptions,
         }
       },
       onComplete: async (result, context) => {

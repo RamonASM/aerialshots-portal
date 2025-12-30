@@ -603,7 +603,7 @@ describe('Cubicasa Webhook Handler', () => {
 
       expect(mockInsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          aryeo_url: 'https://cubicasa.com/2d-floorplan.png',
+          media_url: 'https://cubicasa.com/2d-floorplan.png',
         })
       )
     })

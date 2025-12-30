@@ -509,7 +509,7 @@ export function CampaignDashboard({ campaign, creditBalance = 0 }: CampaignDashb
               {listing.media_assets && listing.media_assets.length > 0 && (
                 <div className="aspect-video relative">
                   <img
-                    src={listing.media_assets[0].aryeo_url}
+                    src={listing.media_assets[0].media_url || listing.media_assets[0].aryeo_url || ''}
                     alt={listing.address}
                     className="h-full w-full object-cover"
                   />

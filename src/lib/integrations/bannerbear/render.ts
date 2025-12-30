@@ -3,6 +3,7 @@
 
 import { createImage, buildSlideModifications, type BannerbearImage } from './client'
 import { TEMPLATES } from './templates'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { CarouselSlide } from '@/lib/supabase/types'
 
 interface RenderSlideOptions {
@@ -21,7 +22,7 @@ interface RenderCarouselOptions {
   slides: CarouselSlide[]
   mediaAssets: Array<{
     id: string
-    aryeo_url: string
+    media_url: string | null
     type: string
     category?: string | null
   }>
@@ -79,7 +80,8 @@ function mapSlideToPhoto(
   // Simple mapping: cycle through photos
   // In production, could use AI or category matching
   const photoIndex = slideIndex % photos.length
-  return photos[photoIndex]?.aryeo_url || null
+  const photo = photos[photoIndex]
+  return photo ? resolveMediaUrl(photo) : null
 }
 
 // Render all slides in a carousel

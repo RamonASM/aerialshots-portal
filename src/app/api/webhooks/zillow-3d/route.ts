@@ -9,13 +9,13 @@ import crypto from 'crypto'
  * Note: Zillow does not provide a direct API for 3D tours.
  * Tours are typically created via:
  * 1. Zillow 3D Home app (mobile scanning)
- * 2. Partner integrations (like Aryeo)
+ * 2. Partner integrations
  * 3. MLS virtual tour field
  *
  * This handler is designed for:
  * 1. Manual status updates from admin UI
  * 2. Future Zillow API integration if available
- * 3. Partner webhook forwarding from Aryeo
+ * 3. Partner webhook forwarding
  *
  * Supported events:
  * - scheduled: 3D tour scan has been scheduled
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
           await adminSupabase
             .from('media_assets')
             .update({
-              aryeo_url: data.tour_url,
+              media_url: data.tour_url,
               embed_url: data.embed_url,
               thumbnail_url: data.thumbnail_url,
               qc_status: 'approved', // Auto-approve Zillow tours
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
         } else {
           await adminSupabase.from('media_assets').insert({
             listing_id: listing.id,
-            aryeo_url: data.tour_url,
+            media_url: data.tour_url,
             embed_url: data.embed_url,
             thumbnail_url: data.thumbnail_url,
             type: 'virtual_tour',
@@ -248,7 +248,7 @@ export async function GET() {
     setup_instructions: {
       step1: 'Use Zillow 3D Home app to capture tours',
       step2: 'Tours appear on Zillow within 24-48 hours',
-      step3: 'Update listing status manually or via Aryeo sync',
+      step3: 'Update listing status manually or via integration webhook',
     },
   })
 }

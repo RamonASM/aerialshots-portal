@@ -19,13 +19,19 @@ import { QCImageViewer } from './QCImageViewer'
 interface MediaAsset {
   id: string
   listing_id: string
-  aryeo_url: string
+  aryeo_url?: string | null // DEPRECATED - no longer used
+  media_url: string | null // Native ASM storage URL
   storage_path?: string | null
   processed_storage_path?: string | null
   qc_status: string
   qc_notes?: string | null
   category?: string | null
   type: string
+}
+
+// Helper to get the best URL for an asset
+function getAssetUrl(asset: MediaAsset): string {
+  return asset.media_url || ''
 }
 
 interface QCReviewClientProps {
@@ -346,7 +352,7 @@ export function QCReviewClient({
                 src={
                   photo.processed_storage_path
                     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/processed-photos/${photo.processed_storage_path}`
-                    : photo.aryeo_url
+                    : getAssetUrl(photo)
                 }
                 alt=""
                 className="h-full w-full object-cover"

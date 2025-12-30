@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IntegrationPanelClient } from '@/components/admin/ops/IntegrationPanelClient'
+import { SkillsPanelClient } from '@/components/admin/ops/SkillsPanelClient'
 import { JobNotesClient } from '@/components/admin/ops/JobNotesClient'
 import { JobTasksClient } from '@/components/admin/ops/JobTasksClient'
 import { JobServicesClient } from '@/components/admin/ops/JobServicesClient'
@@ -92,7 +93,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       : { data: null },
     supabase
       .from('media_assets')
-      .select('id, aryeo_url, type, category, qc_status')
+      .select('id, aryeo_url, media_url, type, category, qc_status')
       .eq('listing_id', id),
   ])
 
@@ -209,6 +210,15 @@ export default async function JobDetailPage({ params }: PageProps) {
         lastCheck={listing.last_integration_check}
       />
 
+      {/* AI Skills Panel */}
+      <SkillsPanelClient
+        listingId={listing.id}
+        mediaAssets={(media_assets || []).map((asset) => ({
+          url: asset.media_url || asset.aryeo_url || '',
+          type: asset.type,
+        }))}
+      />
+
       {/* Details Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Job Info */}
@@ -288,7 +298,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             {listing.media_assets
               .filter((m: { type: string }) => m.type === 'photo')
               .slice(0, 16)
-              .map((asset: { id: string; aryeo_url: string; qc_status: string }) => (
+              .map((asset: { id: string; media_url: string | null; aryeo_url: string | null; qc_status: string }) => (
                 <div
                   key={asset.id}
                   className={`relative aspect-square overflow-hidden rounded-lg ${
@@ -300,7 +310,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                   }`}
                 >
                   <img
-                    src={asset.aryeo_url}
+                    src={asset.media_url || asset.aryeo_url || ''}
                     alt=""
                     className="h-full w-full object-cover"
                   />

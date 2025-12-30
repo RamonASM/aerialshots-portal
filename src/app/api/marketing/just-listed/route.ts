@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateJustListedAssets, isMarketingConfigured } from '@/lib/marketing'
 import type { JustListedData, MarketingAssetFormat } from '@/lib/marketing'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,14 +78,15 @@ export async function POST(request: NextRequest) {
     // Get hero photo for the listing
     const { data: heroPhoto } = await supabase
       .from('media_assets')
-      .select('aryeo_url')
+      .select('media_url')
       .eq('listing_id', listingId)
       .eq('type', 'photo')
       .order('sort_order', { ascending: true })
       .limit(1)
       .single()
 
-    if (!heroPhoto?.aryeo_url) {
+    const heroPhotoUrl = resolveMediaUrl(heroPhoto)
+    if (!heroPhotoUrl) {
       return NextResponse.json(
         { error: 'No photos available for marketing graphics' },
         { status: 400 }
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
       beds: listingData.beds || listingData.bedrooms || 0,
       baths: listingData.baths || listingData.bathrooms || 0,
       sqft: listingData.sqft || listingData.square_feet || 0,
-      photoUrl: heroPhoto.aryeo_url,
+      photoUrl: heroPhotoUrl,
       agentName: agent.name,
       agentPhone: agent.phone,
       agentLogoUrl: agent.logo_url,

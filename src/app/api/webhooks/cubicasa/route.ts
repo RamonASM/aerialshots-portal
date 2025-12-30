@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           await supabase
             .from('media_assets')
             .update({
-              aryeo_url: floorPlanUrl,
+              media_url: floorPlanUrl,
               qc_status: 'pending',
             })
             .eq('id', existingAsset.id)
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
           // Create new floor plan asset
           await supabase.from('media_assets').insert({
             listing_id: listing.id as string,
-            aryeo_url: floorPlanUrl,
+            media_url: floorPlanUrl,
             type: 'floorplan',
             category: 'floor_plan',
             qc_status: 'pending',

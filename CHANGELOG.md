@@ -2,6 +2,287 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2024-12-30
+
+### Added - Performance & Accessibility Polish
+
+#### Performance Optimizations
+- Dynamic imports for below-fold components on homepage
+  - ProcessTimeline, PackagesPreview, PortfolioPreview, FAQAccordion, CTASection
+  - Reduces initial bundle size by ~30-40KB
+- Dynamic import for Lightbox component (loaded on-demand only)
+- Vercel deployment configuration (`vercel.json`)
+  - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+  - Static asset caching (fonts, _next/static)
+  - Cron jobs for review requests and drip campaigns
+  - PostHog analytics proxy rewrites
+
+#### Accessibility Improvements (WCAG AA)
+- Improved color contrast ratio for muted text (#a1a1a6 → #b8b8bd)
+  - Now meets 4.5:1 contrast ratio requirement
+- FAQAccordion accessibility overhaul:
+  - Added `aria-expanded` to accordion buttons
+  - Added `aria-controls` linking to content panels
+  - Added `role="region"` with `aria-labelledby`
+  - Added `aria-hidden` to collapsed content
+  - Added visible focus indicators (focus-visible:ring-2)
+  - Replaced hardcoded colors with semantic CSS variables
+- Section landmarks with `aria-label` attributes
+
+---
+
+### Added - Phase 6: SEO & Structured Data
+
+#### JSON-LD Structured Data (`src/lib/seo/json-ld.tsx`)
+- `OrganizationJsonLd` - Company/brand schema
+- `LocalBusinessJsonLd` - Local business with hours, services, ratings
+- `WebSiteJsonLd` - Website schema with search action
+- `ServiceJsonLd` - Individual service offerings
+- `FAQPageJsonLd` - FAQ question/answer pairs
+- `BreadcrumbJsonLd` - Breadcrumb navigation
+- `ProductJsonLd` - Package/pricing products
+- `ImageGalleryJsonLd` - Portfolio image galleries
+- `HowToJsonLd` - Process/checklist steps
+- `AggregateRatingJsonLd` - Review ratings
+- `HomePageJsonLd` - Combined homepage schema
+- Company constants: COMPANY_INFO, SERVICES
+
+#### XML Sitemap (`src/app/sitemap.ts`)
+- Dynamic sitemap generation
+- Static marketing pages (home, about, portfolio, blog, checklist, booking)
+- Developer documentation pages
+- Dynamic community pages from database
+- Dynamic property pages from database (delivered/published listings)
+- Proper priorities and change frequencies
+
+#### Robots.txt (`src/app/robots.ts`)
+- Allow public pages (marketing, portfolio, community, property)
+- Disallow private areas (admin, team, dashboard, client, delivery, API)
+- Block AI training bots (GPTBot, ChatGPT, CCBot, anthropic-ai)
+- Reference to sitemap
+
+#### Page JSON-LD Integration
+- Homepage: Organization, LocalBusiness, WebSite, FAQ schemas
+- About: Organization, Breadcrumb, HowTo (booking process)
+- Portfolio: ImageGallery, Breadcrumb
+- Checklist: HowTo (preparation steps), Breadcrumb
+
+#### Shared Data (`src/lib/data/marketing-faqs.ts`)
+- Extracted FAQ data for reuse in component and schema
+
+---
+
+### Added - Phase 6 & 7: AI Skills & Agents Platform
+
+#### Skills Framework (`src/lib/skills/`)
+- `types.ts` - Core skill interfaces (Skill, SkillResult, SkillConfig)
+- `registry.ts` - Skill registration and discovery system
+- `executor.ts` - Skill execution with logging and retry logic
+- `composer.ts` - Skill composition builder for multi-step workflows
+- `framework.test.ts` - 28 tests for core framework
+
+#### Image Skills (`src/lib/skills/image/`)
+- `generate.ts` - Image generation skill (Gemini/SD providers)
+- `analyze.ts` - Room type and object detection
+- `inpaint.ts` - AI object removal/cleanup
+- `twilight.ts` - Day-to-dusk conversion
+- 28 tests total for image skills
+
+#### Content Skills (`src/lib/skills/content/`)
+- `listing-description.ts` - AI property descriptions (3 styles)
+- `social-caption.ts` - Social media captions (Instagram/FB/TikTok)
+- `email-copy.ts` - Marketing email generation
+- 39 tests total for content skills
+
+#### Video Skills (`src/lib/skills/video/`)
+- `slideshow.ts` - FFmpeg-based slideshow generator
+- `motion.ts` - Ken Burns/parallax effects
+- `audio.ts` - Music overlay and sync
+- `encode.ts` - Final video rendering
+- 38 tests total for video skills
+
+#### Expert Agents (`src/lib/agents/definitions/`)
+- `content/video-creator.ts` - Video creation agent (composes video skills)
+- `content/content-writer.ts` - Content generation agent (composes content skills)
+- `operations/image-enhancer.ts` - Image processing agent (composes image skills)
+- 16 tests total for expert agents
+
+#### Workflow Integration
+- Updated `post-delivery.ts` workflow with video-creator and content-writer steps
+- Parallel execution support for content generation
+- Shared context for skill outputs between workflow steps
+
+#### Virtual Staging Integration
+- `src/lib/integrations/virtual-staging/client.ts` - Gemini-powered staging
+- Room type detection, furniture removal, style-based staging
+- 27 tests for staging integration
+
+#### Proofing Service
+- `src/lib/proofing/service.ts` - Client photo proofing workflow
+- Session management, photo selection, pinned comments
+- Seller sharing with granular permissions
+
+#### Blog Integration
+- `src/lib/queries/blog.ts` - Sanity CMS blog queries
+- Article fetching, category filters, related articles
+- Blog page at `/(marketing)/blog/[slug]/page.tsx`
+
+**Test Coverage: 1351 tests passing (65 test files)**
+
+---
+
+### Added - Phase 5: Content Pages
+
+#### About Page (`src/app/(marketing)/about/page.tsx`)
+- Company story and mission section
+- Team member cards from `staff` table
+- Certifications showcase (FAA Part 107, Zillow, Matterport, Insured)
+- Equipment showcase (Drones, Cameras, Lenses, 3D, Video, Lighting)
+- Process timeline (Book → Shoot → Edit → Deliver → Publish)
+- Company stats from database
+- CTA section
+
+#### Team Data (`src/lib/queries/team.ts`)
+- `getTeamMembers()` - Active staff with skills and certifications
+- `getCompanyStats()` - Listings, agents, years, cities served
+- 1-hour cache with 'team'/'company' tags
+
+#### Blog Integration (Links to External Blog)
+- `src/lib/integrations/sanity/client.ts` - Sanity CMS client
+  - Matches existing `aerialshots-blog-frontend` configuration
+  - Project ID: dqyvtgh9, Dataset: production
+- `src/lib/queries/blog.ts` - Blog article queries
+  - `getBlogArticles()` - All published articles
+  - `getFeaturedBlogArticles()` - Featured content
+  - `getBlogCategories()` - Category list
+  - `getArticlesByPillar()` - Content pillar filtering
+  - Links to external blog at blog.aerialshots.media
+- `src/app/(marketing)/blog/page.tsx` - Blog preview page
+  - Featured article card
+  - Article grid with pillar badges
+  - Category filters linking to external blog
+  - CTA to full blog site
+
+#### Checklist Page (`src/app/(marketing)/checklist/`)
+- `page.tsx` - Pre-shoot preparation guide
+  - 6 sections: Exterior, Kitchen, Living, Bedrooms, Bathrooms, Garage
+  - 58 checklist items with priority levels
+  - Quick tips section
+  - Common mistakes to avoid
+- `ChecklistClient.tsx` - Interactive checklist
+  - Progress tracking with percentage
+  - Collapsible sections
+  - Priority badges (Must Do, Important, Nice to Have)
+  - Reset and print functionality
+  - Completion celebration
+
+---
+
+### Added - Phase 4: Portfolio & Gallery
+
+#### Portfolio Components
+- `src/components/marketing/portfolio/PortfolioGrid.tsx` - Masonry gallery
+  - Filterable by type (Photos, Video, Drone, 3D Tours, Staging, Floor Plans)
+  - Responsive grid layout with column spans
+  - Animated filter transitions
+  - Video preview on hover
+- `src/components/marketing/portfolio/Lightbox.tsx` - Full-screen viewer
+  - Keyboard navigation (← → Esc Z Space)
+  - Thumbnail strip for navigation
+  - Zoom toggle for photos
+  - Video playback support
+  - Touch/swipe gestures for mobile
+- `src/components/marketing/portfolio/BeforeAfterSlider.tsx` - Virtual staging comparison
+  - Drag slider for before/after comparison
+  - Touch support for mobile
+  - Labels with icons
+  - StagingShowcase with example selector
+  - InlineComparison hover-based variant
+
+#### Portfolio Data
+- `src/lib/queries/portfolio.ts` - Cached portfolio data fetching
+  - `getPortfolioItems()` - All portfolio items from delivered listings
+  - `getFeaturedPortfolioItems()` - Featured items for homepage
+  - `getStagingExamples()` - Before/after staging pairs
+  - `getPortfolioStats()` - Aggregate counts by type
+  - 1-hour cache with 'portfolio' tag
+
+#### Portfolio Page
+- `src/app/(marketing)/portfolio/page.tsx` - Main portfolio page
+  - Hero section with stats display
+  - Filterable gallery with suspense
+  - CTA section with booking/pricing links
+- `src/app/(marketing)/portfolio/PortfolioClient.tsx` - Client component
+  - Lightbox state management via useLightbox hook
+  - Virtual staging showcase toggle
+
+---
+
+### Added - Phase 3: Enhanced Booking Flow
+
+#### State Management
+- `src/stores/useBookingStore.ts` - Zustand store with persistence
+  - Form data, pricing calculations, smart recommendations
+  - Immer middleware for immutable updates
+  - Session persistence with localStorage
+
+#### Booking Components
+- `src/components/booking/GooglePlacesAutocomplete.tsx` - Address autocomplete
+  - Florida-biased search results
+  - Parses full address components (street, city, state, zip, lat/lng)
+  - Selected address display with edit capability
+- `src/components/booking/AirspaceMap.tsx` - Drone airspace visualization
+  - Integrates with Aloft API for airspace checks
+  - Visual status indicators (clear/restricted/prohibited)
+  - Nearby airport markers and restriction list
+- `src/components/booking/AvailabilityCalendar.tsx` - Scheduling with weather
+  - 7-day weather forecast overlay
+  - Time slot grid with availability
+  - Weather-based date recommendations
+- `src/components/booking/PackageSelection.tsx` - Enhanced package picker
+  - 3-column card layout with "Most Popular" badge
+  - Square footage tier selector
+  - Savings display vs. à la carte pricing
+- `src/components/booking/SmartAddons.tsx` - AI-recommended add-ons
+  - Categorized grid (staging, photography, video, delivery)
+  - Smart recommendations based on package selection
+  - Quantity controls for per-unit add-ons
+- `src/components/booking/ExitIntentModal.tsx` - Cart abandonment recovery
+  - Detects mouse leaving page top
+  - 10% discount offer with code COMEBACK10
+  - Email capture for recovery link
+- `src/components/booking/CouponCodeInput.tsx` - Coupon validation
+  - Real-time validation via API
+  - Applied coupon display with remove option
+- `src/components/booking/LoyaltyPointsSelector.tsx` - Points redemption
+  - Slider-based point selection
+  - Max 50% of order with points
+  - Real-time value calculation
+- `src/components/booking/PaymentStep.tsx` - Enhanced payment
+  - Stripe Elements integration
+  - Coupon and loyalty point discounts
+  - Pay now or pay later options
+
+#### Booking APIs
+- `src/app/api/airspace/route.ts` - Airspace status check
+- `src/app/api/weather/route.ts` - Weather forecast for scheduling
+- `src/app/api/coupons/validate/route.ts` - Coupon validation
+- `src/app/api/booking/session/route.ts` - Cart recovery sessions
+  - POST: Save/update session
+  - GET: Retrieve by sessionId
+  - PATCH: Mark as converted/abandoned
+- `src/app/api/booking/recovery-email/route.ts` - Abandonment email
+
+#### Booking Hooks
+- `src/hooks/useBookingSync.ts` - Session sync with server
+  - Auto-save on form changes
+  - beforeunload handler for recovery
+- `useExitIntent` - Mouse leave detection
+- `useLoyaltyPoints` - Fetch user's available points
+- `useAirspace` - Check airspace for coordinates
+
+---
+
 ## [Unreleased] - 2024-12-29
 
 ### Added - Phase 14: Complete Platform

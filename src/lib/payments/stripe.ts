@@ -60,3 +60,48 @@ export function toDollars(cents: number): number {
 export function formatAmountForStripe(amount: number): number {
   return toCents(amount)
 }
+
+/**
+ * Create a payment intent
+ */
+export async function createPaymentIntent(params: {
+  amount: number // in dollars
+  currency?: string
+  customer_id?: string
+  metadata?: Record<string, string>
+  idempotencyKey?: string
+}): Promise<{
+  success: boolean
+  clientSecret?: string
+  paymentIntentId?: string
+  error?: string
+}> {
+  try {
+    const stripe = getStripe()
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: toCents(params.amount),
+        currency: params.currency || 'usd',
+        customer: params.customer_id,
+        metadata: params.metadata,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      },
+      params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined
+    )
+
+    return {
+      success: true,
+      clientSecret: paymentIntent.client_secret || undefined,
+      paymentIntentId: paymentIntent.id,
+    }
+  } catch (error) {
+    console.error('[Stripe] Error creating payment intent:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create payment intent',
+    }
+  }
+}

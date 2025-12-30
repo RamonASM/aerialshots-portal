@@ -352,7 +352,11 @@ export interface Database {
         Row: {
           id: string
           listing_id: string
-          aryeo_url: string
+          /** @deprecated Use media_url instead. Legacy Aryeo CDN URL. */
+          aryeo_url: string | null
+          /** Native ASM storage URL - use this for all new media. */
+          media_url: string | null
+          storage_bucket: string | null
           type: string
           category: string | null
           sort_order: number | null
@@ -372,11 +376,18 @@ export interface Database {
           file_size_bytes: number | null
           image_width: number | null
           image_height: number | null
+          // Migration tracking
+          migration_status: 'pending' | 'migrating' | 'completed' | 'failed'
+          migrated_at: string | null
         }
         Insert: {
           id?: string
           listing_id: string
-          aryeo_url: string
+          /** @deprecated Use media_url instead. Legacy Aryeo CDN URL. */
+          aryeo_url?: string | null
+          /** Native ASM storage URL - use this for all new media. */
+          media_url?: string | null
+          storage_bucket?: string | null
           type: string
           category?: string | null
           sort_order?: number | null
@@ -396,11 +407,17 @@ export interface Database {
           file_size_bytes?: number | null
           image_width?: number | null
           image_height?: number | null
+          // Migration tracking
+          migration_status?: 'pending' | 'migrating' | 'completed' | 'failed'
+          migrated_at?: string | null
         }
         Update: {
           id?: string
           listing_id?: string
-          aryeo_url?: string
+          /** @deprecated Use media_url instead. Legacy Aryeo CDN URL. */
+          aryeo_url?: string | null
+          media_url?: string | null
+          storage_bucket?: string | null
           type?: string
           category?: string | null
           sort_order?: number | null
@@ -420,6 +437,9 @@ export interface Database {
           file_size_bytes?: number | null
           image_width?: number | null
           image_height?: number | null
+          // Migration tracking
+          migration_status?: 'pending' | 'migrating' | 'completed' | 'failed'
+          migrated_at?: string | null
         }
         Relationships: [
           {
@@ -1970,6 +1990,186 @@ export interface Database {
             foreignKeyName: "share_links_agent_id_fkey"
             columns: ["agent_id"]
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      seller_access_controls: {
+        Row: {
+          id: string
+          listing_id: string
+          media_access_enabled: boolean
+          granted_by_payment: boolean
+          granted_by_agent: boolean
+          granted_by_admin: boolean
+          granted_at: string | null
+          granted_by_user_id: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          media_access_enabled?: boolean
+          granted_by_payment?: boolean
+          granted_by_agent?: boolean
+          granted_by_admin?: boolean
+          granted_at?: string | null
+          granted_by_user_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          listing_id?: string
+          media_access_enabled?: boolean
+          granted_by_payment?: boolean
+          granted_by_agent?: boolean
+          granted_by_admin?: boolean
+          granted_at?: string | null
+          granted_by_user_id?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_access_controls_listing_id_fkey"
+            columns: ["listing_id"]
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      photographer_locations: {
+        Row: {
+          id: string
+          staff_id: string
+          listing_id: string | null
+          latitude: number
+          longitude: number
+          accuracy: number | null
+          heading: number | null
+          speed: number | null
+          status: string
+          eta_minutes: number | null
+          last_updated_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          staff_id: string
+          listing_id?: string | null
+          latitude: number
+          longitude: number
+          accuracy?: number | null
+          heading?: number | null
+          speed?: number | null
+          status?: string
+          eta_minutes?: number | null
+          last_updated_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          staff_id?: string
+          listing_id?: string | null
+          latitude?: number
+          longitude?: number
+          accuracy?: number | null
+          heading?: number | null
+          speed?: number | null
+          status?: string
+          eta_minutes?: number | null
+          last_updated_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_locations_staff_id_fkey"
+            columns: ["staff_id"]
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photographer_locations_listing_id_fkey"
+            columns: ["listing_id"]
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      reschedule_requests: {
+        Row: {
+          id: string
+          listing_id: string
+          share_link_id: string | null
+          requester_name: string | null
+          requester_email: string | null
+          requester_phone: string | null
+          original_date: string | null
+          requested_slots: Json
+          reason: string | null
+          status: 'pending' | 'approved' | 'denied' | 'cancelled'
+          admin_notes: string | null
+          handled_by: string | null
+          handled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          share_link_id?: string | null
+          requester_name?: string | null
+          requester_email?: string | null
+          requester_phone?: string | null
+          original_date?: string | null
+          requested_slots?: Json
+          reason?: string | null
+          status?: 'pending' | 'approved' | 'denied' | 'cancelled'
+          admin_notes?: string | null
+          handled_by?: string | null
+          handled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          listing_id?: string
+          share_link_id?: string | null
+          requester_name?: string | null
+          requester_email?: string | null
+          requester_phone?: string | null
+          original_date?: string | null
+          requested_slots?: Json
+          reason?: string | null
+          status?: 'pending' | 'approved' | 'denied' | 'cancelled'
+          admin_notes?: string | null
+          handled_by?: string | null
+          handled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reschedule_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_share_link_id_fkey"
+            columns: ["share_link_id"]
+            referencedRelation: "share_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reschedule_requests_handled_by_fkey"
+            columns: ["handled_by"]
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           }
         ]
@@ -4916,6 +5116,7 @@ export type PaymentStatus =
   | 'pending'
   | 'processing'
   | 'succeeded'
+  | 'paid'
   | 'failed'
   | 'refunded'
   | 'cancelled'
@@ -4969,7 +5170,7 @@ export type Zillow3DStatus =
 export type SLAStatus = 'on_track' | 'at_risk' | 'overdue'
 
 // Share Link Types
-export type ShareLinkType = 'media' | 'schedule' | 'status'
+export type ShareLinkType = 'media' | 'schedule' | 'status' | 'seller'
 
 // Seller Schedule Types
 export type SellerScheduleStatus =

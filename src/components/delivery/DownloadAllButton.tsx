@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Download, Loader2, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { Database } from '@/lib/supabase/types'
 
 type MediaAsset = Database['public']['Tables']['media_assets']['Row']
@@ -19,7 +20,7 @@ export function DownloadAllButton({ assets, listingAddress }: DownloadAllButtonP
   const [completed, setCompleted] = useState(false)
 
   const downloadableAssets = assets.filter(
-    (a) => a.type !== 'matterport' && a.type !== 'interactive'
+    (a) => a.type !== 'matterport' && a.type !== 'interactive' && resolveMediaUrl(a)
   )
 
   const handleDownloadAll = async () => {
@@ -35,9 +36,11 @@ export function DownloadAllButton({ assets, listingAddress }: DownloadAllButtonP
       // In production, you might want to use a ZIP library like JSZip
       for (let i = 0; i < downloadableAssets.length; i++) {
         const asset = downloadableAssets[i]
+        const assetUrl = resolveMediaUrl(asset)
+        if (!assetUrl) continue
         setCurrentFile(i + 1)
         try {
-          const response = await fetch(asset.aryeo_url)
+          const response = await fetch(assetUrl)
           const blob = await response.blob()
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')

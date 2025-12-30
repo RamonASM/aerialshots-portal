@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -26,7 +27,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     // Get media asset
     const { data: asset } = await adminSupabase
       .from('media_assets')
-      .select('id, type, aryeo_url')
+      .select('id, type, media_url')
       .eq('id', id)
       .single()
 
@@ -95,7 +96,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     // Check if media asset exists and is a video
     const { data: asset } = await adminSupabase
       .from('media_assets')
-      .select('id, type, aryeo_url')
+      .select('id, type, media_url')
       .eq('id', id)
       .single()
 
@@ -117,7 +118,7 @@ export async function POST(request: Request, { params }: RouteParams) {
           watermark_enabled: watermark_enabled !== false,
           // In production, you would trigger video processing here
           // For now, we'll use the original URL as the preview
-          preview_url: asset.aryeo_url,
+          preview_url: resolveMediaUrl(asset),
           generated_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
         },

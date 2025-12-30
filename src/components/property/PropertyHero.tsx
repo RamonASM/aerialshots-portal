@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { Database } from '@/lib/supabase/types'
 
 type MediaAsset = Database['public']['Tables']['media_assets']['Row']
@@ -18,7 +19,12 @@ export function PropertyHero({ images, video, address }: PropertyHeroProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showVideo, setShowVideo] = useState(false)
 
-  const heroImages = images.slice(0, 10)
+  // Filter to only images with a valid URL
+  const heroImages = images.filter(img => resolveMediaUrl(img)).slice(0, 10)
+
+  // Helper to get resolved URL
+  const getImageUrl = (image: MediaAsset) => resolveMediaUrl(image) || ''
+  const videoUrl = video ? resolveMediaUrl(video) : null
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? heroImages.length - 1 : prev - 1))
@@ -41,10 +47,10 @@ export function PropertyHero({ images, video, address }: PropertyHeroProps) {
   return (
     <div className="relative h-[50vh] min-h-[400px] bg-black lg:h-[70vh]">
       {/* Video Overlay */}
-      {showVideo && video && (
+      {showVideo && videoUrl && (
         <div className="absolute inset-0 z-20 bg-black">
           <video
-            src={video.aryeo_url}
+            src={videoUrl}
             autoPlay
             controls
             className="h-full w-full object-contain"
@@ -64,7 +70,7 @@ export function PropertyHero({ images, video, address }: PropertyHeroProps) {
       {/* Image Carousel */}
       <div className="relative h-full">
         <Image
-          src={heroImages[currentIndex]?.aryeo_url ?? ''}
+          src={getImageUrl(heroImages[currentIndex])}
           alt={`${address} - Photo ${currentIndex + 1}`}
           fill
           className="object-cover"
@@ -96,7 +102,7 @@ export function PropertyHero({ images, video, address }: PropertyHeroProps) {
         )}
 
         {/* Play Video Button */}
-        {video && !showVideo && (
+        {videoUrl && !showVideo && (
           <button
             onClick={() => setShowVideo(true)}
             className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 p-4 text-black transition-transform hover:scale-110"

@@ -9,7 +9,7 @@ interface MediaAsset {
   id: string
   type: string
   category: string | null
-  aryeo_url: string
+  media_url: string | null
   qc_status: string
 }
 

@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { Building, ExternalLink, Eye, MapPin, Users, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ShareButton } from '@/components/dashboard/ShareButton'
+import { AIIndicator } from '@/components/dashboard/SkillBadges'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 interface MediaAsset {
   id: string
   listing_id: string
-  aryeo_url: string
+  media_url: string | null
   type: string
 }
 
@@ -29,6 +30,7 @@ interface Listing {
   ops_status: string | null
   media_assets: MediaAsset[]
   lead_count: number
+  has_ai_content?: boolean
 }
 
 interface RealtimeListingsGridProps {
@@ -98,7 +100,7 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
 
     const { data: media } = await supabase
       .from('media_assets')
-      .select('id, listing_id, aryeo_url, type')
+      .select('id, listing_id, media_url, type')
       .eq('listing_id', listingId)
 
     const { count: leadCount } = await supabase
@@ -106,10 +108,25 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
       .select('*', { count: 'exact', head: true })
       .eq('listing_id', listingId)
 
+    // Check for AI content (may not exist yet)
+    let hasAIContent = false
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count } = await (supabase as any)
+        .from('listing_skill_outputs')
+        .select('*', { count: 'exact', head: true })
+        .eq('listing_id', listingId)
+        .eq('status', 'completed')
+      hasAIContent = (count || 0) > 0
+    } catch {
+      // Table may not exist yet
+    }
+
     return {
       ...listing,
       media_assets: media || [],
       lead_count: leadCount || 0,
+      has_ai_content: hasAIContent,
     } as Listing
   }
 
@@ -161,9 +178,9 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
             >
               {/* Image */}
               <div className="relative h-40 bg-[#0a0a0a]">
-                {heroImage ? (
+                {heroImage?.media_url ? (
                   <img
-                    src={heroImage.aryeo_url}
+                    src={heroImage.media_url}
                     alt={listing.address}
                     className="h-full w-full object-cover"
                   />
@@ -225,14 +242,20 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
                   ) : (
                     <span />
                   )}
-                  {/* Lead Count */}
-                  {listing.lead_count > 0 && (
-                    <div className="flex items-center gap-1 text-[13px]">
-                      <Users className="h-3.5 w-3.5 text-amber-400" />
-                      <span className="text-amber-400 font-medium">{listing.lead_count}</span>
-                      <span className="text-[#636366]">lead{listing.lead_count !== 1 ? 's' : ''}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* AI Content Badge */}
+                    {listing.has_ai_content && (
+                      <AIIndicator hasContent={true} />
+                    )}
+                    {/* Lead Count */}
+                    {listing.lead_count > 0 && (
+                      <div className="flex items-center gap-1 text-[13px]">
+                        <Users className="h-3.5 w-3.5 text-amber-400" />
+                        <span className="text-amber-400 font-medium">{listing.lead_count}</span>
+                        <span className="text-[#636366]">lead{listing.lead_count !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 flex gap-2">

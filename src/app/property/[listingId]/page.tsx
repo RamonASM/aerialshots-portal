@@ -57,8 +57,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: listing.address,
       description: `${features}${priceStr}`,
       type: 'website',
-      images: listing.media_assets[0]?.aryeo_url
-        ? [{ url: listing.media_assets[0].aryeo_url }]
+      images: (listing.media_assets[0]?.media_url || listing.media_assets[0]?.aryeo_url)
+        ? [{ url: listing.media_assets[0].media_url || listing.media_assets[0].aryeo_url || '' }]
         : [],
     },
   }
@@ -160,7 +160,7 @@ export default async function PropertyPage({ params }: PageProps) {
                 </h2>
                 <div className="overflow-hidden rounded-xl border border-white/[0.08]">
                   <iframe
-                    src={mediaByCategory.matterport[0].aryeo_url}
+                    src={mediaByCategory.matterport[0].media_url || mediaByCategory.matterport[0].aryeo_url || ''}
                     className="h-[400px] w-full sm:h-[500px] lg:h-[600px]"
                     allowFullScreen
                     title="3D Virtual Tour"
@@ -179,7 +179,7 @@ export default async function PropertyPage({ params }: PageProps) {
                   {mediaByCategory.floorplan.map((fp) => (
                     <img
                       key={fp.id}
-                      src={fp.aryeo_url}
+                      src={fp.media_url || fp.aryeo_url || ''}
                       alt="Floor Plan"
                       className="w-full rounded-xl border border-white/[0.08]"
                     />

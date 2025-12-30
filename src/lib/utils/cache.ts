@@ -35,7 +35,7 @@ export function getListingCacheKey(id: string): string {
 }
 
 /**
- * Generate a cache key for a listing by Aryeo ID
+ * @deprecated The Aryeo integration has been removed. Use getListingCacheKey instead.
  */
 export function getListingByAryeoCacheKey(aryeoId: string): string {
   return `listing:aryeo:${aryeoId}`

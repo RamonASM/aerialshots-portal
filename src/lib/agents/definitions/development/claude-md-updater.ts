@@ -37,7 +37,7 @@ The CLAUDE.md file follows this structure:
 3. Architecture - Key patterns, file structure, tech stack
 4. API Routes - All API endpoints with their purpose
 5. Database Schema - Tables and their relationships
-6. Integrations - External services (Supabase, Aryeo, etc.)
+6. Integrations - External services (Supabase, Stripe, etc.)
 7. Environment Variables - Required .env configuration
 8. Key Workflows - Important business processes
 

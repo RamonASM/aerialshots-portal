@@ -22,13 +22,19 @@ import { InpaintModal } from './InpaintModal'
 interface MediaAsset {
   id: string
   listing_id: string
-  aryeo_url: string
+  aryeo_url?: string | null // DEPRECATED - no longer used
+  media_url: string | null // Native ASM storage URL
   storage_path?: string | null
   processed_storage_path?: string | null
   qc_status: string
   qc_notes?: string | null
   category?: string | null
   type: string
+}
+
+// Helper to get the best URL for an asset
+function getAssetUrl(asset: MediaAsset): string {
+  return asset.media_url || ''
 }
 
 interface QCImageViewerProps {
@@ -304,7 +310,7 @@ export function QCImageViewer({
         <div className="flex h-full items-center justify-center p-8">
           {showComparison && hasProcessedVersion ? (
             <BeforeAfterSlider
-              beforeImage={currentAsset.aryeo_url}
+              beforeImage={getAssetUrl(currentAsset)}
               afterImage={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/processed-photos/${currentAsset.processed_storage_path}`}
               zoom={zoom}
             />
@@ -313,7 +319,7 @@ export function QCImageViewer({
               src={
                 hasProcessedVersion
                   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/processed-photos/${currentAsset.processed_storage_path}`
-                  : currentAsset.aryeo_url
+                  : getAssetUrl(currentAsset)
               }
               alt=""
               className="max-h-full max-w-full object-contain transition-transform"
@@ -436,7 +442,7 @@ export function QCImageViewer({
           imageUrl={
             currentAsset.processed_storage_path
               ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/processed-photos/${currentAsset.processed_storage_path}`
-              : currentAsset.aryeo_url
+              : getAssetUrl(currentAsset)
           }
           assetId={currentAsset.id}
           listingId={listingId}

@@ -1,8 +1,11 @@
 import { notFound } from 'next/navigation'
 import { getListingById, organizeMediaByCategory, getCategoryInfo } from '@/lib/queries/listings'
 import { DeliveryHeader, MediaSection, DownloadAllButton, DeliveryPageTracker } from '@/components/delivery'
+import { DeliveryAIContent } from '@/components/delivery/DeliveryAIContent'
+import { DeliveryVideos } from '@/components/delivery/DeliveryVideos'
 import { LaunchCampaignButton } from '@/components/campaigns'
 import { ShareButton } from '@/components/ui/share-button'
+import { getListingSkillOutputs } from '@/lib/queries/skill-outputs'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -31,7 +34,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DeliveryPage({ params }: PageProps) {
   const { listingId } = await params
-  const listing = await getListingById(listingId)
+
+  // Fetch listing and skill outputs in parallel
+  const [listing, skillOutputs] = await Promise.all([
+    getListingById(listingId),
+    getListingSkillOutputs(listingId),
+  ])
 
   if (!listing) {
     notFound()
@@ -104,6 +112,38 @@ export default async function DeliveryPage({ params }: PageProps) {
             />
           )
         })}
+
+        {/* AI-Generated Content Section */}
+        {skillOutputs && (skillOutputs.descriptions || skillOutputs.socialCaptions || skillOutputs.videos) && (
+          <section className="border-t border-white/[0.08] px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-white">AI-Generated Content</h2>
+              <p className="mt-1 text-sm text-neutral-400">
+                Marketing content automatically generated for your listing
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* AI Videos */}
+              {skillOutputs.videos && (
+                <DeliveryVideos
+                  videos={skillOutputs.videos}
+                  brandColor={brandColor}
+                />
+              )}
+
+              {/* AI Descriptions & Captions */}
+              {(skillOutputs.descriptions || skillOutputs.socialCaptions) && (
+                <DeliveryAIContent
+                  descriptions={skillOutputs.descriptions}
+                  captions={skillOutputs.socialCaptions}
+                  brandColor={brandColor}
+                  generatedAt={skillOutputs.generatedAt}
+                />
+              )}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}

@@ -85,9 +85,9 @@
   --secondary: rgba(255, 255, 255, 0.05);
   --secondary-foreground: #ffffff;
 
-  /* Muted - iOS-style secondary text */
+  /* Muted - iOS-style secondary text (WCAG AA compliant: 4.5:1 contrast) */
   --muted: #1c1c1e;
-  --muted-foreground: #a1a1a6;
+  --muted-foreground: #b8b8bd;
 
   /* Accent */
   --accent: rgba(255, 255, 255, 0.08);
@@ -319,5 +319,228 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ============================================
+   Marketing Site Animation Keyframes
+   ============================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 119, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 119, 255, 0.5);
+  }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ============================================
+   Marketing Site Utility Classes
+   ============================================ */
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  /* Animation delays */
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+  .animation-delay-700 { animation-delay: 700ms; }
+  .animation-delay-1000 { animation-delay: 1000ms; }
+
+  /* Initial hidden state for animations */
+  .animate-hidden {
+    opacity: 0;
+  }
+
+  /* Gradient backgrounds for marketing */
+  .gradient-radial-blue {
+    background: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      rgba(0, 119, 255, 0.15) 0%,
+      transparent 70%
+    );
+  }
+
+  .gradient-radial-top {
+    background: radial-gradient(
+      ellipse 100% 100% at 50% -50%,
+      rgba(0, 119, 255, 0.08) 0%,
+      transparent 60%
+    );
+  }
+
+  .gradient-mesh {
+    background-image:
+      radial-gradient(at 0% 0%, rgba(0, 119, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(51, 149, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(0, 119, 255, 0.06) 0%, transparent 50%);
+  }
+
+  /* Typography scale for marketing */
+  .text-display-2xl {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+
+  .text-display-xl {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .text-display-lg {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  .text-display-md {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  .text-body-lg {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .text-body-md {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-up,
+    .animate-fade-in,
+    .animate-slide-in-right,
+    .animate-scale-in,
+    .animate-float,
+    .animate-glow,
+    .animate-gradient,
+    .animate-marquee {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
   }
 }

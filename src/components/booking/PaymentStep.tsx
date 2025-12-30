@@ -8,9 +8,12 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js'
-import { Lock, CreditCard, AlertCircle, Loader2 } from 'lucide-react'
+import { Lock, CreditCard, AlertCircle, Loader2, Calendar, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/pricing/config'
+import { CouponCodeInput } from './CouponCodeInput'
+import { LoyaltyPointsSelector, useLoyaltyPoints } from './LoyaltyPointsSelector'
+import { useBookingStore } from '@/stores/useBookingStore'
 
 // Load Stripe outside of component to avoid recreating on each render
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -29,6 +32,7 @@ interface PaymentStepProps {
   breakdown: Array<{ name: string; price: number; quantity?: number }>
   onSubmit: (paymentIntentId: string) => Promise<void>
   isSubmitting: boolean
+  showDiscounts?: boolean
 }
 
 export function PaymentStep({
@@ -38,16 +42,36 @@ export function PaymentStep({
   breakdown,
   onSubmit,
   isSubmitting,
+  showDiscounts = true,
 }: PaymentStepProps) {
+  const { formData, applyCoupon, removeCoupon, setLoyaltyPoints, pricing } = useBookingStore()
+  const { points: loyaltyPoints, isLoading: loyaltyLoading } = useLoyaltyPoints()
+
+  // Apply coupon discount to total
+  const couponDiscount = pricing.couponDiscount || 0
+  const loyaltyDiscount = formData.loyaltyPointsValue || 0
+  const finalTotal = Math.max(0, total - couponDiscount - loyaltyDiscount)
+
+  const handleCouponApply = (code: string, discount: number, type: 'percent' | 'fixed') => {
+    applyCoupon(code, discount, type)
+  }
+
+  const handleCouponRemove = () => {
+    removeCoupon()
+  }
+
+  const handleLoyaltyChange = (points: number, value: number) => {
+    setLoyaltyPoints(points, value)
+  }
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoadingIntent, setIsLoadingIntent] = useState(false)
 
-  // Create payment intent when we have enough info
+  // Create payment intent when we have enough info (with finalTotal)
   useEffect(() => {
     const createPaymentIntent = async () => {
-      if (!contactData.email || !contactData.name || total <= 0) return
+      if (!contactData.email || !contactData.name || finalTotal <= 0) return
       if (clientSecret) return // Don't recreate if we already have one
 
       setIsLoadingIntent(true)
@@ -58,9 +82,11 @@ export function PaymentStep({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: total,
+            amount: finalTotal,
             email: contactData.email,
             name: contactData.name,
+            couponCode: formData.couponCode,
+            loyaltyPoints: formData.loyaltyPointsToRedeem,
           }),
         })
 
@@ -81,7 +107,7 @@ export function PaymentStep({
 
     const timer = setTimeout(createPaymentIntent, 500)
     return () => clearTimeout(timer)
-  }, [contactData.email, contactData.name, total, clientSecret])
+  }, [contactData.email, contactData.name, finalTotal, clientSecret, formData.couponCode, formData.loyaltyPointsToRedeem])
 
   return (
     <div className="space-y-6">
@@ -156,6 +182,30 @@ export function PaymentStep({
             </div>
           </div>
 
+          {/* Discounts Section */}
+          {showDiscounts && (
+            <div className="space-y-4 pt-4 border-t border-neutral-800">
+              <h4 className="font-medium text-white">Discounts & Rewards</h4>
+
+              {/* Coupon Code */}
+              <CouponCodeInput
+                subtotal={total}
+                onApply={handleCouponApply}
+                onRemove={handleCouponRemove}
+              />
+
+              {/* Loyalty Points */}
+              {!loyaltyLoading && loyaltyPoints > 0 && (
+                <LoyaltyPointsSelector
+                  maxPoints={loyaltyPoints}
+                  pointsValue={0.01}
+                  orderTotal={total - couponDiscount}
+                  onPointsChange={handleLoyaltyChange}
+                />
+              )}
+            </div>
+          )}
+
           {/* Payment Section */}
           <div className="space-y-4 pt-4 border-t border-neutral-800">
             <h4 className="font-medium text-white flex items-center gap-2">
@@ -202,7 +252,7 @@ export function PaymentStep({
                 <CheckoutForm
                   onSubmit={onSubmit}
                   isSubmitting={isSubmitting}
-                  total={total}
+                  total={finalTotal}
                   paymentIntentId={paymentIntentId!}
                 />
               </Elements>
@@ -239,13 +289,41 @@ export function PaymentStep({
                   <span className="text-white">{formatCurrency(item.price)}</span>
                 </div>
               ))}
+
+              {/* Coupon discount */}
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-400">
+                    Coupon ({formData.couponCode})
+                  </span>
+                  <span className="text-green-400">-{formatCurrency(couponDiscount)}</span>
+                </div>
+              )}
+
+              {/* Loyalty points discount */}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-400">
+                    Loyalty Points ({formData.loyaltyPointsToRedeem})
+                  </span>
+                  <span className="text-amber-400">-{formatCurrency(loyaltyDiscount)}</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-neutral-800">
+              {(couponDiscount > 0 || loyaltyDiscount > 0) && (
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-neutral-500">Subtotal</span>
+                  <span className="text-neutral-500 line-through">
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="font-medium text-white">Total</span>
                 <span className="text-2xl font-bold text-white">
-                  {formatCurrency(total)}
+                  {formatCurrency(finalTotal)}
                 </span>
               </div>
             </div>

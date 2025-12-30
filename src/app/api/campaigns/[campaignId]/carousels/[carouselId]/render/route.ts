@@ -67,7 +67,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         address: string
         media_assets: Array<{
           id: string
-          aryeo_url: string
+          media_url: string | null
           type: string
           category: string | null
         }>

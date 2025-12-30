@@ -19,7 +19,8 @@ type Listing = Database['public']['Tables']['listings']['Row']
 interface PartialMediaAsset {
   id: string
   listing_id: string
-  aryeo_url: string
+  aryeo_url: string | null
+  media_url: string | null
   type: string
 }
 
@@ -94,7 +95,7 @@ const getAgentPortfolioData = unstable_cache(
     const { data: mediaData } = listingIds.length > 0
       ? await supabase
           .from('media_assets')
-          .select('id, listing_id, aryeo_url, type')
+          .select('id, listing_id, aryeo_url, media_url, type')
           .in('listing_id', listingIds)
       : { data: [] }
 
@@ -412,7 +413,7 @@ function ListingCard({
       <div className="relative h-48 bg-[#0a0a0a]">
         {heroImage ? (
           <img
-            src={heroImage.aryeo_url}
+            src={heroImage.media_url || heroImage.aryeo_url || ''}
             alt={listing.address}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />

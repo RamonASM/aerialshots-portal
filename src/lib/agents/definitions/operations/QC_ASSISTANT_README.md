@@ -243,7 +243,7 @@ The agent requires:
    - `id`, `address`, `is_rush`, `scheduled_at`, `delivered_at`
 
 2. **Media Assets table** with fields:
-   - `id`, `listing_id`, `type`, `category`, `aryeo_url`, `qc_status`, `sort_order`
+   - `id`, `listing_id`, `type`, `category`, `media_url`, `qc_status`, `sort_order`
 
 3. **Agents table** (ai_agents) with the agent registered
 4. **Executions table** (ai_agent_executions) for logging

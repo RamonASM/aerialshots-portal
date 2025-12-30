@@ -93,9 +93,74 @@ const newListingWorkflow: WorkflowDefinition = {
       },
     },
 
-    // Step 3: Template Selector - Auto-select template
+    // Step 3: Content Writer - Generate initial property descriptions
+    {
+      agentSlug: 'content-writer',
+      parallel: 'initial-content',
+      required: false,
+      condition: async (context: WorkflowContext) => {
+        // Only generate descriptions if we have minimum property data
+        const listingData = context.sharedContext.listingData as Record<string, unknown> | undefined
+        const hasAddress = !!(listingData?.address || context.triggerData?.address)
+        const hasBeds = !!(listingData?.beds || context.triggerData?.beds)
+        return hasAddress && hasBeds
+      },
+      inputMapper: async (context: WorkflowContext) => {
+        const listingData = context.sharedContext.listingData as Record<string, unknown> | undefined
+
+        const property = {
+          address: (listingData?.address || context.triggerData?.address || '') as string,
+          city: (listingData?.city || context.triggerData?.city || '') as string,
+          state: (listingData?.state || context.triggerData?.state || 'FL') as string,
+          zipCode: (listingData?.zipCode || context.triggerData?.zip) as string | undefined,
+          beds: (listingData?.beds || context.triggerData?.beds || 0) as number,
+          baths: (listingData?.baths || context.triggerData?.baths || 0) as number,
+          sqft: (listingData?.sqft || context.triggerData?.sqft || 0) as number,
+          price: listingData?.price || context.triggerData?.price,
+          yearBuilt: listingData?.yearBuilt || context.triggerData?.yearBuilt,
+          propertyType: listingData?.propertyType || context.triggerData?.propertyType,
+          features: (listingData?.features || context.triggerData?.features || []) as string[],
+          agentName: context.triggerData?.agentName as string | undefined,
+        }
+
+        // Use neighborhood data from previous step if available
+        const neighborhoodData = context.sharedContext.neighborhoodData as Record<string, unknown> | undefined
+        const neighborhood = neighborhoodData ? {
+          name: (neighborhoodData.name || '') as string,
+          city: property.city,
+          state: property.state,
+          walkScore: neighborhoodData.walkScore as number | undefined,
+          nearbyPlaces: neighborhoodData.nearbyPlaces,
+          vibe: neighborhoodData.vibe as string | undefined,
+        } : undefined
+
+        return {
+          listingId: context.listingId,
+          property,
+          neighborhood,
+          contentTypes: ['description'], // Only descriptions for initial listing
+          descriptionStyles: ['professional', 'warm'], // Two styles for agent to choose
+          agentName: property.agentName || 'Your Agent',
+        }
+      },
+      onComplete: async (result, context) => {
+        if (result.success && result.output) {
+          const output = result.output as Record<string, unknown>
+          const descriptions = output.descriptions as unknown[] | undefined
+          context.sharedContext.initialDescription = {
+            descriptions: descriptions,
+            generatedAt: output.generatedAt,
+          }
+          const descCount = descriptions?.length || 0
+          console.log(`Generated ${descCount} initial descriptions`)
+        }
+      },
+    },
+
+    // Step 4: Template Selector - Auto-select template (parallel with content-writer)
     {
       agentSlug: 'template-selector',
+      parallel: 'initial-content',
       required: false,
       inputMapper: async (context: WorkflowContext) => {
         const listingData = context.sharedContext.listingData as Record<string, unknown> | undefined
@@ -117,7 +182,7 @@ const newListingWorkflow: WorkflowDefinition = {
       },
     },
 
-    // Step 4: Shoot Scheduler - Generate schedule recommendations (parallel with template)
+    // Step 5: Shoot Scheduler - Generate schedule recommendations
     {
       agentSlug: 'shoot-scheduler',
       parallel: 'recommendations',
@@ -143,7 +208,7 @@ const newListingWorkflow: WorkflowDefinition = {
       },
     },
 
-    // Step 5: Agent Welcome - Send confirmation/welcome notification
+    // Step 6: Agent Welcome - Send confirmation/welcome notification
     {
       agentSlug: 'agent-welcome-notifier',
       required: true, // Critical - agent must be notified
@@ -157,6 +222,8 @@ const newListingWorkflow: WorkflowDefinition = {
           selectedTemplate: context.sharedContext.selectedTemplate,
           scheduleRecommendations: context.sharedContext.scheduleRecommendations,
           isFirstOrder: context.triggerData?.isFirstOrder === true,
+          // Include generated descriptions
+          initialDescription: context.sharedContext.initialDescription,
         }
       },
       onComplete: async (result, context) => {

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight, Grid, Maximize2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { Database } from '@/lib/supabase/types'
 
 type MediaAsset = Database['public']['Tables']['media_assets']['Row']
@@ -18,7 +19,12 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [showAll, setShowAll] = useState(false)
 
-  const displayImages = showAll ? images : images.slice(0, 8)
+  // Filter to only images with a valid URL
+  const validImages = images.filter(img => resolveMediaUrl(img))
+  const displayImages = showAll ? validImages : validImages.slice(0, 8)
+
+  // Helper to get resolved URL
+  const getImageUrl = (image: MediaAsset) => resolveMediaUrl(image) || ''
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index)
@@ -30,20 +36,20 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
   }
 
   const goToPrevious = () => {
-    setLightboxIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+    setLightboxIndex((prev) => (prev === 0 ? validImages.length - 1 : prev - 1))
   }
 
   const goToNext = () => {
-    setLightboxIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+    setLightboxIndex((prev) => (prev === validImages.length - 1 ? 0 : prev + 1))
   }
 
-  if (images.length === 0) return null
+  if (validImages.length === 0) return null
 
   return (
     <section className="py-8">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-[22px] font-semibold text-white">Photo Gallery</h2>
-        <span className="text-[13px] text-[#636366]">{images.length} Photos</span>
+        <span className="text-[13px] text-[#636366]">{validImages.length} Photos</span>
       </div>
 
       {/* Grid */}
@@ -55,7 +61,7 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
             className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#0a0a0a] border border-white/[0.08]"
           >
             <Image
-              src={image.aryeo_url}
+              src={getImageUrl(image)}
               alt={`${address} - Photo ${index + 1}`}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -70,11 +76,11 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
       </div>
 
       {/* Show More Button */}
-      {images.length > 8 && !showAll && (
+      {validImages.length > 8 && !showAll && (
         <div className="mt-6 text-center">
           <Button variant="outline" onClick={() => setShowAll(true)}>
             <Grid className="mr-2 h-4 w-4" />
-            View All {images.length} Photos
+            View All {validImages.length} Photos
           </Button>
         </div>
       )}
@@ -107,7 +113,7 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
           {/* Image */}
           <div className="relative h-[80vh] w-[90vw] max-w-6xl">
             <Image
-              src={images[lightboxIndex]?.aryeo_url ?? ''}
+              src={getImageUrl(validImages[lightboxIndex])}
               alt={`${address} - Photo ${lightboxIndex + 1}`}
               fill
               className="object-contain"
@@ -117,12 +123,12 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
 
           {/* Counter */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-[#1c1c1e] border border-white/[0.08] px-4 py-2 text-[13px] text-white">
-            {lightboxIndex + 1} / {images.length}
+            {lightboxIndex + 1} / {validImages.length}
           </div>
 
           {/* Thumbnails */}
           <div className="absolute bottom-16 left-1/2 flex -translate-x-1/2 gap-2 overflow-x-auto">
-            {images.slice(0, 10).map((image, index) => (
+            {validImages.slice(0, 10).map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => setLightboxIndex(index)}
@@ -131,7 +137,7 @@ export function PhotoGallery({ images, address }: PhotoGalleryProps) {
                 }`}
               >
                 <Image
-                  src={image.aryeo_url}
+                  src={getImageUrl(image)}
                   alt=""
                   fill
                   className="object-cover"

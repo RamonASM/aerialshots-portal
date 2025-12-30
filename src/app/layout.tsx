@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { PWAInstallBanner, OfflineIndicator } from "@/components/pwa";
@@ -14,12 +14,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0ea5e9",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "Aerial Shots Media Portal",
   description: "Real estate media delivery portal for Central Florida agents. Professional photography, video, drone, and virtual staging.",
   keywords: ["real estate photography", "aerial photography", "drone photography", "virtual staging", "Central Florida"],
   manifest: "/manifest.webmanifest",
-  themeColor: "#0ea5e9",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

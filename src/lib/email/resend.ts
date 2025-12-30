@@ -427,3 +427,53 @@ export async function sendLowBalanceEmail({
 
   return data
 }
+
+/**
+ * Generic email sender for custom emails
+ */
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  from,
+}: {
+  to: string
+  subject: string
+  html?: string
+  text?: string
+  from?: string
+}): Promise<{
+  success: boolean
+  id?: string
+  error?: string
+}> {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: from || 'Aerial Shots Media <hello@aerialshots.media>',
+      to,
+      subject,
+      html: html || text || '',
+      text,
+    })
+
+    if (error) {
+      console.error('Failed to send email:', error)
+      return {
+        success: false,
+        error: error.message,
+      }
+    }
+
+    return {
+      success: true,
+      id: data?.id,
+    }
+  } catch (error) {
+    console.error('Error sending email:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    }
+  }
+}

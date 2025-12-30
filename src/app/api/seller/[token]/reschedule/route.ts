@@ -1,0 +1,198 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+interface RouteParams {
+  params: Promise<{ token: string }>
+}
+
+const rescheduleRequestSchema = z.object({
+  requested_slots: z.array(z.object({
+    date: z.string(),
+    time_preference: z.enum(['morning', 'afternoon', 'anytime']).optional(),
+    specific_time: z.string().optional(),
+  })).min(1, 'At least one preferred slot is required'),
+  reason: z.string().optional(),
+  requester_name: z.string().optional(),
+  requester_email: z.string().email().optional(),
+  requester_phone: z.string().optional(),
+})
+
+/**
+ * POST /api/seller/[token]/reschedule
+ * Submit a reschedule request from seller
+ * PUBLIC - token is the auth
+ */
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { token } = await params
+    const supabase = await createClient()
+
+    // Validate token
+    const { data: shareLink, error: linkError } = await supabase
+      .from('share_links')
+      .select('id, listing_id, client_name, client_email, is_active, expires_at')
+      .eq('share_token', token)
+      .eq('link_type', 'seller')
+      .single()
+
+    if (linkError || !shareLink) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
+    }
+
+    if (!shareLink.is_active) {
+      return NextResponse.json({ error: 'Link revoked' }, { status: 410 })
+    }
+
+    if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+      return NextResponse.json({ error: 'Link expired' }, { status: 410 })
+    }
+
+    // Parse request body
+    const body = await request.json()
+    const parseResult = rescheduleRequestSchema.safeParse(body)
+
+    if (!parseResult.success) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: parseResult.error.flatten().fieldErrors,
+      }, { status: 400 })
+    }
+
+    const { requested_slots, reason, requester_name, requester_email, requester_phone } = parseResult.data
+
+    // Get current listing info
+    const { data: listing } = await supabase
+      .from('listings')
+      .select('scheduled_at, ops_status')
+      .eq('id', shareLink.listing_id)
+      .single()
+
+    // Check if already has pending reschedule request
+    const { data: existingRequest } = await supabase
+      .from('reschedule_requests')
+      .select('id')
+      .eq('listing_id', shareLink.listing_id)
+      .eq('share_link_id', shareLink.id)
+      .eq('status', 'pending')
+      .single()
+
+    if (existingRequest) {
+      return NextResponse.json({
+        error: 'A reschedule request is already pending',
+        pending_request_id: existingRequest.id,
+      }, { status: 409 })
+    }
+
+    // Check if shoot hasn't already happened
+    if (listing?.ops_status === 'delivered') {
+      return NextResponse.json({
+        error: 'Cannot reschedule - shoot has already been completed',
+      }, { status: 400 })
+    }
+
+    // Create reschedule request
+    const { data: rescheduleRequest, error: insertError } = await supabase
+      .from('reschedule_requests')
+      .insert({
+        listing_id: shareLink.listing_id,
+        share_link_id: shareLink.id,
+        requester_name: requester_name || shareLink.client_name,
+        requester_email: requester_email || shareLink.client_email,
+        requester_phone,
+        original_date: listing?.scheduled_at,
+        requested_slots,
+        reason,
+        status: 'pending',
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Reschedule insert error:', insertError)
+      return NextResponse.json({ error: 'Failed to submit reschedule request' }, { status: 500 })
+    }
+
+    // TODO: Send notification to admin/staff about reschedule request
+    // Can be done via the notifications system
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reschedule request submitted successfully',
+      request: {
+        id: rescheduleRequest.id,
+        status: rescheduleRequest.status,
+        requested_slots: rescheduleRequest.requested_slots,
+        created_at: rescheduleRequest.created_at,
+      },
+    })
+
+  } catch (error) {
+    console.error('Seller reschedule error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE /api/seller/[token]/reschedule
+ * Cancel a pending reschedule request
+ * PUBLIC - token is the auth
+ */
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { token } = await params
+    const supabase = await createClient()
+
+    // Validate token
+    const { data: shareLink, error: linkError } = await supabase
+      .from('share_links')
+      .select('id, listing_id, is_active, expires_at')
+      .eq('share_token', token)
+      .eq('link_type', 'seller')
+      .single()
+
+    if (linkError || !shareLink) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
+    }
+
+    if (!shareLink.is_active) {
+      return NextResponse.json({ error: 'Link revoked' }, { status: 410 })
+    }
+
+    // Find pending reschedule request
+    const { data: pendingRequest } = await supabase
+      .from('reschedule_requests')
+      .select('id')
+      .eq('listing_id', shareLink.listing_id)
+      .eq('share_link_id', shareLink.id)
+      .eq('status', 'pending')
+      .single()
+
+    if (!pendingRequest) {
+      return NextResponse.json({ error: 'No pending reschedule request found' }, { status: 404 })
+    }
+
+    // Cancel the request
+    const { error: updateError } = await supabase
+      .from('reschedule_requests')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', pendingRequest.id)
+
+    if (updateError) {
+      console.error('Reschedule cancel error:', updateError)
+      return NextResponse.json({ error: 'Failed to cancel request' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reschedule request cancelled',
+    })
+
+  } catch (error) {
+    console.error('Seller reschedule cancel error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

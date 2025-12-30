@@ -6,7 +6,6 @@ import {
   CACHE_REVALIDATION,
   CACHE_TAGS,
   getListingCacheKey,
-  getListingByAryeoCacheKey,
   getAgentListingsCacheKey,
 } from '@/lib/utils/cache'
 
@@ -73,8 +72,12 @@ export const getListingById = unstable_cache(
   }
 )
 
-// Internal function to fetch listing by Aryeo ID (for caching)
+/**
+ * @deprecated The Aryeo integration has been removed. Use getListingById instead.
+ * This function is kept for backwards compatibility but will be removed in a future release.
+ */
 async function fetchListingByAryeoId(aryeoListingId: string): Promise<ListingWithDetails | null> {
+  console.warn('fetchListingByAryeoId is deprecated. Use getListingById instead.')
   const supabase = await createClient()
 
   const { data: listing, error } = await supabase
@@ -88,14 +91,16 @@ async function fetchListingByAryeoId(aryeoListingId: string): Promise<ListingWit
     .single()
 
   if (error || !listing) {
-    console.error('Error fetching listing by Aryeo ID:', error)
+    console.error('Error fetching listing by legacy Aryeo ID:', error)
     return null
   }
 
   return normalizeListingWithDetails(listing as SupabaseListingWithJoins)
 }
 
-// Get listing by Aryeo listing ID (cached)
+/**
+ * @deprecated The Aryeo integration has been removed. Use getListingById instead.
+ */
 export const getListingByAryeoId = unstable_cache(
   fetchListingByAryeoId,
   ['listing-by-aryeo-id'],

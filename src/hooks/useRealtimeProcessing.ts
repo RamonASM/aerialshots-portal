@@ -7,7 +7,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 export interface ProcessingJob {
   id: string
   founddr_job_id: string | null
-  listing_id: string
+  listing_id: string | null
   status: 'pending' | 'uploading' | 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
   input_keys: string[] | null
   output_key: string | null

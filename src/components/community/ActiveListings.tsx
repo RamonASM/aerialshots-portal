@@ -40,9 +40,9 @@ export function ActiveListings({ listings, communityName }: ActiveListingsProps)
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden bg-[#0a0a0a]">
-                {heroImage?.aryeo_url ? (
+                {heroImage?.media_url ? (
                   <Image
-                    src={heroImage.aryeo_url}
+                    src={heroImage.media_url}
                     alt={listing.address}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"

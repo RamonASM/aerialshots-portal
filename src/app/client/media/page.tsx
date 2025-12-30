@@ -42,7 +42,8 @@ interface MediaListing {
 interface MediaAsset {
   id: string
   type: 'photo' | 'video' | 'matterport' | 'floorplan'
-  aryeo_url: string
+  aryeo_url: string | null
+  media_url: string | null
   download_url?: string
   position: number
 }
@@ -113,7 +114,7 @@ export default function ClientMediaPage() {
     const { data: mediaAssets } = listingIds.length > 0
       ? await supabase
           .from('media_assets')
-          .select('listing_id, type, aryeo_url')
+          .select('listing_id, type, aryeo_url, media_url')
           .in('listing_id', listingIds)
       : { data: [] }
 
@@ -129,7 +130,8 @@ export default function ClientMediaPage() {
           delivered_at: string | null
         }
         const listingMedia = mediaAssets?.filter(ma => ma.listing_id === listing.id) || []
-        const thumbnail = listingMedia.find(m => m.type === 'photo')?.aryeo_url || null
+        const firstPhoto = listingMedia.find(m => m.type === 'photo')
+        const thumbnail = firstPhoto?.media_url || firstPhoto?.aryeo_url || null
 
         return {
           id: listing.id,
@@ -157,7 +159,7 @@ export default function ClientMediaPage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('media_assets')
-      .select('id, type, aryeo_url')
+      .select('id, type, aryeo_url, media_url')
       .eq('listing_id', listingId)
       .order('created_at', { ascending: true })
 
@@ -166,6 +168,7 @@ export default function ClientMediaPage() {
         id: item.id,
         type: item.type as MediaAsset['type'],
         aryeo_url: item.aryeo_url,
+        media_url: item.media_url,
         position: idx,
       }))
       setLightboxAssets(assets)
@@ -529,9 +532,9 @@ function Lightbox({
       </div>
 
       {/* Download button */}
-      {currentAsset?.aryeo_url && (
+      {(currentAsset?.media_url || currentAsset?.aryeo_url) && (
         <a
-          href={currentAsset.aryeo_url}
+          href={currentAsset.media_url || currentAsset.aryeo_url || ''}
           download
           target="_blank"
           rel="noopener noreferrer"
@@ -560,7 +563,7 @@ function Lightbox({
       <div className="max-w-5xl max-h-[80vh] w-full px-4">
         {isPhoto ? (
           <img
-            src={currentAsset.aryeo_url}
+            src={currentAsset.media_url || currentAsset.aryeo_url || ''}
             alt={`Photo ${currentIndex + 1}`}
             className="w-full h-auto max-h-[80vh] object-contain mx-auto"
           />
@@ -582,7 +585,7 @@ function Lightbox({
             }`}
           >
             {asset.type === 'photo' ? (
-              <img src={asset.aryeo_url} alt="" className="w-full h-full object-cover" />
+              <img src={asset.media_url || asset.aryeo_url || ''} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-[#1c1c1e] flex items-center justify-center">
                 <Video className="w-4 h-4 text-[#636366]" />

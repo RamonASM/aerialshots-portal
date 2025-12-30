@@ -4,6 +4,7 @@
 import { registerAgent } from '../../registry'
 import { generateWithAI } from '@/lib/ai/client'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { AgentExecutionContext, AgentExecutionResult } from '../../types'
 
 interface SEOMetaInput {
@@ -116,7 +117,8 @@ async function generateSEOMeta(
     const sqftStr = listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : ''
     const features = [bedsStr, bathsStr, sqftStr].filter(Boolean).join(', ')
 
-    const heroImage = media_assets?.find((m: any) => m.type === 'photo')?.aryeo_url || ''
+    const heroAsset = media_assets?.find((m: any) => m.type === 'photo')
+    const heroImage = resolveMediaUrl(heroAsset) || ''
 
     prompt = `${SEO_META_PROMPT}
 
@@ -267,7 +269,8 @@ function generateFallbackMeta(
     const bathsStr = listing.baths ? `${listing.baths} bath` : ''
     const sqftStr = listing.sqft ? `${listing.sqft.toLocaleString()} sqft` : ''
     const features = [bedsStr, bathsStr, sqftStr].filter(Boolean).join(' | ')
-    const heroImage = media_assets?.find((m: any) => m.type === 'photo')?.aryeo_url || ''
+    const heroAsset = media_assets?.find((m: any) => m.type === 'photo')
+    const heroImage = resolveMediaUrl(heroAsset) || ''
 
     return {
       title: `${listing.address}${priceStr} | ${listing.city || 'Florida'}`,

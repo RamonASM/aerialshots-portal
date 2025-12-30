@@ -17,6 +17,7 @@ export type NotificationType =
   | 'integration_failed'
   | 'low_credit_balance'
   | 'review_request'
+  | 'waitlist_slot_available'
 
 export interface NotificationRecipient {
   email?: string
