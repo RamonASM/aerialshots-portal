@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createQuickBooksClient } from '@/lib/integrations/quickbooks/client'
 import { cookies } from 'next/headers'
 import { apiLogger, formatError } from '@/lib/logger'
+import { encryptQBToken, QB_ENCRYPTION_KEY } from '@/lib/utils/encryption'
 
 /**
  * GET /api/integrations/quickbooks/callback
@@ -58,12 +59,26 @@ export async function GET(request: NextRequest) {
     const qbClient = createQuickBooksClient({})
     const tokens = await qbClient.exchangeCode(code)
 
-    // Store tokens securely
-    // In production, encrypt these tokens before storing
+    // Store tokens securely with encryption
     const tokenExpiry = new Date(Date.now() + tokens.expires_in * 1000)
     const refreshExpiry = new Date(Date.now() + tokens.x_refresh_token_expires_in * 1000)
 
-    // Store in integration_settings table (or similar)
+    // Encrypt tokens before storing
+    let encryptedAccessToken = tokens.access_token
+    let encryptedRefreshToken = tokens.refresh_token
+    let isEncrypted = false
+
+    if (process.env[QB_ENCRYPTION_KEY]) {
+      encryptedAccessToken = encryptQBToken(tokens.access_token)
+      encryptedRefreshToken = encryptQBToken(tokens.refresh_token)
+      isEncrypted = true
+    } else if (process.env.NODE_ENV === 'production') {
+      apiLogger.error('QUICKBOOKS_TOKEN_ENCRYPTION_KEY not configured in production - tokens will be stored unencrypted')
+    } else {
+      apiLogger.warn('QUICKBOOKS_TOKEN_ENCRYPTION_KEY not configured - tokens stored unencrypted (dev mode only)')
+    }
+
+    // Store in integration_settings table
     // Cast to any since this table may not be in types
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: saveError } = await (supabase as any)
@@ -73,8 +88,9 @@ export async function GET(request: NextRequest) {
         value: {
           connected: true,
           realm_id: realmId,
-          access_token: tokens.access_token, // Should be encrypted in production
-          refresh_token: tokens.refresh_token, // Should be encrypted in production
+          access_token: encryptedAccessToken,
+          refresh_token: encryptedRefreshToken,
+          tokens_encrypted: isEncrypted,
           token_expiry: tokenExpiry.toISOString(),
           refresh_expiry: refreshExpiry.toISOString(),
           connected_at: new Date().toISOString(),

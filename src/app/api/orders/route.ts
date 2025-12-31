@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
-    const agentId = searchParams.get('agentId')
+    const requestedAgentId = searchParams.get('agentId')
 
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
@@ -173,15 +173,46 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if user is staff (can view all orders)
+    const isStaff = user.email?.endsWith('@aerialshots.media') || false
+
+    // Get user's agent record
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+
+    // Determine which agent_id to filter by
+    let filterAgentId: string | null = null
+
+    if (isStaff) {
+      // Staff can optionally filter by agent, or see all if no filter
+      filterAgentId = requestedAgentId
+    } else if (agent) {
+      // Non-staff users can ONLY see their own orders
+      filterAgentId = agent.id
+      // If they requested a different agent's orders, deny
+      if (requestedAgentId && requestedAgentId !== agent.id) {
+        return NextResponse.json(
+          { error: 'Forbidden: Cannot view other users orders' },
+          { status: 403 }
+        )
+      }
+    } else {
+      // No agent record and not staff - return empty
+      return NextResponse.json({ orders: [] })
+    }
+
     // Build query
     let query = supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
 
-    // Filter by agent if specified
-    if (agentId) {
-      query = query.eq('agent_id', agentId)
+    // Apply filter (required for non-staff)
+    if (filterAgentId) {
+      query = query.eq('agent_id', filterAgentId)
     }
 
     const { data: orders, error } = await query

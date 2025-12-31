@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { requireStaff } from '@/lib/api/middleware/require-staff'
 
 export async function GET() {
   try {
+    // Require staff authentication
+    try {
+      await requireStaff()
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const supabase = await createClient()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

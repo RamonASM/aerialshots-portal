@@ -12,9 +12,15 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // 60 seconds for processing
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret - MUST be configured
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error('CRON_SECRET environment variable is not configured')
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+  }
+
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
