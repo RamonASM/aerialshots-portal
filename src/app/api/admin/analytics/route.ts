@@ -124,10 +124,10 @@ export async function GET() {
         : 0,
     })).sort((a, b) => b.delivered - a.delivered)
 
-    // Revenue metrics - placeholder until orders table is set up
-    // For now, we'll calculate based on listings
-    let revenueThisMonth = 0
-    let revenueLastMonth = 0
+    // Revenue metrics - unavailable (requires orders table with prices)
+    // Returns 0 to indicate no data rather than fabricated estimates
+    const revenueThisMonth = 0
+    const revenueLastMonth = 0
     const agentOrderCounts: Record<string, number> = {}
 
     // Count listings by agent as a proxy for orders

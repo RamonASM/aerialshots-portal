@@ -105,7 +105,7 @@ export async function GET(request: Request) {
           city: listing.city,
           state: listing.state || 'FL',
           count: 0,
-          revenue: 0, // Would need to join with orders for actual revenue
+          revenue: 0, // Revenue unavailable - requires orders table
           lat: listing.lat || undefined,
           lng: listing.lng || undefined,
         })
@@ -113,8 +113,7 @@ export async function GET(request: Request) {
 
       const cityData = cityMap.get(cityKey)!
       cityData.count++
-      // Estimate revenue based on count (placeholder - $400 avg per job)
-      cityData.revenue = cityData.count * 400
+      // Revenue unavailable without orders table - leave as 0
 
       // Update coordinates if we have them
       if (listing.lat && listing.lng && !cityData.lat) {

@@ -155,8 +155,8 @@ export async function GET() {
         pendingQC: pendingQC || 0,
         leadsToday: leadsToday || 0,
         leadsTodayChange,
-        avgQCTime: 45, // Placeholder - would calculate from actual data
-        avgDeliveryTime: 1440, // 24 hours in minutes - placeholder
+        avgQCTime: null, // No data - requires QC timestamp tracking
+        avgDeliveryTime: null, // No data - requires delivery time analysis
         lastUpdated: now.toISOString(),
       },
       activities,

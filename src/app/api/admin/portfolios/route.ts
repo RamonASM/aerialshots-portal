@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       ...agent,
       listingsCount: listingCountMap[agent.id] || 0,
       campaignsCount: campaignCountMap[agent.id] || 0,
-      portfolioViews: 0, // Placeholder - analytics table not yet implemented
+      portfolioViews: null, // Unavailable - requires analytics tracking implementation
       instagramConnected: !!agent.instagram_url,
     }))
 

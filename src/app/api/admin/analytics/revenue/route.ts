@@ -80,123 +80,96 @@ export async function GET(request: Request) {
       (agents || []).map((a) => [a.id, { name: a.name, company: '' }])
     )
 
-    // Average job value estimate (would come from orders in production)
-    const AVG_JOB_VALUE = 400
-
-    // Calculate totals
+    // Calculate totals - counts only (revenue requires orders table with prices)
     const totalListings = listings?.length || 0
-    const totalRevenue = totalListings * AVG_JOB_VALUE
+    // Revenue data unavailable - requires orders table with line items
+    const totalRevenue = null
 
-    // This month's revenue
+    // This month's jobs
     const thisMonthListings = (listings || []).filter(
       (l) => new Date(l.created_at) >= thisMonthStart
     )
-    const revenueThisMonth = thisMonthListings.length * AVG_JOB_VALUE
+    const revenueThisMonth = null // No data - requires orders table
 
-    // Last month's revenue
+    // Last month's jobs
     const lastMonthListings = (listings || []).filter((l) => {
       const date = new Date(l.created_at)
       return date >= lastMonthStart && date <= lastMonthEnd
     })
-    const revenueLastMonth = lastMonthListings.length * AVG_JOB_VALUE
+    const revenueLastMonth = null // No data - requires orders table
 
-    // Calculate growth
-    const revenueGrowth = revenueLastMonth > 0
-      ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
-      : 0
+    // Growth unavailable without revenue data
+    const revenueGrowth = null
 
-    // Revenue by photographer
-    const photographerRevenue = new Map<
-      string,
-      { jobs: number; revenue: number }
-    >()
+    // Jobs by photographer (revenue unavailable without orders)
+    const photographerJobs = new Map<string, number>()
     for (const listing of listings || []) {
       if (!listing.photographer_id) continue
-      const current = photographerRevenue.get(listing.photographer_id) || {
-        jobs: 0,
-        revenue: 0,
-      }
-      current.jobs++
-      current.revenue += AVG_JOB_VALUE
-      photographerRevenue.set(listing.photographer_id, current)
+      const current = photographerJobs.get(listing.photographer_id) || 0
+      photographerJobs.set(listing.photographer_id, current + 1)
     }
 
-    const revenueByPhotographer = Array.from(photographerRevenue.entries())
-      .map(([id, data]) => ({
+    const revenueByPhotographer = Array.from(photographerJobs.entries())
+      .map(([id, jobs]) => ({
         id,
         name: photographerMap.get(id) || 'Unknown',
-        revenue: data.revenue,
-        jobs: data.jobs,
-        avgPerJob: data.jobs > 0 ? data.revenue / data.jobs : 0,
+        revenue: null, // No data - requires orders table
+        jobs,
+        avgPerJob: null, // No data - requires orders table
       }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.jobs - a.jobs)
 
-    // Revenue by month
-    const monthlyRevenue = new Map<string, { revenue: number; jobs: number }>()
+    // Jobs by month (revenue unavailable without orders)
+    const monthlyJobs = new Map<string, number>()
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     // Initialize all months
     for (const month of months) {
-      monthlyRevenue.set(month, { revenue: 0, jobs: 0 })
+      monthlyJobs.set(month, 0)
     }
 
     for (const listing of listings || []) {
       const date = new Date(listing.created_at)
       const monthName = months[date.getMonth()]
-      const current = monthlyRevenue.get(monthName)!
-      current.jobs++
-      current.revenue += AVG_JOB_VALUE
+      const current = monthlyJobs.get(monthName) || 0
+      monthlyJobs.set(monthName, current + 1)
     }
 
     const revenueByMonth = months.map((month) => ({
       month,
-      ...monthlyRevenue.get(month)!,
+      jobs: monthlyJobs.get(month) || 0,
+      revenue: null, // No data - requires orders table
     }))
 
-    // Top agents by spend
-    const agentSpend = new Map<string, { orderCount: number; totalSpend: number }>()
+    // Top agents by job count (spend unavailable without orders)
+    const agentJobs = new Map<string, number>()
     for (const listing of listings || []) {
       if (!listing.agent_id) continue
-      const current = agentSpend.get(listing.agent_id) || {
-        orderCount: 0,
-        totalSpend: 0,
-      }
-      current.orderCount++
-      current.totalSpend += AVG_JOB_VALUE
-      agentSpend.set(listing.agent_id, current)
+      const current = agentJobs.get(listing.agent_id) || 0
+      agentJobs.set(listing.agent_id, current + 1)
     }
 
-    const topAgents = Array.from(agentSpend.entries())
-      .map(([id, data]) => ({
+    const topAgents = Array.from(agentJobs.entries())
+      .map(([id, orderCount]) => ({
         id,
         name: agentMap.get(id)?.name || 'Unknown',
         company: agentMap.get(id)?.company || '',
-        ...data,
+        orderCount,
+        totalSpend: null, // No data - requires orders table
       }))
-      .sort((a, b) => b.totalSpend - a.totalSpend)
+      .sort((a, b) => b.orderCount - a.orderCount)
       .slice(0, 10)
 
-    // Revenue by service (placeholder - would need order_items)
-    const revenueByService = [
-      { service: 'Photography', revenue: Math.round(totalRevenue * 0.45), count: Math.round(totalListings * 0.9) },
-      { service: 'Drone/Aerial', revenue: Math.round(totalRevenue * 0.2), count: Math.round(totalListings * 0.6) },
-      { service: 'Video', revenue: Math.round(totalRevenue * 0.15), count: Math.round(totalListings * 0.3) },
-      { service: '3D Tours', revenue: Math.round(totalRevenue * 0.1), count: Math.round(totalListings * 0.25) },
-      { service: 'Floor Plans', revenue: Math.round(totalRevenue * 0.05), count: Math.round(totalListings * 0.2) },
-      { service: 'Other', revenue: Math.round(totalRevenue * 0.05), count: Math.round(totalListings * 0.1) },
-    ]
+    // Revenue by service - unavailable (requires order_items table)
+    const revenueByService = null
 
-    // Calculate metrics
-    const averageOrderValue = totalListings > 0 ? totalRevenue / totalListings : 0
+    // Calculate metrics (jobs only, revenue unavailable)
+    const averageOrderValue = null // No data - requires orders table
     const monthsElapsed = now.getMonth() + 1
     const averageJobsPerMonth = monthsElapsed > 0 ? totalListings / monthsElapsed : 0
 
-    // Project based on current month's pace
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-    const daysElapsed = now.getDate()
-    const projectedMonthlyRevenue = daysElapsed > 0
-      ? (revenueThisMonth / daysElapsed) * daysInMonth
-      : 0
+    // Projected revenue unavailable without real revenue data
+    const projectedMonthlyRevenue = null // No data - requires orders table
 
     return NextResponse.json({
       totalRevenue,

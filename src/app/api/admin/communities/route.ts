@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     // Communities don't have a direct listing relationship in the current schema
-    // Return communities as-is for now
+    // listingCount unavailable - requires community_id foreign key on listings table
     const enrichedCommunities = communities?.map(community => ({
       ...community,
-      listingCount: 0, // Placeholder until relationship is established
+      listingCount: null, // Unavailable - no community-listing relationship in schema
     }))
 
     return NextResponse.json({
