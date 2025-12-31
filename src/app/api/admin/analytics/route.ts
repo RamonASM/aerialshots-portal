@@ -183,21 +183,15 @@ export async function GET() {
     // Integration success rates
     const { data: integrationData } = await supabase
       .from('listings')
-      .select('fotello_status, cubicasa_status, zillow_3d_status')
+      .select('cubicasa_status, zillow_3d_status')
       .gte('created_at', thirtyDaysAgo.toISOString())
 
     const integrationStats = {
-      fotello: { total: 0, delivered: 0, failed: 0 },
       cubicasa: { total: 0, delivered: 0, failed: 0 },
       zillow_3d: { total: 0, delivered: 0, failed: 0 },
     }
 
     integrationData?.forEach(listing => {
-      if (listing.fotello_status && listing.fotello_status !== 'not_applicable') {
-        integrationStats.fotello.total++
-        if (listing.fotello_status === 'delivered') integrationStats.fotello.delivered++
-        if (listing.fotello_status === 'failed') integrationStats.fotello.failed++
-      }
       if (listing.cubicasa_status && listing.cubicasa_status !== 'not_applicable') {
         integrationStats.cubicasa.total++
         if (listing.cubicasa_status === 'delivered') integrationStats.cubicasa.delivered++

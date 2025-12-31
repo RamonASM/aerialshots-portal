@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import {
-  Camera,
   LayoutGrid,
   View,
   RefreshCw,
@@ -15,10 +14,6 @@ import { Button } from '@/components/ui/button'
 import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 
 interface IntegrationData {
-  fotello: {
-    status: IntegrationStatus
-    external_id: string | null
-  }
   cubicasa: {
     status: IntegrationStatus
     external_id: string | null
@@ -30,7 +25,7 @@ interface IntegrationData {
 }
 
 interface IntegrationConfig {
-  key: 'fotello' | 'cubicasa' | 'zillow_3d'
+  key: 'cubicasa' | 'zillow_3d'
   name: string
   description: string
   icon: React.ComponentType<{ className?: string }>
@@ -39,13 +34,6 @@ interface IntegrationConfig {
 }
 
 const INTEGRATIONS: IntegrationConfig[] = [
-  {
-    key: 'fotello',
-    name: 'Fotello',
-    description: 'AI Photo Editing',
-    icon: Camera,
-    statuses: ['pending', 'ordered', 'processing', 'delivered', 'needs_manual', 'failed', 'not_applicable'],
-  },
   {
     key: 'cubicasa',
     name: 'Cubicasa',

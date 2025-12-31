@@ -160,7 +160,7 @@ export interface IntegrationCompleteData {
 
 export interface IntegrationFailedData {
   recipientName: string
-  integrationName: string // e.g., "Fotello (AI editing)", "Cubicasa (floor plans)"
+  integrationName: string // e.g., "FoundDR (HDR processing)", "Cubicasa (floor plans)"
   propertyAddress: string
   listingId: string
   status: string // e.g., "failed", "needs_manual"

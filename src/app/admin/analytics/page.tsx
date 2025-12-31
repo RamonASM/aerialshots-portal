@@ -52,7 +52,6 @@ interface AnalyticsData {
     count: number
   }>
   integrationStats: {
-    fotello: { total: number; delivered: number; failed: number }
     cubicasa: { total: number; delivered: number; failed: number }
     zillow_3d: { total: number; delivered: number; failed: number }
   }
@@ -413,9 +412,8 @@ export default function AnalyticsPage() {
           <Clock className="h-5 w-5 text-blue-500" />
           Integration Performance (30 days)
         </h3>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {[
-            { name: 'Fotello', ...data.integrationStats.fotello },
             { name: 'Cubicasa', ...data.integrationStats.cubicasa },
             { name: 'Zillow 3D', ...data.integrationStats.zillow_3d },
           ].map((integration) => {

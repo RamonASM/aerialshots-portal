@@ -1,12 +1,13 @@
 /**
  * FoundDR Processing API Route
  *
- * Triggers HDR processing for uploaded photos via the FoundDR backend.
+ * Triggers HDR processing for uploaded photos via RunPod Serverless GPU.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getFoundDRClient, type FoundDRJobRequest } from '@/lib/founddr/client'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getRunPodClient } from '@/lib/integrations/founddr'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { listing_id, media_asset_ids, storage_paths, is_rush } = body
+    const { listing_id, media_asset_ids, storage_paths } = body
 
     // Validate required fields
     if (!listing_id || !media_asset_ids?.length || !storage_paths?.length) {
@@ -58,81 +59,166 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    // Build callback URL for FoundDR webhook
-    const callbackUrl =
-      process.env.FOUNDDR_WEBHOOK_URL ||
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/webhooks/founddr`
-
-    // Create job request for FoundDR
-    const jobRequest: FoundDRJobRequest = {
-      listing_id,
-      media_asset_ids,
-      storage_paths,
-      callback_url: callbackUrl,
-      is_rush: is_rush || false,
-      options: {},
-    }
-
-    // Call FoundDR API
-    const founddr = getFoundDRClient()
-    const result = await founddr.createJob(jobRequest)
-
-    // Create local processing_jobs record for tracking
-    const { error: insertError } = await supabase.from('processing_jobs').insert({
-      founddr_job_id: result.founddr_job_id,
-      listing_id,
-      status: 'queued',
-      input_keys: storage_paths,
-      bracket_count: storage_paths.length,
-      queued_at: new Date().toISOString(),
-    })
-
-    if (insertError) {
-      console.error('Failed to create processing_jobs record:', insertError)
-      // Continue anyway - FoundDR job was already created
-    }
-
-    // Update media_assets with processing job reference
-    const { error: updateError } = await supabase
-      .from('media_assets')
-      .update({ qc_status: 'processing' })
-      .in('id', media_asset_ids)
-
-    if (updateError) {
-      console.error('Failed to update media_assets:', updateError)
-    }
-
-    // Log the event
-    await supabase.from('job_events').insert({
-      listing_id,
-      event_type: 'hdr_processing_started',
-      new_value: {
-        founddr_job_id: result.founddr_job_id,
-        bracket_count: storage_paths.length,
-        is_rush,
-        estimated_time_seconds: result.estimated_time_seconds,
-      },
-      actor_id: user.id,
-      actor_type: 'staff',
-    })
-
-    return NextResponse.json({
-      founddr_job_id: result.founddr_job_id,
-      status: result.status,
-      message: result.message,
-      estimated_time_seconds: result.estimated_time_seconds,
-    })
-  } catch (error) {
-    console.error('Processing API error:', error)
-
-    if (error instanceof Error && error.name === 'FoundDRError') {
-      const statusCode = 'statusCode' in error ? (error as { statusCode: number }).statusCode : 500
+    // Check if RunPod is configured
+    const runpod = getRunPodClient()
+    if (!runpod.isConfigured()) {
       return NextResponse.json(
-        { error: error.message },
-        { status: statusCode || 500 }
+        { error: 'RunPod integration not configured. Set RUNPOD_ENDPOINT_ID and RUNPOD_API_KEY.' },
+        { status: 503 }
       )
     }
 
+    // Create processing job record
+    const { data: processingJob, error: jobError } = await supabase
+      .from('processing_jobs')
+      .insert({
+        listing_id,
+        status: 'processing',
+        input_keys: storage_paths,
+        bracket_count: storage_paths.length,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (jobError) {
+      console.error('Failed to create processing job:', jobError)
+      return NextResponse.json({ error: 'Failed to create processing job' }, { status: 500 })
+    }
+
+    // Generate signed URLs for RunPod to download the images
+    const signedUrls: string[] = []
+    for (const path of storage_paths) {
+      const { data: signedUrl, error: signError } = await supabase.storage
+        .from('staged-photos')
+        .createSignedUrl(path, 300) // 5 minute expiry
+
+      if (signError || !signedUrl?.signedUrl) {
+        console.error('Failed to create signed URL:', path, signError)
+        return NextResponse.json({ error: `Failed to access image: ${path}` }, { status: 500 })
+      }
+      signedUrls.push(signedUrl.signedUrl)
+    }
+
+    console.log(`Starting RunPod HDR processing for listing ${listing_id} with ${storage_paths.length} brackets`)
+
+    try {
+      // Process via RunPod using signed URLs
+      const result = await runpod.processHDRFromURLs(signedUrls, {
+        enableWindowPull: true,
+        jpegQuality: 95,
+      })
+
+      if (result.status === 'COMPLETED' && result.output) {
+        // Use admin client for storage upload (bypasses RLS)
+        const adminClient = createAdminClient()
+
+        // Upload result to Supabase storage
+        const outputKey = `processed/${listing_id}/${processingJob.id}.jpg`
+        const imageBuffer = Buffer.from(result.output.image_base64, 'base64')
+
+        const { error: uploadError } = await adminClient.storage
+          .from('processed-photos')
+          .upload(outputKey, imageBuffer, {
+            contentType: 'image/jpeg',
+            upsert: true,
+          })
+
+        if (uploadError) {
+          console.error('Failed to upload processed image:', uploadError)
+          throw new Error('Failed to upload processed image')
+        }
+
+        // Get public URL
+        const { data: urlData } = adminClient.storage
+          .from('processed-photos')
+          .getPublicUrl(outputKey)
+
+        // Update job as completed
+        await supabase
+          .from('processing_jobs')
+          .update({
+            status: 'completed',
+            output_key: outputKey,
+            completed_at: new Date().toISOString(),
+            processing_time_ms: result.output.metrics.total_time_ms,
+            metrics: result.output.metrics,
+          })
+          .eq('id', processingJob.id)
+
+        // Update media assets
+        await supabase
+          .from('media_assets')
+          .update({
+            processing_job_id: processingJob.id,
+            qc_status: 'pending_review',
+          })
+          .in('id', media_asset_ids)
+
+        // Log the event
+        await supabase.from('job_events').insert({
+          listing_id,
+          event_type: 'hdr_processing_completed',
+          new_value: {
+            processing_job_id: processingJob.id,
+            bracket_count: storage_paths.length,
+            processing_time_ms: result.output.metrics.total_time_ms,
+            fusion_method: result.output.metrics.fusion_method,
+          },
+          actor_id: user.id,
+          actor_type: 'staff',
+        })
+
+        console.log(`RunPod HDR processing completed for listing ${listing_id} in ${result.output.metrics.total_time_ms}ms`)
+
+        return NextResponse.json({
+          success: true,
+          processingJobId: processingJob.id,
+          outputUrl: urlData.publicUrl,
+          outputKey,
+          metrics: result.output.metrics,
+          dimensions: {
+            width: result.output.width,
+            height: result.output.height,
+          },
+        })
+      } else {
+        // Processing failed
+        await supabase
+          .from('processing_jobs')
+          .update({
+            status: 'failed',
+            error_message: result.error || 'Unknown error',
+          })
+          .eq('id', processingJob.id)
+
+        console.error(`RunPod HDR processing failed for listing ${listing_id}:`, result.error)
+
+        return NextResponse.json({
+          success: false,
+          error: result.error || 'Processing failed',
+          processingJobId: processingJob.id,
+        }, { status: 500 })
+      }
+    } catch (runpodError) {
+      // Update job to failed
+      await supabase
+        .from('processing_jobs')
+        .update({
+          status: 'failed',
+          error_message: runpodError instanceof Error ? runpodError.message : 'Unknown error',
+        })
+        .eq('id', processingJob.id)
+
+      console.error('RunPod request failed:', runpodError)
+
+      return NextResponse.json(
+        { error: 'HDR processing request failed', details: runpodError instanceof Error ? runpodError.message : 'Unknown error' },
+        { status: 502 }
+      )
+    }
+  } catch (error) {
+    console.error('Processing API error:', error)
     return NextResponse.json(
       { error: 'Failed to start HDR processing' },
       { status: 500 }
@@ -161,22 +247,15 @@ export async function GET(request: NextRequest) {
     const { data: job, error } = await supabase
       .from('processing_jobs')
       .select('*')
-      .eq('founddr_job_id', jobId)
+      .eq('id', jobId)
       .single()
 
     if (error || !job) {
-      // Try to get status from FoundDR
-      try {
-        const founddr = getFoundDRClient()
-        const status = await founddr.getJobStatus(jobId)
-        return NextResponse.json(status)
-      } catch {
-        return NextResponse.json({ error: 'Job not found' }, { status: 404 })
-      }
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
 
     return NextResponse.json({
-      job_id: job.founddr_job_id,
+      job_id: job.id,
       status: job.status,
       output_key: job.output_key,
       metrics: job.metrics,

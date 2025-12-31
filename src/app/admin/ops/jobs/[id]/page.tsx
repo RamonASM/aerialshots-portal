@@ -72,8 +72,6 @@ export default async function JobDetailPage({ params }: PageProps) {
     .from('listings')
     .select(`
       *,
-      fotello_job_id,
-      fotello_status,
       cubicasa_order_id,
       cubicasa_status,
       zillow_3d_id,
@@ -206,10 +204,6 @@ export default async function JobDetailPage({ params }: PageProps) {
       <IntegrationPanelClient
         listingId={listing.id}
         integrations={{
-          fotello: {
-            status: (listing.fotello_status as IntegrationStatus) || 'pending',
-            external_id: listing.fotello_job_id || null,
-          },
           cubicasa: {
             status: (listing.cubicasa_status as IntegrationStatus) || 'pending',
             external_id: listing.cubicasa_order_id || null,

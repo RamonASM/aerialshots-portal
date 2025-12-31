@@ -58,7 +58,7 @@ const STATUS_CONFIGS: Record<AnyIntegrationStatus, StatusConfig> = {
     bgColor: 'bg-neutral-500/5',
     icon: MinusCircle,
   },
-  // Fotello-specific
+  // Manual intervention required
   needs_manual: {
     label: 'Needs Attention',
     color: 'text-orange-400',

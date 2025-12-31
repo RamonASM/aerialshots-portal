@@ -88,10 +88,9 @@ export default function IntegrationsSettingsPage() {
       setLoading(true)
 
       // Fetch all data in parallel
-      const [calendarRes, webhooksRes, fotelloRes, cubicasaRes, zillowRes] = await Promise.all([
+      const [calendarRes, webhooksRes, cubicasaRes, zillowRes] = await Promise.all([
         fetch('/api/integrations/google-calendar/sync').then((r) => r.json()).catch(() => ({ connected: false })),
         fetch('/api/admin/integrations/zapier').then((r) => r.json()).catch(() => ({ webhooks: [] })),
-        fetch('/api/webhooks/fotello').then((r) => r.json()).catch(() => ({ status: 'pending_setup' })),
         fetch('/api/webhooks/cubicasa').then((r) => r.json()).catch(() => ({ status: 'pending_setup' })),
         fetch('/api/webhooks/zillow-3d').then((r) => r.json()).catch(() => ({ status: 'pending_setup' })),
       ])
@@ -99,7 +98,6 @@ export default function IntegrationsSettingsPage() {
       setCalendarStatus(calendarRes)
       setWebhooks(webhooksRes.webhooks || [])
       setThirdPartyStatus({
-        fotello: fotelloRes,
         cubicasa: cubicasaRes,
         zillow_3d: zillowRes,
       })
@@ -389,37 +387,6 @@ export default function IntegrationsSettingsPage() {
               </p>
             </div>
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {/* Fotello */}
-              <div className="flex items-center justify-between px-5 py-4">
-                <div className="flex items-center gap-4">
-                  <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-                    <Camera className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-neutral-900 dark:text-white">Fotello</div>
-                    <div className="text-sm text-neutral-500">AI photo editing service</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {thirdPartyStatus.fotello?.configured ? (
-                    <span className="flex items-center gap-1 text-sm text-green-600">
-                      <CheckCircle className="h-4 w-4" />
-                      Active
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-sm text-amber-600">
-                      <AlertTriangle className="h-4 w-4" />
-                      Pending Setup
-                    </span>
-                  )}
-                  <Button size="sm" variant="ghost" asChild>
-                    <a href="https://app.fotello.co" target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-
               {/* Cubicasa */}
               <div className="flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-4">

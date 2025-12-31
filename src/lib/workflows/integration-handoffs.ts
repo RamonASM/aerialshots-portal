@@ -9,7 +9,7 @@ import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
  * Called from webhook handlers when integration status changes.
  */
 
-type IntegrationType = 'fotello' | 'cubicasa' | 'zillow_3d'
+type IntegrationType = 'cubicasa' | 'zillow_3d'
 
 interface HandoffContext {
   listingId: string
@@ -37,7 +37,6 @@ export async function processIntegrationHandoff(context: HandoffContext): Promis
       address,
       agent_id,
       ops_status,
-      fotello_status,
       cubicasa_status,
       zillow_3d_status
     `)
@@ -66,7 +65,6 @@ async function handleIntegrationComplete(
     address: string
     agent_id: string | null
     ops_status: string
-    fotello_status: IntegrationStatus | null
     cubicasa_status: IntegrationStatus | null
     zillow_3d_status: Zillow3DStatus | null
   },
@@ -76,7 +74,6 @@ async function handleIntegrationComplete(
 
   // Notify QC team that integration is ready for review
   const integrationNames: Record<IntegrationType, string> = {
-    fotello: 'AI-edited photos',
     cubicasa: 'Floor plans',
     zillow_3d: '3D tour',
   }
@@ -195,7 +192,6 @@ async function handleIntegrationFailed(
   const supabase = await createClient()
 
   const integrationNames: Record<IntegrationType, string> = {
-    fotello: 'Fotello (AI editing)',
     cubicasa: 'Cubicasa (floor plans)',
     zillow_3d: 'Zillow 3D (virtual tour)',
   }
@@ -251,19 +247,16 @@ async function handleIntegrationFailed(
  * Check if all required integrations are complete
  */
 async function checkAllIntegrationsComplete(listing: {
-  fotello_status: IntegrationStatus | null
   cubicasa_status: IntegrationStatus | null
   zillow_3d_status: Zillow3DStatus | null
 }): Promise<boolean> {
   // Integrations are complete if they're either "delivered"/"live" OR "not_applicable"
-  const fotelloComplete =
-    listing.fotello_status === 'delivered' || listing.fotello_status === 'not_applicable'
   const cubicasaComplete =
     listing.cubicasa_status === 'delivered' || listing.cubicasa_status === 'not_applicable'
   const zillow3dComplete =
     listing.zillow_3d_status === 'live' || listing.zillow_3d_status === 'not_applicable'
 
-  return fotelloComplete && cubicasaComplete && zillow3dComplete
+  return cubicasaComplete && zillow3dComplete
 }
 
 /**

@@ -6,10 +6,6 @@ import { IntegrationStatusPanel } from './IntegrationStatusPanel'
 import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 
 interface IntegrationData {
-  fotello: {
-    status: IntegrationStatus
-    external_id: string | null
-  }
   cubicasa: {
     status: IntegrationStatus
     external_id: string | null

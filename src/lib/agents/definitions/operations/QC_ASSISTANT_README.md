@@ -6,7 +6,7 @@ The QC Assistant agent pre-screens photos for quality issues and calculates prio
 
 ## Purpose
 
-- **Input**: Listing ID and media assets (after Fotello enhancement)
+- **Input**: Listing ID and media assets (after HDR processing)
 - **Output**: QC recommendations, flagged issues, priority score
 - **Priority Calculation**: Based on rush flag, time since ready, deadline, and VIP client status
 
@@ -267,7 +267,7 @@ Potential improvements:
 ## Related Agents
 
 - **care-task-generator**: Creates follow-up tasks for flagged issues
-- **fotello-enhancer**: Pre-processing before QC (hypothetical)
+- **image-enhancer**: Pre-processing before QC (HDR, cleanup, sky replacement)
 - **delivery-coordinator**: Uses QC results to schedule deliveries
 
 ## Support

@@ -8,20 +8,10 @@ import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 const RATE_LIMIT_CONFIG = { limit: 30, windowSeconds: 60 }
 
 // Valid integration types
-const INTEGRATION_TYPES = ['fotello', 'cubicasa', 'zillow_3d'] as const
+const INTEGRATION_TYPES = ['cubicasa', 'zillow_3d'] as const
 type IntegrationType = (typeof INTEGRATION_TYPES)[number]
 
 // Valid statuses for each integration
-const FOTELLO_STATUSES: IntegrationStatus[] = [
-  'pending',
-  'ordered',
-  'processing',
-  'delivered',
-  'needs_manual',
-  'failed',
-  'not_applicable',
-]
-
 const CUBICASA_STATUSES: IntegrationStatus[] = [
   'pending',
   'ordered',
@@ -66,8 +56,6 @@ export async function GET(
       .select(`
         id,
         address,
-        fotello_job_id,
-        fotello_status,
         cubicasa_order_id,
         cubicasa_status,
         zillow_3d_id,
@@ -91,10 +79,6 @@ export async function GET(
       address: listing.address,
       ops_status: listing.ops_status,
       integrations: {
-        fotello: {
-          status: listing.fotello_status,
-          external_id: listing.fotello_job_id,
-        },
         cubicasa: {
           status: listing.cubicasa_status,
           external_id: listing.cubicasa_order_id,
@@ -140,11 +124,9 @@ export async function PATCH(
     }
 
     // Validate status for the integration type
-    const validStatuses: string[] = integration === 'fotello'
-      ? FOTELLO_STATUSES
-      : integration === 'cubicasa'
-        ? CUBICASA_STATUSES
-        : ZILLOW_3D_STATUSES
+    const validStatuses: string[] = integration === 'cubicasa'
+      ? CUBICASA_STATUSES
+      : ZILLOW_3D_STATUSES
 
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
@@ -158,10 +140,7 @@ export async function PATCH(
       last_integration_check: new Date().toISOString(),
     }
 
-    if (integration === 'fotello') {
-      updateData.fotello_status = status
-      if (external_id !== undefined) updateData.fotello_job_id = external_id
-    } else if (integration === 'cubicasa') {
+    if (integration === 'cubicasa') {
       updateData.cubicasa_status = status
       if (external_id !== undefined) updateData.cubicasa_order_id = external_id
     } else if (integration === 'zillow_3d') {
@@ -183,7 +162,6 @@ export async function PATCH(
       .eq('id', id)
       .select(`
         id,
-        fotello_status,
         cubicasa_status,
         zillow_3d_status,
         integration_error_message
@@ -311,16 +289,6 @@ export async function POST(
         integration: 'cubicasa',
         status: 'ordered',
       })
-    }
-
-    if (integration === 'fotello') {
-      // Fotello doesn't have a public API yet - requires enterprise access
-      return NextResponse.json({
-        success: false,
-        error: 'Fotello API integration requires enterprise API credentials. Contact support@fotello.co for access.',
-        action: 'manual',
-        message: 'Please upload photos to Fotello manually and update status.',
-      }, { status: 400 })
     }
 
     if (integration === 'zillow_3d') {

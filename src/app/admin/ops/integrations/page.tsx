@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import {
-  Camera,
   LayoutGrid,
   View,
   AlertTriangle,
@@ -30,25 +29,14 @@ async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createC
     .from('listings')
     .select(`
       id,
-      fotello_status,
       cubicasa_status,
       zillow_3d_status
     `)
 
-  const fotello: IntegrationMetrics = { total: 0, pending: 0, processing: 0, delivered: 0, failed: 0 }
   const cubicasa: IntegrationMetrics = { total: 0, pending: 0, processing: 0, delivered: 0, failed: 0 }
   const zillow3d: IntegrationMetrics = { total: 0, pending: 0, processing: 0, delivered: 0, failed: 0 }
 
   listings?.forEach((listing) => {
-    // Fotello metrics
-    if (listing.fotello_status && listing.fotello_status !== 'not_applicable') {
-      fotello.total++
-      if (['pending'].includes(listing.fotello_status)) fotello.pending++
-      if (['ordered', 'processing'].includes(listing.fotello_status)) fotello.processing++
-      if (listing.fotello_status === 'delivered') fotello.delivered++
-      if (['failed', 'needs_manual'].includes(listing.fotello_status)) fotello.failed++
-    }
-
     // Cubicasa metrics
     if (listing.cubicasa_status && listing.cubicasa_status !== 'not_applicable') {
       cubicasa.total++
@@ -68,7 +56,7 @@ async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createC
     }
   })
 
-  return { fotello, cubicasa, zillow3d }
+  return { cubicasa, zillow3d }
 }
 
 export default async function IntegrationsDashboardPage() {
@@ -85,14 +73,13 @@ export default async function IntegrationsDashboardPage() {
       address,
       city,
       state,
-      fotello_status,
       cubicasa_status,
       zillow_3d_status,
       integration_error_message,
       ops_status,
       updated_at
     `)
-    .or('fotello_status.eq.failed,fotello_status.eq.needs_manual,cubicasa_status.eq.failed,zillow_3d_status.eq.failed')
+    .or('cubicasa_status.eq.failed,zillow_3d_status.eq.failed')
     .order('updated_at', { ascending: false })
     .limit(10)
 
@@ -104,12 +91,11 @@ export default async function IntegrationsDashboardPage() {
       address,
       city,
       state,
-      fotello_status,
       cubicasa_status,
       zillow_3d_status,
       last_integration_check
     `)
-    .or('fotello_status.eq.delivered,cubicasa_status.eq.delivered,zillow_3d_status.eq.live')
+    .or('cubicasa_status.eq.delivered,zillow_3d_status.eq.live')
     .order('last_integration_check', { ascending: false })
     .limit(5)
 
@@ -121,24 +107,15 @@ export default async function IntegrationsDashboardPage() {
       address,
       city,
       state,
-      fotello_status,
       cubicasa_status,
       zillow_3d_status,
       updated_at
     `)
-    .or('fotello_status.in.(ordered,processing),cubicasa_status.in.(ordered,processing),zillow_3d_status.in.(scheduled,scanned,processing)')
+    .or('cubicasa_status.in.(ordered,processing),zillow_3d_status.in.(scheduled,scanned,processing)')
     .order('updated_at', { ascending: false })
     .limit(10)
 
   const integrationCards = [
-    {
-      key: 'fotello',
-      name: 'Fotello',
-      description: 'AI Photo Editing',
-      icon: Camera,
-      color: 'bg-purple-500',
-      metrics: metrics.fotello,
-    },
     {
       key: 'cubicasa',
       name: 'Cubicasa',
@@ -263,9 +240,6 @@ export default async function IntegrationsDashboardPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {listing.fotello_status === 'failed' || listing.fotello_status === 'needs_manual' ? (
-                    <IntegrationStatusBadge status={listing.fotello_status as IntegrationStatus} size="sm" />
-                  ) : null}
                   {listing.cubicasa_status === 'failed' ? (
                     <IntegrationStatusBadge status={listing.cubicasa_status as IntegrationStatus} size="sm" />
                   ) : null}
@@ -307,11 +281,6 @@ export default async function IntegrationsDashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {listing.fotello_status && ['ordered', 'processing'].includes(listing.fotello_status) && (
-                      <span className="flex items-center gap-1 text-xs text-purple-500">
-                        <Camera className="h-3 w-3" />
-                      </span>
-                    )}
                     {listing.cubicasa_status && ['ordered', 'processing'].includes(listing.cubicasa_status) && (
                       <span className="flex items-center gap-1 text-xs text-blue-500">
                         <LayoutGrid className="h-3 w-3" />
@@ -359,12 +328,6 @@ export default async function IntegrationsDashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {listing.fotello_status === 'delivered' && (
-                      <span className="flex items-center gap-1 text-xs text-purple-500">
-                        <Camera className="h-3 w-3" />
-                        <CheckCircle className="h-3 w-3" />
-                      </span>
-                    )}
                     {listing.cubicasa_status === 'delivered' && (
                       <span className="flex items-center gap-1 text-xs text-blue-500">
                         <LayoutGrid className="h-3 w-3" />

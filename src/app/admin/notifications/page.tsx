@@ -620,7 +620,6 @@ function NewRuleModal({
                 className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               >
                 <option value="">Any Integration</option>
-                <option value="fotello">Fotello (AI Editing)</option>
                 <option value="cubicasa">Cubicasa (Floor Plans)</option>
                 <option value="zillow_3d">Zillow 3D Tours</option>
               </select>

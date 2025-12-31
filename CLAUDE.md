@@ -26,8 +26,8 @@ ASM Portal is a Next.js 16 application for Aerial Shots Media, providing:
 - **AI:** Anthropic Claude API, Google Gemini for content/image generation
 - **State Management:** Zustand with persistence + Immer
 - **Payments:** Stripe Elements
-- **Testing:** Vitest (1500+ tests passing)
-- **Integrations:** Supabase Storage (media), Google Places, Ticketmaster, Resend (email), Aloft (airspace), FoundDR (HDR), Cubicasa (floor plans)
+- **Testing:** Vitest (2,473+ tests passing)
+- **Integrations:** 27+ services (see Integrations section below)
 
 ## Key Commands
 
@@ -54,7 +54,7 @@ src/
 │   ├── agents/[agentSlug] # Agent portfolio pages
 │   ├── api/               # API routes
 │   │   ├── founddr/       # HDR processing endpoints
-│   │   ├── webhooks/      # Webhook handlers (FoundDR, Cubicasa, Fotello)
+│   │   ├── webhooks/      # Webhook handlers (FoundDR, Cubicasa, Zillow 3D)
 │   │   ├── integrations/  # QuickBooks OAuth
 │   │   └── cron/          # Scheduled tasks (storage-cleanup, etc.)
 │   ├── community/[slug]   # Community/neighborhood pages
@@ -350,3 +350,101 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 - Check CHANGELOG.md for context on recent work
 - Pricing is in database - update via Supabase, not JSON files
 - Orders have `source` field to track origin (portal vs ai_agent)
+
+---
+
+## Complete Platform Inventory
+
+### Codebase Stats
+
+| Metric | Count |
+|--------|-------|
+| API Routes | 206 |
+| Test Files | 272 |
+| SQL Migrations | 53 |
+| Integrations | 27 |
+| Tests Passing | 2,473+ |
+
+### All Integrations
+
+| Integration | Purpose | Status |
+|-------------|---------|--------|
+| **FoundDR** | HDR photo processing | Awaiting vendor setup |
+| **Cubicasa** | Floor plan generation | Awaiting API access |
+| **Aloft** | Drone airspace checks | Awaiting API key |
+| **QuickBooks** | Invoice sync | Awaiting OAuth setup |
+| **Bannerbear** | Social carousel generation | Placeholder template IDs |
+| Supabase Storage | Native media storage | Active |
+| Google Places | Address autocomplete | Active |
+| Google Maps | Distance/travel times | Active |
+| Google Calendar | Scheduling sync | Active |
+| Ticketmaster | Local events | Active |
+| Resend | Email delivery | Active |
+| Twilio | SMS notifications | Active |
+| Stripe | Payments | Active |
+| Sanity | Blog CMS | Active |
+| WalkScore | Walk/transit scores | Active |
+| Weather | Forecast for scheduling | Active |
+| Virtual Staging | AI staging (Gemini) | Active |
+| FAA | Drone regulations | Active (FL only) |
+| Yelp | Local business data | Active |
+| Movies/News | Local content | Active |
+| Theme Parks | FL attraction times | Active |
+| Slack | Team notifications | Active |
+| Zapier | Webhook automation | Active |
+| Dropbox | File storage | Active |
+| Instagram | Social embedding | Active |
+| MLS | Listing data providers | Active |
+| Canva | Design templates | Stub |
+
+### Life Here API (Developer API)
+
+Public API at `/api/v1/location/*`:
+- `/scores` - Composite lifestyle scores
+- `/overview` - Location summary
+- `/dining` - Restaurant data
+- `/commute` - Transit/drive times
+- `/events` - Local events
+- `/attractions` - Theme parks, venues
+- `/essentials` - Schools, healthcare
+- `/lifestyle` - Recreation options
+- `/news` - Local news feed
+- `/movies` - Theater listings
+
+Florida-specific scoring:
+- Time to Magic (Disney/Universal drive times)
+- Beach Access (Atlantic/Gulf proximity)
+
+### QC Dashboard
+
+Components in `/components/qc/`:
+- QCQueue, QCReviewClient, QCImageViewer
+- QCStats, PriorityQueue, WorkloadChart
+- BeforeAfterSlider, InpaintCanvas, InpaintModal
+
+### FoundDR Processing Pipeline
+
+Endpoints at `/api/founddr/`:
+- `/process` - Submit for HDR
+- `/process-runpod` - GPU processing
+- `/status/[jobId]` - Job polling
+- `/queue` - Queue view
+- `/retry` - Retry failed
+- Webhook for completion
+
+### Feature Status
+
+| Feature | Status |
+|---------|--------|
+| Agent Dashboard | Complete |
+| Client Portal | Complete |
+| Booking Flow | Complete |
+| Marketing Site | Complete |
+| Team Portals | Complete |
+| QC Dashboard | Complete |
+| Life Here API | Complete |
+| Skills Framework | Complete |
+| AI Agents | Complete |
+| Storywork Voice Input | Coming Soon |
+| Carousel Generation | Needs Bannerbear |
+| Content Retainer Booking | Coming Soon |

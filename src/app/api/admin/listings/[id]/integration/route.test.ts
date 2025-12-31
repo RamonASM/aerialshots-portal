@@ -53,8 +53,6 @@ describe('Integration Status API', () => {
     it('should return integration statuses for a listing', async () => {
       const mockListing = {
         id: 'test-listing-id',
-        fotello_status: 'processing',
-        fotello_job_id: 'fotello-123',
         cubicasa_status: 'delivered',
         cubicasa_order_id: 'cubicasa-456',
         zillow_3d_status: 'pending',
@@ -77,7 +75,6 @@ describe('Integration Status API', () => {
 
       expect(response.status).toBe(200)
       expect(data.integrations).toBeDefined()
-      expect(data.integrations.fotello.status).toBe('processing')
       expect(data.integrations.cubicasa.status).toBe('delivered')
       expect(data.integrations.zillow_3d.status).toBe('pending')
     })
@@ -99,10 +96,10 @@ describe('Integration Status API', () => {
   })
 
   describe('PATCH /api/admin/listings/[id]/integration', () => {
-    it('should update fotello status successfully', async () => {
+    it('should update cubicasa status successfully', async () => {
       const mockListing = {
         id: 'test-listing-id',
-        fotello_status: 'pending',
+        cubicasa_status: 'pending',
       }
 
       mockSupabaseClient.from.mockImplementation((table: string) => {
@@ -116,7 +113,7 @@ describe('Integration Status API', () => {
             update: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({ data: { ...mockListing, fotello_status: 'processing' }, error: null }),
+                  single: vi.fn().mockResolvedValue({ data: { ...mockListing, cubicasa_status: 'processing' }, error: null }),
                 }),
               }),
             }),
@@ -128,7 +125,7 @@ describe('Integration Status API', () => {
       })
 
       const request = createMockRequest('PATCH', {
-        integration: 'fotello',
+        integration: 'cubicasa',
         status: 'processing',
       })
       const response = await PATCH(request, { params: createMockParams() })
@@ -152,7 +149,7 @@ describe('Integration Status API', () => {
 
     it('should reject invalid status for integration', async () => {
       const request = createMockRequest('PATCH', {
-        integration: 'fotello',
+        integration: 'cubicasa',
         status: 'invalid_status',
       })
       const response = await PATCH(request, { params: createMockParams() })
@@ -290,7 +287,7 @@ describe('Integration Status API', () => {
       expect(response.status).toBe(400)
     })
 
-    it('should return manual action for fotello', async () => {
+    it('should return manual action for zillow_3d', async () => {
       const mockListing = {
         id: 'test-listing-id',
         address: '123 Main St',
@@ -300,7 +297,7 @@ describe('Integration Status API', () => {
         lat: 28.5383,
         lng: -81.3792,
         sqft: 2500,
-        fotello_status: 'pending',
+        zillow_3d_status: 'pending',
       }
 
       mockSupabaseClient.from.mockReturnValue({
@@ -312,12 +309,12 @@ describe('Integration Status API', () => {
       })
 
       const request = createMockRequest('POST', {
-        integration: 'fotello',
+        integration: 'zillow_3d',
       })
       const response = await POST(request, { params: createMockParams() })
       const data = await response.json()
 
-      // Fotello returns 400 with action: manual since no API is available
+      // Zillow 3D returns 400 with action: manual since no API is available
       expect(response.status).toBe(400)
       expect(data.action).toBe('manual')
     })
@@ -350,31 +347,6 @@ function createStatusUpdateMock(mockListing: object) {
 }
 
 describe('Integration Status Validation', () => {
-  describe('Fotello statuses', () => {
-    const validFotelloStatuses = [
-      'pending',
-      'ordered',
-      'processing',
-      'delivered',
-      'needs_manual',
-      'failed',
-      'not_applicable',
-    ]
-
-    it.each(validFotelloStatuses)('should accept "%s" as valid fotello status', async (status) => {
-      const mockListing = { id: 'test-id', fotello_status: 'pending' }
-      mockSupabaseClient.from.mockImplementation(createStatusUpdateMock(mockListing))
-
-      const request = createMockRequest('PATCH', {
-        integration: 'fotello',
-        status,
-      })
-      const response = await PATCH(request, { params: createMockParams() })
-
-      expect(response.status).toBe(200)
-    })
-  })
-
   describe('Cubicasa statuses', () => {
     const validCubicasaStatuses = [
       'pending',

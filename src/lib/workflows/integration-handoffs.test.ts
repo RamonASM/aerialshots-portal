@@ -30,7 +30,6 @@ describe('Integration Handoff Workflow', () => {
       address: '123 Main St',
       agent_id: 'agent-456',
       ops_status: 'processing',
-      fotello_status: 'pending',
       cubicasa_status: 'pending',
       zillow_3d_status: 'pending',
     }
@@ -69,7 +68,7 @@ describe('Integration Handoff Workflow', () => {
 
       await processIntegrationHandoff({
         listingId: 'listing-123',
-        integration: 'fotello',
+        integration: 'cubicasa',
         previousStatus: 'processing',
         newStatus: 'delivered',
       })
@@ -204,7 +203,7 @@ describe('Integration Handoff Workflow', () => {
 
       await processIntegrationHandoff({
         listingId: 'non-existent',
-        integration: 'fotello',
+        integration: 'cubicasa',
         previousStatus: 'processing',
         newStatus: 'delivered',
       })
@@ -220,7 +219,6 @@ describe('Integration Handoff Workflow', () => {
         address: '123 Main St',
         agent_id: 'agent-456',
         ops_status: 'staged',
-        fotello_status: 'delivered',
         cubicasa_status: 'delivered',
         zillow_3d_status: 'not_applicable', // Not applicable counts as complete
       }
@@ -295,7 +293,6 @@ describe('Integration Handoff Workflow', () => {
         address: '123 Main St',
         agent_id: 'agent-456',
         ops_status: 'staged',
-        fotello_status: 'delivered',
         cubicasa_status: 'processing', // Still processing
         zillow_3d_status: 'pending',
       }
@@ -333,7 +330,7 @@ describe('Integration Handoff Workflow', () => {
 
       await processIntegrationHandoff({
         listingId: 'listing-123',
-        integration: 'fotello',
+        integration: 'cubicasa',
         previousStatus: 'processing',
         newStatus: 'delivered',
       })
@@ -348,7 +345,6 @@ describe('Integration Handoff Workflow', () => {
         address: '123 Main St',
         agent_id: 'agent-456',
         ops_status: 'in_qc', // Already in QC
-        fotello_status: 'delivered',
         cubicasa_status: 'delivered',
         zillow_3d_status: 'live',
       }
@@ -408,7 +404,7 @@ describe('Integration Handoff Workflow', () => {
 
       await triggerIntegrationHandoff(
         'listing-123',
-        'fotello',
+        'cubicasa',
         'processing',
         'delivered',
         'external-id-123'
@@ -424,56 +420,49 @@ describe('Integration Handoff Workflow', () => {
     const testCases = [
       {
         name: 'all delivered',
-        fotello: 'delivered',
         cubicasa: 'delivered',
         zillow_3d: 'live',
         expected: true,
       },
       {
         name: 'all not_applicable',
-        fotello: 'not_applicable',
         cubicasa: 'not_applicable',
         zillow_3d: 'not_applicable',
         expected: true,
       },
       {
         name: 'mixed delivered and not_applicable',
-        fotello: 'delivered',
         cubicasa: 'not_applicable',
         zillow_3d: 'live',
         expected: true,
       },
       {
         name: 'one still processing',
-        fotello: 'delivered',
         cubicasa: 'processing',
         zillow_3d: 'live',
         expected: false,
       },
       {
         name: 'one pending',
-        fotello: 'pending',
         cubicasa: 'delivered',
-        zillow_3d: 'not_applicable',
+        zillow_3d: 'pending',
         expected: false,
       },
       {
         name: 'one failed',
-        fotello: 'delivered',
         cubicasa: 'failed',
         zillow_3d: 'live',
         expected: false,
       },
     ]
 
-    testCases.forEach(({ name, fotello, cubicasa, zillow_3d, expected }) => {
+    testCases.forEach(({ name, cubicasa, zillow_3d, expected }) => {
       it(`should ${expected ? 'advance' : 'not advance'} when ${name}`, async () => {
         const listing = {
           id: 'listing-123',
           address: '123 Main St',
           agent_id: 'agent-456',
           ops_status: 'staged',
-          fotello_status: fotello,
           cubicasa_status: cubicasa,
           zillow_3d_status: zillow_3d,
         }
@@ -523,7 +512,7 @@ describe('Integration Handoff Workflow', () => {
 
         await processIntegrationHandoff({
           listingId: 'listing-123',
-          integration: 'fotello',
+          integration: 'cubicasa',
           previousStatus: 'processing',
           newStatus: 'delivered',
         })

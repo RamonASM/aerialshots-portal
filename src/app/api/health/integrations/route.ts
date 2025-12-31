@@ -159,14 +159,6 @@ export async function GET() {
       status: getIntegrationStatus(['CUBICASA_API_KEY'], ['CUBICASA_WEBHOOK_SECRET']),
       lastChecked: timestamp,
     },
-    {
-      name: 'Fotello',
-      description: 'AI photo editing',
-      requiredEnvVars: ['FOTELLO_WEBHOOK_SECRET'],
-      missingEnvVars: getMissingVars(['FOTELLO_WEBHOOK_SECRET']),
-      status: getIntegrationStatus(['FOTELLO_WEBHOOK_SECRET']),
-      lastChecked: timestamp,
-    },
 
     // Drone & Airspace
     {
