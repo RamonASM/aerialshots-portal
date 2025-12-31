@@ -248,25 +248,25 @@ TWILIO_PHONE_NUMBER=
 GOOGLE_PLACES_API_KEY=
 TICKETMASTER_API_KEY=
 
-# FoundDR (HDR Processing) - awaiting setup
-FOUNDDR_API_URL=
-FOUNDDR_API_SECRET=
-FOUNDDR_WEBHOOK_URL=
-FOUNDDR_WEBHOOK_SECRET=
+# RunPod HDR Processing (replaces FoundDR API)
+RUNPOD_ENDPOINT_ID=        # RunPod serverless endpoint ID
+RUNPOD_API_KEY=            # RunPod API key
 
 # Cubicasa (Floor Plans) - awaiting API access
+# For now, use manual floor plan upload (JPG, PDF, PNG)
 CUBICASA_API_KEY=
 CUBICASA_WEBHOOK_SECRET=
 CUBICASA_ENVIRONMENT=production
 
-# QuickBooks (Invoicing)
+# QuickBooks (Invoicing) - not currently in use
 QUICKBOOKS_CLIENT_ID=
 QUICKBOOKS_CLIENT_SECRET=
 QUICKBOOKS_REDIRECT_URI=
 QUICKBOOKS_ENVIRONMENT=sandbox
 
-# Aloft (Drone Airspace) - awaiting API access
-ALOFT_API_KEY=
+# Aloft - NOT REQUIRED (uses free FAA data fallback)
+# The client works with hardcoded Florida airports without API key
+# ALOFT_API_KEY=  # Only needed for full LAANC authorization
 
 # Sanity CMS (Blog)
 NEXT_PUBLIC_SANITY_PROJECT_ID=dqyvtgh9
@@ -369,11 +369,11 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 
 | Integration | Purpose | Status |
 |-------------|---------|--------|
-| **FoundDR** | HDR photo processing | Awaiting vendor setup |
-| **Cubicasa** | Floor plan generation | Awaiting API access |
-| **Aloft** | Drone airspace checks | Awaiting API key |
-| **QuickBooks** | Invoice sync | Awaiting OAuth setup |
-| **Bannerbear** | Social carousel generation | Placeholder template IDs |
+| **RunPod/FoundDR** | HDR photo processing | ✅ Ready (add env vars) |
+| **Cubicasa** | Floor plan generation | ⏳ Manual upload for now |
+| **Aloft** | Drone airspace checks | ✅ Works (free FAA fallback) |
+| **QuickBooks** | Invoice sync | ⏸️ Not in use |
+| **Bannerbear** | Social carousel generation | ⏸️ Building replacement |
 | Supabase Storage | Native media storage | Active |
 | Google Places | Address autocomplete | Active |
 | Google Maps | Distance/travel times | Active |
@@ -422,29 +422,38 @@ Components in `/components/qc/`:
 - QCStats, PriorityQueue, WorkloadChart
 - BeforeAfterSlider, InpaintCanvas, InpaintModal
 
-### FoundDR Processing Pipeline
+### HDR Processing Pipeline (RunPod)
+
+**Client**: `src/lib/integrations/founddr/runpod-client.ts`
+
+Uses RunPod serverless GPU for HDR photo processing:
+- Sync processing via `/runsync` endpoint
+- Async processing via `/run` with polling
+- Returns base64 image with processing metrics
 
 Endpoints at `/api/founddr/`:
 - `/process` - Submit for HDR
-- `/process-runpod` - GPU processing
+- `/process-runpod` - GPU processing (RunPod)
 - `/status/[jobId]` - Job polling
 - `/queue` - Queue view
 - `/retry` - Retry failed
-- Webhook for completion
 
 ### Feature Status
 
 | Feature | Status |
 |---------|--------|
-| Agent Dashboard | Complete |
-| Client Portal | Complete |
-| Booking Flow | Complete |
-| Marketing Site | Complete |
-| Team Portals | Complete |
-| QC Dashboard | Complete |
-| Life Here API | Complete |
-| Skills Framework | Complete |
-| AI Agents | Complete |
+| Agent Dashboard | ✅ Complete |
+| Client Portal | ✅ Complete |
+| Booking Flow | ✅ Complete |
+| Marketing Site | ✅ Complete |
+| Team Portals | ✅ Complete |
+| QC Dashboard | ✅ Complete |
+| Life Here API | ✅ Complete |
+| Skills Framework | ✅ Complete |
+| AI Agents | ✅ Complete |
+| HDR Processing (RunPod) | ✅ Ready (add env vars) |
+| Airspace Checks | ✅ Works (free FAA) |
+| Floor Plans | ⏳ Manual upload |
 | Storywork Voice Input | Coming Soon |
-| Carousel Generation | Needs Bannerbear |
+| Carousel Generation | Building replacement |
 | Content Retainer Booking | Coming Soon |
