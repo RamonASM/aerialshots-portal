@@ -103,6 +103,12 @@ export const navigationGroups: NavGroup[] = [
         description: 'Geographic view of assignments',
         badge: 'new',
       },
+      {
+        name: 'Zillow Showcase',
+        href: '/admin/ops/aryeo-lite',
+        icon: Globe,
+        description: 'Upload photos via Aryeo Lite',
+      },
     ],
   },
   {
@@ -370,6 +376,7 @@ export function getPathLabel(segment: string): string {
     integrations: 'Integrations',
     // Tier 8 - Advanced Features
     'calendar-map': 'Calendar Map',
+    'aryeo-lite': 'Zillow Showcase',
     merge: 'Merge Orders',
     preview: 'Video Preview',
     customers: 'Customers',

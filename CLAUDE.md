@@ -10,10 +10,13 @@ ASM Portal is a Next.js 16 application for Aerial Shots Media, providing:
 - **Property Websites** - Public-facing property marketing pages
 - **Community Pages** - SEO-optimized neighborhood/area guides
 - **Admin Panel** - Staff management, QC workflow, curation tools
+- **Team Portals** - Photographer and videographer job management
+- **Booking Flow** - Multi-step booking with package selection, scheduling, payment
 
 **Production URL:** `https://app.aerialshots.media`
 **Marketing Site:** `https://aerialshots.media` (same codebase, (marketing) route group)
 **Blog:** `https://blog.aerialshots.media` (separate Next.js app at `~/aerialshots-blog-frontend`)
+**AI Agent Backend:** `~/asm-agent-backend` (Express.js API for AI booking agents)
 
 ## Tech Stack
 
@@ -57,7 +60,10 @@ src/
 │   ├── community/[slug]   # Community/neighborhood pages
 │   ├── dashboard/         # Agent dashboard
 │   ├── delivery/[listingId]  # Media delivery
-│   └── property/[listingId]  # Property websites
+│   ├── property/[listingId]  # Property websites
+│   └── team/              # Team portals
+│       ├── photographer/  # Photographer dashboard, jobs, schedule
+│       └── videographer/  # Videographer dashboard, queue, schedule
 ├── components/
 │   ├── admin/ops/         # Admin operations components
 │   ├── booking/           # Multi-step booking flow components
@@ -206,10 +212,13 @@ const workflow = createComposition('post-delivery')
 - `video-creator` - Composes video skills for slideshow/reel generation
 - `content-writer` - Generates listing descriptions and social content
 - `image-enhancer` - HDR processing, cleanup, sky replacement
+- `media-tips` - Analyzes media assets and generates quality improvement tips
+- `neighborhood-data` - Researches local area, attractions, schools
+- `qc-assistant` - AI-powered quality control review
 
 **Workflows:**
 - `post-delivery` - Runs after media delivery (QC → notify → video → content → campaign)
-- `new-listing` - Runs when listing created (data enrich → content → template select)
+- `new-listing` - Runs when listing created (data enrich → neighborhood → content → template select)
 
 ## Recent Changes
 
@@ -272,9 +281,72 @@ REVIEW_REQUEST_DELAY_MS=7200000
 CRON_SECRET=
 ```
 
+## Unified Architecture
+
+The platform uses a unified architecture where portal and AI agent backend share the same Supabase database:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Unified Architecture                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│                    ┌──────────────────────┐                         │
+│                    │     Supabase         │                         │
+│                    │  (Single Source)     │                         │
+│                    │  • orders            │                         │
+│                    │  • listings          │                         │
+│                    │  • pricing_tiers     │                         │
+│                    │  • packages          │                         │
+│                    │  • services          │                         │
+│                    └──────────────────────┘                         │
+│                            ▲    ▲                                   │
+│              ┌─────────────┘    └─────────────┐                     │
+│              │                                │                     │
+│  ┌───────────┴──────────┐      ┌──────────────┴─────────┐          │
+│  │  aerialshots-portal  │      │   asm-agent-backend    │          │
+│  │  (Next.js 16)        │      │   (Express.js)         │          │
+│  │  • Human booking UI  │      │  • AI agent API        │          │
+│  │  • Admin panel       │      │  • Chatbot booking     │          │
+│  │  • Delivery pages    │      │  • Voice booking       │          │
+│  └──────────────────────┘      └────────────────────────┘          │
+│                                                                      │
+│  SHARED: Supabase database, pricing from DB, real availability     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Pricing System
+
+Pricing is stored in the database as single source of truth:
+- `pricing_tiers` - Square footage buckets with base photo prices
+- `packages` - Essentials, Signature, Luxury with included services
+- `package_pricing` - Price matrix (package × tier)
+- `services` - A la carte services with base prices and durations
+
+Use `src/lib/queries/pricing.ts` to fetch pricing data:
+```typescript
+import { getPricing, calculateQuote, getTierForSqft } from '@/lib/queries/pricing'
+
+const { tiers, packages, services } = await getPricing()
+const quote = await calculateQuote(sqft, 'signature', ['droneOnly', 'realTwilight'])
+```
+
+### Team Portals
+
+Staff can have multiple roles (e.g., photographer + videographer). Use `hasVideographerAccess()` or similar helpers:
+```typescript
+function hasVideographerAccess(staff: { role: string | null; roles?: string[] | null }): boolean {
+  if (staff.role === 'admin') return true
+  if (staff.role === 'videographer') return true
+  if (staff.roles?.includes('videographer')) return true
+  return false
+}
+```
+
 ## Notes for Claude
 
 - Always run `npm run build` before committing to catch TypeScript errors
 - Use `app.aerialshots.media` as the production domain (not `portal.`)
 - Migrations go in `supabase/migrations/` with format `YYYYMMDD_NNN_description.sql`
 - Check CHANGELOG.md for context on recent work
+- Pricing is in database - update via Supabase, not JSON files
+- Orders have `source` field to track origin (portal vs ai_agent)

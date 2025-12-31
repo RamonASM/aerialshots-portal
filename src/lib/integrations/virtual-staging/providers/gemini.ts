@@ -1,7 +1,9 @@
 /**
  * Google Gemini provider for virtual staging
- * Uses Gemini's image generation/editing capabilities
+ * Uses Gemini's image generation/editing capabilities via Imagen 3
  */
+
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 interface GeminiStagingParams {
   imageUrl: string
@@ -13,23 +15,51 @@ interface GeminiStagingParams {
 interface GeminiStagingResult {
   success: boolean
   imageUrl?: string
+  imageBase64?: string
   processingTime?: number
   error?: string
+  provider: 'gemini'
+  status: 'success' | 'error' | 'not_configured'
+}
+
+// Initialize Gemini client lazily
+let genAI: GoogleGenerativeAI | null = null
+
+function getGeminiClient(): GoogleGenerativeAI | null {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    return null
+  }
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY)
+  }
+  return genAI
+}
+
+/**
+ * Fetch image and convert to base64 for Gemini API
+ */
+async function imageToBase64(imageUrl: string): Promise<{ data: string; mimeType: string }> {
+  const response = await fetch(imageUrl)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.statusText}`)
+  }
+
+  const contentType = response.headers.get('content-type') || 'image/jpeg'
+  const buffer = await response.arrayBuffer()
+  const base64 = Buffer.from(buffer).toString('base64')
+
+  return {
+    data: base64,
+    mimeType: contentType,
+  }
 }
 
 /**
  * Generate staged image using Google Gemini
  *
- * Note: This is a placeholder for the actual Gemini API integration.
- * When implementing, use the @google/generative-ai SDK.
- *
- * Example integration:
- * ```typescript
- * import { GoogleGenerativeAI } from '@google/generative-ai'
- *
- * const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
- * const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
- * ```
+ * Uses Gemini's vision capabilities to analyze the room and
+ * describe what staging would look like. For actual image generation,
+ * this integrates with Gemini's image generation (Imagen 3) when available.
  */
 export async function generateWithGemini(
   params: GeminiStagingParams
@@ -38,25 +68,86 @@ export async function generateWithGemini(
 
   try {
     // Validate API key
-    if (!process.env.GOOGLE_AI_API_KEY) {
+    const client = getGeminiClient()
+    if (!client) {
       return {
         success: false,
-        error: 'GOOGLE_AI_API_KEY not configured',
+        error: 'GOOGLE_AI_API_KEY not configured. Add it to your environment variables.',
+        provider: 'gemini',
+        status: 'not_configured',
       }
     }
 
-    // TODO: Implement actual Gemini API call
-    // For now, return a simulated successful result
+    // Get the vision model for image analysis
+    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
 
-    // Simulated processing time
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    // Convert the input image to base64
+    const imageData = await imageToBase64(params.imageUrl)
 
+    // Create the staging prompt
+    const stagingPrompt = buildGeminiPrompt({
+      roomType: params.roomType,
+      style: params.style,
+    })
+
+    // For image generation, we need to use the imagen model
+    // gemini-2.0-flash-exp supports image generation
+    const imagenModel = client.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        // @ts-expect-error - responseModalities is available for image generation
+        responseModalities: ['image', 'text'],
+      },
+    })
+
+    // Generate the staged image
+    const result = await imagenModel.generateContent([
+      {
+        inlineData: imageData,
+      },
+      {
+        text: `${stagingPrompt}
+
+Based on this empty room image, generate a new image showing the same room but virtually staged with beautiful, realistic furniture and decor in ${params.style} style.
+
+The staging should:
+- Keep the exact same room structure, walls, floors, and windows
+- Add appropriate furniture for a ${params.roomType}
+- Use photorealistic quality with proper lighting and shadows
+- Match the perspective and lighting of the original photo`,
+      },
+    ])
+
+    const response = result.response
     const processingTime = Date.now() - startTime
 
+    // Check if we got an image in the response
+    if (response.candidates && response.candidates.length > 0) {
+      const candidate = response.candidates[0]
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          // Check for inline image data
+          if ('inlineData' in part && part.inlineData) {
+            return {
+              success: true,
+              imageBase64: part.inlineData.data,
+              processingTime,
+              provider: 'gemini',
+              status: 'success',
+            }
+          }
+        }
+      }
+    }
+
+    // If no image was generated, return an error with the text response if available
+    const textResponse = response.text?.() || 'No image generated'
     return {
-      success: true,
-      imageUrl: `https://storage.example.com/staged/gemini-${Date.now()}.jpg`,
+      success: false,
+      error: `Image generation not available: ${textResponse.substring(0, 200)}`,
       processingTime,
+      provider: 'gemini',
+      status: 'error',
     }
   } catch (error) {
     console.error('[Gemini] Error generating staged image:', error)
@@ -64,6 +155,8 @@ export async function generateWithGemini(
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       processingTime: Date.now() - startTime,
+      provider: 'gemini',
+      status: 'error',
     }
   }
 }

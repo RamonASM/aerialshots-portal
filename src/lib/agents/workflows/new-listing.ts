@@ -50,9 +50,9 @@ const newListingWorkflow: WorkflowDefinition = {
       },
     },
 
-    // Step 2: Neighborhood Researcher - Research local area (conditional)
+    // Step 2: Neighborhood Data - Research local area (conditional)
     {
-      agentSlug: 'neighborhood-researcher',
+      agentSlug: 'neighborhood-data',
       required: false,
       condition: async (context: WorkflowContext) => {
         // Only research neighborhood if:

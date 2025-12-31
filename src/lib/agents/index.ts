@@ -97,6 +97,7 @@ import './definitions/operations/delivery-notifier'
 import './definitions/operations/listing-data-enricher'
 import './definitions/operations/agent-welcome-notifier'
 import './definitions/operations/shoot-scheduler'
+import './definitions/operations/media-tips'
 
 // Lifestyle
 import './definitions/lifestyle/portfolio-stats'

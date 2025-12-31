@@ -2,6 +2,46 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2024-12-31
+
+### Added - Unified Platform Architecture
+
+#### Unified Pricing System (`supabase/migrations/20241231_001_unified_pricing.sql`)
+- `pricing_tiers` table - 6 square footage buckets with base photo prices
+- `packages` table - Essentials, Signature, Luxury with included services
+- `package_pricing` table - Price matrix (package × tier) for all combinations
+- `services` table - 17 a la carte services with prices, durations, categories
+- Seeds all pricing data from asm_pricing_kb.json
+- Added `source` column to orders table (portal vs ai_agent tracking)
+
+#### Pricing Query Module (`src/lib/queries/pricing.ts`)
+- `getPricing()` - Cached fetch of all pricing data
+- `getTierForSqft()` - Find tier for given square footage
+- `getPackagePrice()` - Get package price for specific tier
+- `calculateQuote()` - Full quote with package + addons
+- `getServicesByCategory()` - Filter services by category
+- `calculateDuration()` - Estimate shoot duration from services
+
+#### Videographer Portal (`src/app/team/videographer/`)
+- Dashboard page with today's video jobs, stats, route map
+- Queue page for videos awaiting editing
+- Schedule page with weekly calendar view
+- Job detail page with status updates, media assets
+- Settings page with notification preferences
+- Multi-role authentication (staff can have photographer + videographer roles)
+
+#### Media Tips Agent (`src/lib/agents/definitions/operations/media-tips.ts`)
+- Analyzes media assets for quality issues
+- Generates actionable improvement tips by category
+- Returns overall score, summary, and prioritized actions
+- Categories: composition, lighting, staging, technical, presentation
+
+#### AI Workflow Fixes
+- Fixed `neighborhood-researcher` → `neighborhood-data` slug mismatch in new-listing workflow
+- Added media-tips agent to agent index
+
+---
+
 ## [Unreleased] - 2024-12-30
 
 ### Added - Performance & Accessibility Polish

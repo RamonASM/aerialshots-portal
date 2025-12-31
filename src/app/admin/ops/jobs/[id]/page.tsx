@@ -11,6 +11,8 @@ import {
   Clock,
   AlertTriangle,
   Plug,
+  Globe,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IntegrationPanelClient } from '@/components/admin/ops/IntegrationPanelClient'
@@ -136,6 +138,17 @@ export default async function JobDetailPage({ params }: PageProps) {
           </p>
         </div>
         <JobServicesClient listingId={listing.id} />
+        <Button variant="outline" size="sm" className="gap-2" asChild>
+          <a
+            href="https://app.aryeo.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Globe className="h-4 w-4" />
+            Aryeo Lite
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </Button>
       </div>
 
       {/* Status Progress */}

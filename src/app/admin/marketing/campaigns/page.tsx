@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Mail,
@@ -19,105 +19,120 @@ import {
   Copy,
   Calendar,
   ArrowUpDown,
+  RefreshCw,
 } from 'lucide-react'
 
-type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent'
+type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled'
 
 interface Campaign {
   id: string
   name: string
   subject: string
   status: CampaignStatus
-  recipientCount: number
-  sentCount?: number
-  openCount?: number
-  clickCount?: number
-  sentAt?: string
-  scheduledAt?: string
-  openRate?: number
-  clickRate?: number
-  createdAt: string
-  createdBy?: string
+  recipient_count: number
+  sent_count?: number
+  open_count?: number
+  click_count?: number
+  sent_at?: string
+  scheduled_at?: string
+  open_rate?: number
+  click_rate?: number
+  created_at: string
+  created_by?: string
 }
 
-// Mock data - will be replaced with API
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    id: '1',
-    name: 'Holiday Promotion 2024',
-    subject: 'Special Holiday Rates for Real Estate Photography',
-    status: 'sent',
-    recipientCount: 245,
-    sentCount: 245,
-    openCount: 104,
-    clickCount: 30,
-    sentAt: '2024-12-20T10:00:00Z',
-    openRate: 42.5,
-    clickRate: 12.3,
-    createdAt: '2024-12-18T09:00:00Z',
-    createdBy: 'John Smith',
-  },
-  {
-    id: '2',
-    name: 'Winter Service Update',
-    subject: 'New Twilight Photography Package Available',
-    status: 'sent',
-    recipientCount: 312,
-    sentCount: 310,
-    openCount: 145,
-    clickCount: 52,
-    sentAt: '2024-12-15T14:00:00Z',
-    openRate: 46.8,
-    clickRate: 16.8,
-    createdAt: '2024-12-13T11:00:00Z',
-    createdBy: 'Jane Doe',
-  },
-  {
-    id: '3',
-    name: 'New Year Announcement',
-    subject: 'Exciting Updates for 2025 - New Services Available',
-    status: 'scheduled',
-    recipientCount: 312,
-    scheduledAt: '2025-01-02T09:00:00Z',
-    createdAt: '2024-12-27T14:00:00Z',
-    createdBy: 'John Smith',
-  },
-  {
-    id: '4',
-    name: 'Drone Services Launch',
-    subject: 'Introducing Our New FAA-Certified Drone Photography',
-    status: 'draft',
-    recipientCount: 0,
-    createdAt: '2024-12-28T08:00:00Z',
-    createdBy: 'John Smith',
-  },
-  {
-    id: '5',
-    name: 'Q1 Pricing Update',
-    subject: 'Important: Updated Pricing for 2025',
-    status: 'draft',
-    recipientCount: 0,
-    createdAt: '2024-12-27T16:00:00Z',
-    createdBy: 'Jane Doe',
-  },
-]
+interface CampaignStats {
+  totalCampaigns: number
+  drafts: number
+  scheduled: number
+  sent: number
+}
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [stats, setStats] = useState<CampaignStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | 'all'>('all')
-  const [sortBy, setSortBy] = useState<'createdAt' | 'sentAt' | 'name'>('createdAt')
+  const [sortBy, setSortBy] = useState<'created_at' | 'sent_at' | 'name'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setError(null)
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (searchQuery) params.set('search', searchQuery)
+
+      const response = await fetch(`/api/admin/marketing/campaigns?${params}`)
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please log in to view campaigns')
+        }
+        throw new Error('Failed to fetch campaigns')
+      }
+
+      const data = await response.json()
+      setCampaigns(data.campaigns || [])
+      setStats(data.stats || null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load campaigns')
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter, searchQuery])
 
   useEffect(() => {
-    // TODO: Replace with API call
-    setTimeout(() => {
-      setCampaigns(MOCK_CAMPAIGNS)
-      setLoading(false)
-    }, 500)
-  }, [])
+    fetchCampaigns()
+  }, [fetchCampaigns])
+
+  const handleDelete = async (ids: string[]) => {
+    if (!confirm(`Delete ${ids.length} campaign(s)?`)) return
+
+    setActionLoading('delete')
+    try {
+      await Promise.all(
+        ids.map(id =>
+          fetch(`/api/admin/marketing/campaigns/${id}`, { method: 'DELETE' })
+        )
+      )
+      setSelectedCampaigns([])
+      await fetchCampaigns()
+    } catch {
+      setError('Failed to delete campaigns')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDuplicate = async (ids: string[]) => {
+    setActionLoading('duplicate')
+    try {
+      for (const id of ids) {
+        const campaign = campaigns.find(c => c.id === id)
+        if (campaign) {
+          await fetch('/api/admin/marketing/campaigns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: `${campaign.name} (Copy)`,
+              subject: campaign.subject,
+              body: '', // Would need to fetch full campaign to get body
+            }),
+          })
+        }
+      }
+      setSelectedCampaigns([])
+      await fetchCampaigns()
+    } catch {
+      setError('Failed to duplicate campaigns')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const getStatusColor = (status: CampaignStatus) => {
     switch (status) {
@@ -129,6 +144,8 @@ export default function CampaignsPage() {
         return 'bg-amber-100 text-amber-700'
       case 'sent':
         return 'bg-green-100 text-green-700'
+      case 'cancelled':
+        return 'bg-red-100 text-red-700'
     }
   }
 
@@ -142,44 +159,36 @@ export default function CampaignsPage() {
         return <Send className="h-3.5 w-3.5" />
       case 'sent':
         return <CheckCircle2 className="h-3.5 w-3.5" />
+      case 'cancelled':
+        return <Trash2 className="h-3.5 w-3.5" />
     }
   }
 
-  const filteredCampaigns = campaigns
-    .filter((campaign) => {
-      if (statusFilter !== 'all' && campaign.status !== statusFilter) return false
-      if (
-        searchQuery &&
-        !campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !campaign.subject.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-        return false
-      return true
-    })
-    .sort((a, b) => {
-      let aVal: string | number = ''
-      let bVal: string | number = ''
+  // Sort campaigns client-side (filtering is done server-side)
+  const sortedCampaigns = [...campaigns].sort((a, b) => {
+    let aVal: string | number = ''
+    let bVal: string | number = ''
 
-      switch (sortBy) {
-        case 'createdAt':
-          aVal = a.createdAt
-          bVal = b.createdAt
-          break
-        case 'sentAt':
-          aVal = a.sentAt || a.scheduledAt || a.createdAt
-          bVal = b.sentAt || b.scheduledAt || b.createdAt
-          break
-        case 'name':
-          aVal = a.name.toLowerCase()
-          bVal = b.name.toLowerCase()
-          break
-      }
+    switch (sortBy) {
+      case 'created_at':
+        aVal = a.created_at
+        bVal = b.created_at
+        break
+      case 'sent_at':
+        aVal = a.sent_at || a.scheduled_at || a.created_at
+        bVal = b.sent_at || b.scheduled_at || b.created_at
+        break
+      case 'name':
+        aVal = a.name.toLowerCase()
+        bVal = b.name.toLowerCase()
+        break
+    }
 
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1
-      }
-      return aVal < bVal ? 1 : -1
-    })
+    if (sortOrder === 'asc') {
+      return aVal > bVal ? 1 : -1
+    }
+    return aVal < bVal ? 1 : -1
+  })
 
   const toggleSort = (field: typeof sortBy) => {
     if (sortBy === field) {
@@ -191,10 +200,10 @@ export default function CampaignsPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedCampaigns.length === filteredCampaigns.length) {
+    if (selectedCampaigns.length === sortedCampaigns.length) {
       setSelectedCampaigns([])
     } else {
-      setSelectedCampaigns(filteredCampaigns.map((c) => c.id))
+      setSelectedCampaigns(sortedCampaigns.map((c) => c.id))
     }
   }
 
@@ -220,6 +229,25 @@ export default function CampaignsPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true)
+              fetchCampaigns()
+            }}
+            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -227,17 +255,29 @@ export default function CampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Email Campaigns</h1>
           <p className="text-neutral-600">
-            {campaigns.length} campaigns • {campaigns.filter((c) => c.status === 'sent').length}{' '}
+            {stats?.totalCampaigns || campaigns.length} campaigns • {stats?.sent || campaigns.filter((c) => c.status === 'sent').length}{' '}
             sent
           </p>
         </div>
-        <Link
-          href="/admin/marketing/campaigns/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          New Campaign
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setLoading(true)
+              fetchCampaigns()
+            }}
+            className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <Link
+            href="/admin/marketing/campaigns/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Campaign
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -275,13 +315,21 @@ export default function CampaignsPage() {
           <span className="text-sm text-blue-700">
             {selectedCampaigns.length} selected
           </span>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white rounded border border-blue-200 text-blue-700 hover:bg-blue-100">
+          <button
+            onClick={() => handleDuplicate(selectedCampaigns)}
+            disabled={actionLoading === 'duplicate'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white rounded border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+          >
             <Copy className="h-4 w-4" />
-            Duplicate
+            {actionLoading === 'duplicate' ? 'Duplicating...' : 'Duplicate'}
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white rounded border border-red-200 text-red-700 hover:bg-red-50">
+          <button
+            onClick={() => handleDelete(selectedCampaigns)}
+            disabled={actionLoading === 'delete'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
             <Trash2 className="h-4 w-4" />
-            Delete
+            {actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       )}
@@ -295,8 +343,8 @@ export default function CampaignsPage() {
                 <input
                   type="checkbox"
                   checked={
-                    selectedCampaigns.length === filteredCampaigns.length &&
-                    filteredCampaigns.length > 0
+                    selectedCampaigns.length === sortedCampaigns.length &&
+                    sortedCampaigns.length > 0
                   }
                   onChange={toggleSelectAll}
                   className="rounded border-neutral-300"
@@ -322,7 +370,7 @@ export default function CampaignsPage() {
               </th>
               <th className="px-4 py-3 text-left">
                 <button
-                  onClick={() => toggleSort('createdAt')}
+                  onClick={() => toggleSort('created_at')}
                   className="flex items-center gap-1 text-xs font-medium text-neutral-600 uppercase tracking-wider hover:text-neutral-900"
                 >
                   Date
@@ -333,7 +381,7 @@ export default function CampaignsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {filteredCampaigns.map((campaign) => (
+            {sortedCampaigns.map((campaign) => (
               <tr
                 key={campaign.id}
                 className="hover:bg-neutral-50 transition-colors"
@@ -372,21 +420,21 @@ export default function CampaignsPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5 text-sm text-neutral-600">
                     <Users className="h-4 w-4" />
-                    {campaign.recipientCount > 0
-                      ? campaign.recipientCount.toLocaleString()
+                    {campaign.recipient_count > 0
+                      ? campaign.recipient_count.toLocaleString()
                       : '-'}
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  {campaign.status === 'sent' && campaign.openRate !== undefined ? (
+                  {campaign.status === 'sent' && campaign.open_rate !== undefined ? (
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1 text-purple-600">
                         <Eye className="h-4 w-4" />
-                        {campaign.openRate}%
+                        {campaign.open_rate}%
                       </div>
                       <div className="flex items-center gap-1 text-amber-600">
                         <MousePointer className="h-4 w-4" />
-                        {campaign.clickRate}%
+                        {campaign.click_rate}%
                       </div>
                     </div>
                   ) : (
@@ -394,17 +442,17 @@ export default function CampaignsPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-sm text-neutral-600">
-                  {campaign.status === 'scheduled' && campaign.scheduledAt && (
+                  {campaign.status === 'scheduled' && campaign.scheduled_at && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {new Date(campaign.scheduledAt).toLocaleDateString()}
+                      {new Date(campaign.scheduled_at).toLocaleDateString()}
                     </div>
                   )}
-                  {campaign.status === 'sent' && campaign.sentAt && (
-                    <span>{new Date(campaign.sentAt).toLocaleDateString()}</span>
+                  {campaign.status === 'sent' && campaign.sent_at && (
+                    <span>{new Date(campaign.sent_at).toLocaleDateString()}</span>
                   )}
-                  {(campaign.status === 'draft' || campaign.status === 'sending') && (
-                    <span>{new Date(campaign.createdAt).toLocaleDateString()}</span>
+                  {(campaign.status === 'draft' || campaign.status === 'sending' || campaign.status === 'cancelled') && (
+                    <span>{new Date(campaign.created_at).toLocaleDateString()}</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -417,7 +465,7 @@ export default function CampaignsPage() {
           </tbody>
         </table>
 
-        {filteredCampaigns.length === 0 && (
+        {sortedCampaigns.length === 0 && (
           <div className="p-8 text-center">
             <Mail className="h-12 w-12 text-neutral-300 mx-auto mb-3" />
             <p className="text-neutral-600">No campaigns found</p>

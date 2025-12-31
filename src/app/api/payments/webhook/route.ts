@@ -4,6 +4,57 @@ import Stripe from 'stripe'
 import { getStripe } from '@/lib/payments/stripe'
 import { createClient } from '@/lib/supabase/server'
 
+/**
+ * Check if a Stripe event has already been processed (idempotency check)
+ * Returns true if already processed, false if new
+ * Uses aryeo_event_id column with 'stripe:' prefix for Stripe events
+ */
+async function isEventProcessed(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('webhook_events')
+    .select('id')
+    .eq('aryeo_event_id', `stripe:${eventId}`)
+    .eq('status', 'success')
+    .single()
+
+  return !!data
+}
+
+/**
+ * Record a webhook event for idempotency tracking
+ * Uses 'stripe:' prefix to distinguish from Aryeo events
+ */
+async function recordWebhookEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  event: Stripe.Event,
+  status: 'processing' | 'success' | 'failed',
+  error?: string
+) {
+  // Map our status to the table's valid statuses
+  const dbStatus = status === 'processing' ? 'processing' : status === 'success' ? 'success' : 'failed'
+
+  const { error: dbError } = await supabase.from('webhook_events').upsert(
+    {
+      aryeo_event_id: `stripe:${event.id}`,
+      event_type: `stripe.${event.type}`,
+      payload: JSON.parse(JSON.stringify(event.data.object)),
+      status: dbStatus,
+      error_message: error,
+      processed_at: status === 'success' ? new Date().toISOString() : null,
+    },
+    {
+      onConflict: 'aryeo_event_id',
+    }
+  )
+
+  if (dbError) {
+    console.error('Error recording webhook event:', dbError)
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const headersList = await headers()
@@ -33,6 +84,15 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient()
+
+  // Idempotency check: Skip if already processed
+  if (await isEventProcessed(supabase, event.id)) {
+    console.log(`Stripe webhook ${event.id} already processed, skipping`)
+    return NextResponse.json({ received: true, skipped: true })
+  }
+
+  // Mark as processing
+  await recordWebhookEvent(supabase, event, 'processing')
 
   try {
     switch (event.type) {
@@ -138,9 +198,21 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`)
     }
 
+    // Mark event as successfully processed
+    await recordWebhookEvent(supabase, event, 'success')
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook handler error:', error)
+
+    // Mark event as failed
+    await recordWebhookEvent(
+      supabase,
+      event,
+      'failed',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
+
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

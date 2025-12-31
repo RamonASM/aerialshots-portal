@@ -429,6 +429,438 @@ export async function sendLowBalanceEmail({
 }
 
 /**
+ * Send seller availability notification to agent
+ */
+export async function sendSellerAvailabilityEmail({
+  to,
+  agentName,
+  sellerName,
+  propertyAddress,
+  availableDates,
+  notes,
+}: {
+  to: string
+  agentName: string
+  sellerName: string
+  propertyAddress: string
+  availableDates: string[]
+  notes?: string
+}) {
+  const firstName = agentName.split(' ')[0]
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `New Availability from ${sellerName} - ${propertyAddress}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0 0 24px 0;">Aerial Shots Media</h1>
+
+            <h2 style="color: #171717; font-size: 20px; margin: 0 0 16px 0;">
+              New Availability Submitted
+            </h2>
+
+            <p style="color: #525252; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hi ${firstName}, your seller has submitted their availability for the photo shoot.
+            </p>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Property</td>
+                  <td style="padding: 8px 0; color: #171717; font-weight: 500;">${propertyAddress}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Seller</td>
+                  <td style="padding: 8px 0; color: #171717; font-weight: 500;">${sellerName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Available Dates</td>
+                  <td style="padding: 8px 0; color: #171717; font-weight: 500;">${availableDates.join(', ')}</td>
+                </tr>
+                ${notes ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Notes</td>
+                  <td style="padding: 8px 0; color: #171717;">${notes}</td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+
+            <a href="https://app.aerialshots.media/dashboard" style="display: inline-block; background: #3b82f6; color: white; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 8px;">
+              Schedule the Shoot
+            </a>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send seller availability email:', error)
+  }
+
+  return data
+}
+
+/**
+ * Send confirmation email to seller
+ */
+export async function sendSellerConfirmationEmail({
+  to,
+  sellerName,
+  propertyAddress,
+  scheduledDate,
+  agentName,
+}: {
+  to: string
+  sellerName: string
+  propertyAddress: string
+  scheduledDate: string
+  agentName: string
+}) {
+  const firstName = sellerName.split(' ')[0]
+  const formattedDate = new Date(scheduledDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `Photo Shoot Confirmed - ${propertyAddress}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0 0 24px 0;">Aerial Shots Media</h1>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">✓</span>
+              </div>
+              <h2 style="color: #171717; font-size: 22px; margin: 0;">Shoot Confirmed!</h2>
+            </div>
+
+            <p style="color: #525252; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hi ${firstName}, your photo shoot has been scheduled!
+            </p>
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Property</td>
+                  <td style="padding: 8px 0; color: #0c4a6e; font-weight: 500;">${propertyAddress}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Date & Time</td>
+                  <td style="padding: 8px 0; color: #0c4a6e; font-weight: 600;">${formattedDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Your Agent</td>
+                  <td style="padding: 8px 0; color: #0c4a6e;">${agentName}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #fefce8; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+              <h3 style="color: #854d0e; font-size: 14px; margin: 0 0 8px 0;">Preparation Checklist</h3>
+              <ul style="color: #713f12; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li>Remove personal items and clutter</li>
+                <li>Turn on all lights</li>
+                <li>Open blinds/curtains</li>
+                <li>Clear cars from driveway</li>
+              </ul>
+            </div>
+
+            <p style="color: #737373; font-size: 14px; text-align: center;">
+              Need to reschedule? Contact your agent or call (407) 774-5070
+            </p>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send seller confirmation email:', error)
+  }
+
+  return data
+}
+
+/**
+ * Send reschedule notification to staff
+ */
+export async function sendRescheduleNotificationEmail({
+  to,
+  staffName,
+  sellerName,
+  propertyAddress,
+  originalDate,
+  newDate,
+  reason,
+}: {
+  to: string
+  staffName: string
+  sellerName: string
+  propertyAddress: string
+  originalDate: string
+  newDate: string
+  reason?: string
+}) {
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `Reschedule Request - ${propertyAddress}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0 0 24px 0;">Aerial Shots Media</h1>
+
+            <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+              <h2 style="color: #92400e; font-size: 16px; margin: 0;">Shoot Rescheduled</h2>
+            </div>
+
+            <p style="color: #525252; font-size: 16px; margin: 0 0 24px 0;">
+              Hi ${staffName}, a shoot has been rescheduled.
+            </p>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Property</td>
+                  <td style="padding: 8px 0; color: #171717; font-weight: 500;">${propertyAddress}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Seller</td>
+                  <td style="padding: 8px 0; color: #171717;">${sellerName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #ef4444; text-decoration: line-through;">Original</td>
+                  <td style="padding: 8px 0; color: #ef4444; text-decoration: line-through;">${formatDate(originalDate)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">New Time</td>
+                  <td style="padding: 8px 0; color: #22c55e; font-weight: 600;">${formatDate(newDate)}</td>
+                </tr>
+                ${reason ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #737373;">Reason</td>
+                  <td style="padding: 8px 0; color: #171717;">${reason}</td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+
+            <a href="https://app.aerialshots.media/admin/ops/schedule" style="display: inline-block; background: #3b82f6; color: white; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 28px; border-radius: 8px;">
+              View Schedule
+            </a>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send reschedule notification email:', error)
+  }
+
+  return data
+}
+
+/**
+ * Send RSVP confirmation email for open house
+ */
+export async function sendOpenHouseRSVPEmail({
+  to,
+  guestName,
+  propertyAddress,
+  eventDate,
+  agentName,
+  agentPhone,
+}: {
+  to: string
+  guestName: string
+  propertyAddress: string
+  eventDate: string
+  agentName: string
+  agentPhone?: string
+}) {
+  const firstName = guestName.split(' ')[0]
+  const formattedDate = new Date(eventDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `You're Registered! Open House at ${propertyAddress}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0 0 24px 0;">Aerial Shots Media</h1>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="width: 64px; height: 64px; background-color: #dbeafe; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">🏠</span>
+              </div>
+              <h2 style="color: #171717; font-size: 22px; margin: 0;">You're Registered!</h2>
+            </div>
+
+            <p style="color: #525252; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hi ${firstName}, we look forward to seeing you at the open house!
+            </p>
+
+            <div style="background: #f0f9ff; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Property</td>
+                  <td style="padding: 8px 0; color: #0c4a6e; font-weight: 500;">${propertyAddress}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Date & Time</td>
+                  <td style="padding: 8px 0; color: #0c4a6e; font-weight: 600;">${formattedDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Your Host</td>
+                  <td style="padding: 8px 0; color: #0c4a6e;">${agentName}</td>
+                </tr>
+                ${agentPhone ? `
+                <tr>
+                  <td style="padding: 8px 0; color: #0369a1;">Contact</td>
+                  <td style="padding: 8px 0;"><a href="tel:${agentPhone}" style="color: #3b82f6;">${agentPhone}</a></td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+
+            <p style="color: #737373; font-size: 14px; text-align: center;">
+              Add this event to your calendar so you don't forget!
+            </p>
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send open house RSVP email:', error)
+  }
+
+  return data
+}
+
+/**
+ * Send proofing share email
+ */
+export async function sendProofingShareEmail({
+  to,
+  clientName,
+  agentName,
+  propertyAddress,
+  proofingUrl,
+  expiresAt,
+}: {
+  to: string
+  clientName: string
+  agentName: string
+  propertyAddress: string
+  proofingUrl: string
+  expiresAt?: string
+}) {
+  const firstName = clientName.split(' ')[0]
+  const expiryText = expiresAt
+    ? `This link expires on ${new Date(expiresAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })}.`
+    : ''
+
+  const { data, error } = await resend.emails.send({
+    from: 'Aerial Shots Media <notifications@aerialshots.media>',
+    to,
+    subject: `Review Your Photos - ${propertyAddress}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 520px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <h1 style="color: #171717; font-size: 24px; font-weight: 700; margin: 0 0 24px 0;">Aerial Shots Media</h1>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="width: 64px; height: 64px; background-color: #fae8ff; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">📸</span>
+              </div>
+              <h2 style="color: #171717; font-size: 22px; margin: 0;">Your Photos Are Ready!</h2>
+            </div>
+
+            <p style="color: #525252; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hi ${firstName}, ${agentName} has shared photos from ${propertyAddress} for your review.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <a href="${proofingUrl}" style="display: inline-block; background: #8b5cf6; color: white; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
+                Review Photos
+              </a>
+            </div>
+
+            <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+              <p style="color: #525252; font-size: 14px; margin: 0; line-height: 1.6;">
+                <strong>How it works:</strong><br>
+                Click on any photo to approve or request changes. Your feedback helps ensure you get the perfect shots for your listing.
+              </p>
+            </div>
+
+            ${expiryText ? `
+            <p style="color: #a3a3a3; font-size: 12px; text-align: center;">
+              ${expiryText}
+            </p>
+            ` : ''}
+          </div>
+        </body>
+      </html>
+    `,
+  })
+
+  if (error) {
+    console.error('Failed to send proofing share email:', error)
+  }
+
+  return data
+}
+
+/**
  * Generic email sender for custom emails
  */
 export async function sendEmail({

@@ -111,17 +111,28 @@ export interface AlaCarteService {
 }
 
 export const A_LA_CARTE_SERVICES: AlaCarteService[] = [
+  // Photography
   { id: 'photos', name: 'Listing Photography', price: 'varies', category: 'photography' },
   { id: 'droneOnly', name: 'Drone / Aerial (Standalone)', price: 150, category: 'photography' },
   { id: 'droneAddOn', name: 'Drone / Aerial (Add-On)', price: 75, category: 'photography' },
-  { id: '2dFloor', name: '2D Floor Plan (Included)', price: 0, category: 'floorplan' },
-  { id: '3dFloor', name: '3D Floor Plan', price: 75, category: 'floorplan' },
-  { id: 'zillow3d', name: 'Zillow 3D Tour + Interactive Floor Plan', price: 150, category: 'tour' },
+  { id: 'droneLocation', name: 'Additional Drone Location', price: 75, category: 'photography' },
   { id: 'vtwilight', name: 'Virtual Twilight (per photo)', price: 15, category: 'photography' },
   { id: 'realTwilight', name: 'Real Twilight Photography', price: 150, category: 'photography' },
+
+  // Floor Plans
+  { id: '2dFloor', name: '2D Floor Plan (Included)', price: 0, category: 'floorplan' },
+  { id: '3dFloor', name: '3D Floor Plan', price: 75, category: 'floorplan' },
+
+  // Tours
+  { id: 'zillow3d', name: 'Zillow 3D Tour + Interactive Floor Plan', price: 150, category: 'tour' },
+
+  // Staging
   { id: 'stagingCoreEa', name: 'Core Virtual Staging (per photo)', price: 12, category: 'staging' },
   { id: 'stagingPremEa', name: 'Premium Virtual Staging (per photo)', price: 25, category: 'staging' },
   { id: 'stagingCoreAll', name: 'Core Virtual Staging (Full Home)', price: 125, category: 'staging' },
+
+  // Listing Videos
+  { id: 'coreListingVideo', name: 'Core Listing Video', price: 200, category: 'video' },
   { id: 'listingVideo', name: 'Listing Video', price: 350, category: 'video' },
   { id: 'lifestyleVid', name: 'Lifestyle Listing Video', price: 425, category: 'video' },
   { id: 'dayToNight', name: 'Day-to-Night Video', price: 750, category: 'video' },
@@ -130,6 +141,160 @@ export const A_LA_CARTE_SERVICES: AlaCarteService[] = [
   { id: 'lp2v30', name: 'Photos to Video (30s)', price: 95, category: 'video' },
   { id: 'lp2v60', name: 'Photos to Video (1 min)', price: 145, category: 'video' },
 ]
+
+// ================================
+// Content Branding Services
+// ================================
+
+export interface ContentService {
+  id: string
+  name: string
+  price: number
+  category: 'content' | 'subscription'
+  minQuantity?: number
+}
+
+export const CONTENT_SERVICES: ContentService[] = [
+  { id: 'educationalVideo', name: 'Educational Video', price: 125, category: 'content', minQuantity: 3 },
+  { id: 'propertyTourVideo', name: 'Property Tour Video', price: 550, category: 'content' },
+  { id: 'businessSpotlight', name: 'Business Spotlight Video', price: 450, category: 'content' },
+  { id: 'closingVideo', name: 'Closing Celebration Video', price: 350, category: 'content' },
+  { id: 'eventVideo', name: 'Event Video', price: 650, category: 'content' },
+  { id: 'socialManagement', name: 'Social Media Management', price: 600, category: 'subscription' },
+]
+
+// ================================
+// Content Retainer Packages (Monthly)
+// ================================
+
+export interface ContentRetainer {
+  id: string
+  name: string
+  tier: number
+  priceMonthly: number
+  alaCarteValue: number
+  savings: number
+  videosPerMonth: number
+  shootDaysPerMonth: number
+  turnaroundHours: number | null
+  features: string[]
+  includedVideos: {
+    educational: number
+    propertyTour: number
+    businessSpotlight: number
+    closingEvent: number
+  }
+  isPopular?: boolean
+}
+
+export const CONTENT_RETAINERS: ContentRetainer[] = [
+  {
+    id: 'momentum',
+    name: 'Momentum',
+    tier: 1,
+    priceMonthly: 1488,
+    alaCarteValue: 1975,
+    savings: 487,
+    videosPerMonth: 8,
+    shootDaysPerMonth: 2,
+    turnaroundHours: null, // Standard
+    features: [
+      'Branding photoshoot',
+      'Scripting assistance',
+      'Teleprompter support',
+      'Monthly strategy call',
+      'Notion dashboard',
+      'Slack support',
+    ],
+    includedVideos: { educational: 5, propertyTour: 1, businessSpotlight: 1, closingEvent: 1 },
+  },
+  {
+    id: 'dominance',
+    name: 'Dominance',
+    tier: 2,
+    priceMonthly: 2500,
+    alaCarteValue: 2900,
+    savings: 400,
+    videosPerMonth: 12,
+    shootDaysPerMonth: 3,
+    turnaroundHours: 48,
+    features: [
+      'All Momentum features',
+      'Priority scheduling',
+      '48-hour priority edits',
+      'Bi-weekly strategy calls',
+      'Advanced analytics dashboard',
+    ],
+    includedVideos: { educational: 8, propertyTour: 2, businessSpotlight: 1, closingEvent: 1 },
+    isPopular: true,
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    tier: 3,
+    priceMonthly: 4500,
+    alaCarteValue: 5500,
+    savings: 1000,
+    videosPerMonth: 20,
+    shootDaysPerMonth: 4,
+    turnaroundHours: 24,
+    features: [
+      'All Dominance features',
+      'Dedicated account manager',
+      'Weekly strategy calls',
+      'Team training session',
+      'Branding photos for entire team',
+      '24-hour priority turnaround',
+    ],
+    includedVideos: { educational: 15, propertyTour: 3, businessSpotlight: 1, closingEvent: 1 },
+  },
+]
+
+// ================================
+// Travel Fee Tiers
+// ================================
+
+export interface TravelTier {
+  minMiles: number
+  maxMiles: number | null
+  feePerMile: number
+  description: string
+}
+
+export const TRAVEL_TIERS: TravelTier[] = [
+  { minMiles: 0, maxMiles: 40, feePerMile: 0, description: 'Free - Within service area' },
+  { minMiles: 41, maxMiles: 75, feePerMile: 1.5, description: '$1.50/mile' },
+  { minMiles: 76, maxMiles: 150, feePerMile: 2, description: '$2.00/mile' },
+  { minMiles: 151, maxMiles: null, feePerMile: 3, description: '$3.00/mile' },
+]
+
+/**
+ * Calculates travel fee based on distance
+ */
+export function calculateTravelFee(miles: number): number {
+  if (miles <= 40) return 0
+  const tier = TRAVEL_TIERS.find(
+    (t) => miles >= t.minMiles && (t.maxMiles === null || miles <= t.maxMiles)
+  )
+  if (!tier) return 0
+  // Fee applies to miles beyond the free zone
+  const chargeableMiles = miles - 40
+  return chargeableMiles * tier.feePerMile
+}
+
+/**
+ * Gets a content service by ID
+ */
+export function getContentService(serviceId: string): ContentService | undefined {
+  return CONTENT_SERVICES.find((s) => s.id === serviceId)
+}
+
+/**
+ * Gets a content retainer by ID
+ */
+export function getContentRetainer(retainerId: string): ContentRetainer | undefined {
+  return CONTENT_RETAINERS.find((r) => r.id === retainerId)
+}
 
 // ================================
 // Helper Functions
