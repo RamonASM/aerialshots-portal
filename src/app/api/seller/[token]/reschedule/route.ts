@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sendRescheduleNotificationEmail } from '@/lib/email/resend'
 
 interface RouteParams {
   params: Promise<{ token: string }>
@@ -113,8 +114,33 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Failed to submit reschedule request' }, { status: 500 })
     }
 
-    // TODO: Send notification to admin/staff about reschedule request
-    // Can be done via the notifications system
+    // Send notification to admin/staff about reschedule request
+    const { data: listingDetails } = await supabase
+      .from('listings')
+      .select('address, city, state')
+      .eq('id', shareLink.listing_id)
+      .single()
+
+    // Get first requested slot for the email
+    const firstSlot = requested_slots[0]
+    const newDate = firstSlot?.specific_time
+      ? `${firstSlot.date}T${firstSlot.specific_time}`
+      : `${firstSlot.date}T09:00:00`
+
+    // Notify support/admin team
+    await sendRescheduleNotificationEmail({
+      to: 'support@aerialshots.media',
+      staffName: 'Team',
+      sellerName: requester_name || shareLink.client_name || 'Seller',
+      propertyAddress: listingDetails
+        ? `${listingDetails.address}, ${listingDetails.city}, ${listingDetails.state}`
+        : 'Property',
+      originalDate: listing?.scheduled_at || new Date().toISOString(),
+      newDate,
+      reason,
+    }).catch((err) => {
+      console.error('Failed to send reschedule notification email:', err)
+    })
 
     return NextResponse.json({
       success: true,

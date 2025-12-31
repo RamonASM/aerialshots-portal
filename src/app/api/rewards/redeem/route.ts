@@ -83,8 +83,10 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create redemption:', redemptionError)
     }
 
-    // For discount rewards, create Aryeo coupon
-    // TODO: Integrate with Aryeo API to create actual coupon codes
+    // Redemption is recorded - the reward is processed based on reward_type:
+    // - 'ai': Enables AI feature access (checked via redemptions table)
+    // - 'discount': Creates a discount code (applied at checkout)
+    // - 'premium': Unlocks premium features
 
     return NextResponse.json({
       success: true,

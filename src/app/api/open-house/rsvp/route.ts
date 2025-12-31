@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sendOpenHouseRSVPEmail } from '@/lib/email/resend'
 
 const rsvpSchema = z.object({
   openHouseId: z.string().uuid(),
@@ -37,7 +38,10 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: openHouse, error: openHouseError } = await (supabase as any)
       .from('open_houses')
-      .select('id, status, event_date, max_attendees, require_registration')
+      .select(`
+        id, status, event_date, max_attendees, require_registration,
+        listing:listings(id, address, city, state, agent:agents(name, phone))
+      `)
       .eq('id', openHouseId)
       .single()
 
@@ -153,7 +157,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Send confirmation email via Resend
+    // Send confirmation email
+    const listing = openHouse.listing
+    if (listing) {
+      const propertyAddress = `${listing.address}, ${listing.city}, ${listing.state}`
+      const agent = listing.agent
+
+      await sendOpenHouseRSVPEmail({
+        to: email,
+        guestName: name,
+        propertyAddress,
+        eventDate: openHouse.event_date,
+        agentName: agent?.name || 'Aerial Shots Media',
+        agentPhone: agent?.phone,
+      }).catch((err) => {
+        // Don't fail the RSVP if email fails
+        console.error('Failed to send RSVP confirmation email:', err)
+      })
+    }
 
     return NextResponse.json({
       success: true,

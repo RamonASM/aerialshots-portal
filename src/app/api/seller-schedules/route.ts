@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { apiLogger, formatError } from '@/lib/logger'
+import { sendSellerAvailabilityEmail, sendSellerConfirmationEmail } from '@/lib/email/resend'
 import type { SellerScheduleInsert, AvailableSlot, SellerScheduleStatus } from '@/lib/supabase/types'
 
 // Zod schemas for seller schedule validation
@@ -138,7 +139,29 @@ export async function POST(request: NextRequest) {
       result = data
     }
 
-    // TODO: Send notification email to agent about new availability
+    // Send notification email to agent about new availability
+    const { data: listing } = await supabase
+      .from('listings')
+      .select('address, city, state, agent:agents(name, email)')
+      .eq('id', listing_id)
+      .single()
+
+    if (listing?.agent?.email) {
+      const availableDates = available_slots.map((slot) =>
+        `${slot.date} (${slot.start_time} - ${slot.end_time})`
+      )
+
+      await sendSellerAvailabilityEmail({
+        to: listing.agent.email,
+        agentName: listing.agent.name || 'Agent',
+        sellerName: seller_name,
+        propertyAddress: `${listing.address}, ${listing.city}, ${listing.state}`,
+        availableDates,
+        notes: notes || undefined,
+      }).catch((err) => {
+        apiLogger.error({ error: formatError(err) }, 'Failed to send seller availability email')
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -268,7 +291,28 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update schedule' }, { status: 500 })
     }
 
-    // TODO: Send confirmation email to seller
+    // Send confirmation email to seller when schedule is confirmed
+    if (selected_slot && schedule.seller_email && schedule.seller_name) {
+      const { data: listing } = await supabase
+        .from('listings')
+        .select('address, city, state, agent:agents(name)')
+        .eq('id', schedule.listing_id)
+        .single()
+
+      if (listing) {
+        const scheduledDate = `${selected_slot.date}T${selected_slot.start_time}`
+
+        await sendSellerConfirmationEmail({
+          to: schedule.seller_email,
+          sellerName: schedule.seller_name,
+          propertyAddress: `${listing.address}, ${listing.city}, ${listing.state}`,
+          scheduledDate,
+          agentName: listing.agent?.name || 'Your Agent',
+        }).catch((err) => {
+          apiLogger.error({ error: formatError(err) }, 'Failed to send seller confirmation email')
+        })
+      }
+    }
 
     return NextResponse.json({
       success: true,

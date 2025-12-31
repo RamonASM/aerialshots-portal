@@ -222,10 +222,23 @@ export async function POST(request: NextRequest) {
       })
       .eq('aryeo_event_id', `cubicasa_${order_id}_${Date.now()}`)
 
-    // TODO: Trigger notification to QC team when delivered
-    // if (event === 'delivered') {
-    //   await triggerHandoffNotification(listing.id, 'cubicasa_delivered')
-    // }
+    // Notify QC team when floor plan is delivered
+    if (event === 'delivered') {
+      // Log a job event that can be picked up by notification system
+      const { error: eventError } = await supabase.from('job_events').insert({
+        listing_id: listing.id,
+        event_type: 'qc_handoff',
+        new_value: {
+          source: 'cubicasa',
+          message: `Floor plan delivered for ${listing.address}`,
+          requires_review: true,
+        },
+        actor_type: 'system',
+      })
+      if (eventError) {
+        console.error('[Cubicasa Webhook] Failed to create QC handoff event:', eventError)
+      }
+    }
 
     console.log(`[Cubicasa Webhook] Successfully processed ${event} for listing ${listing.id}`)
 

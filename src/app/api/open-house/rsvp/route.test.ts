@@ -5,8 +5,15 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { POST, GET } from './route'
 import { NextRequest } from 'next/server'
+
+// Mock the email module before importing route
+vi.mock('@/lib/email/resend', () => ({
+  sendOpenHouseRSVPEmail: vi.fn(() => Promise.resolve({ id: 'test-email-id' })),
+}))
+
+// Now import the route
+import { POST, GET } from './route'
 
 // Create chainable mock
 function createChainableMock(finalResult: { data: unknown; error: unknown }) {
