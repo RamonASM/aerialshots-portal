@@ -83,8 +83,7 @@ export async function POST(request: NextRequest) {
       is_converted: false,
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('booking_sessions')
       .upsert(upsertRow, { onConflict: 'session_id' })
 
@@ -127,8 +126,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('booking_sessions')
       .select('*')
       .eq('session_id', sessionId)
@@ -143,8 +141,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if session is too old (7 days)
-    const typedData = data as { last_activity_at: string; session_id: string; current_step: number; form_data: unknown; pricing_snapshot: unknown; created_at: string }
-    const sessionAge = Date.now() - new Date(typedData.last_activity_at).getTime()
+    const sessionAge = Date.now() - new Date(data.last_activity_at).getTime()
     const sevenDays = 7 * 24 * 60 * 60 * 1000
 
     if (sessionAge > sevenDays) {
@@ -158,12 +155,12 @@ export async function GET(request: NextRequest) {
       success: true,
       found: true,
       session: {
-        sessionId: typedData.session_id,
-        currentStep: typedData.current_step,
-        formData: typedData.form_data,
-        pricing: typedData.pricing_snapshot,
-        createdAt: typedData.created_at,
-        lastActivityAt: typedData.last_activity_at,
+        sessionId: data.session_id,
+        currentStep: data.current_step,
+        formData: data.form_data,
+        pricing: data.pricing_snapshot,
+        createdAt: data.created_at,
+        lastActivityAt: data.last_activity_at,
       },
     })
   } catch (error) {
@@ -203,8 +200,7 @@ export async function PATCH(request: NextRequest) {
       updates.abandoned_at = new Date().toISOString()
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('booking_sessions')
       .update(updates)
       .eq('session_id', sessionId)

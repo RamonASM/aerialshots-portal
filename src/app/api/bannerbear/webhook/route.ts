@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import crypto from 'crypto'
 import { executeWorkflow } from '@/lib/agents/orchestrator'
+import { apiLogger, formatError } from '@/lib/logger'
 // Import to ensure workflows are registered
 import '@/lib/agents/workflows/post-delivery'
+
+const logger = apiLogger.child({ route: 'bannerbear/webhook' })
 
 interface BannerbearWebhookPayload {
   uid: string
@@ -23,16 +26,16 @@ function verifyWebhookSignature(payload: string, signature: string | null): bool
   // SECURITY: Require webhook secret in production
   if (!webhookSecret) {
     if (isProduction) {
-      console.error('CRITICAL: BANNERBEAR_WEBHOOK_SECRET not configured in production')
+      logger.error('CRITICAL: BANNERBEAR_WEBHOOK_SECRET not configured in production')
       return false
     }
     // Only allow bypass in explicit development mode
-    console.warn('[DEV ONLY] BANNERBEAR_WEBHOOK_SECRET not configured - skipping verification')
+    logger.warn('[DEV ONLY] BANNERBEAR_WEBHOOK_SECRET not configured - skipping verification')
     return true
   }
 
   if (!signature) {
-    console.error('Missing webhook signature header')
+    logger.error('Missing webhook signature header')
     return false
   }
 
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Verify signature
     if (!verifyWebhookSignature(rawBody, signature)) {
-      console.error('Invalid webhook signature')
+      logger.error('Invalid webhook signature')
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Parse the verified payload
     const payload: BannerbearWebhookPayload = JSON.parse(rawBody)
 
-    console.log('Bannerbear webhook received:', payload.uid, payload.status)
+    logger.info({ uid: payload.uid, status: payload.status }, 'Bannerbear webhook received')
 
     // Parse metadata to get carouselId and slidePosition
     let carouselId: string | null = null
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
         carouselId = meta.carouselId
         slidePosition = meta.slidePosition
       } catch (e) {
-        console.error('Failed to parse webhook metadata:', e)
+        logger.error({ ...formatError(e) }, 'Failed to parse webhook metadata')
       }
     }
 
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (fetchError || !carousel) {
-      console.error('Carousel not found:', carouselId)
+      logger.error({ carouselId }, 'Carousel not found')
       return NextResponse.json(
         { error: 'Carousel not found' },
         { status: 404 }
@@ -143,7 +146,7 @@ export async function POST(request: NextRequest) {
       .eq('id', carouselId)
 
     if (updateError) {
-      console.error('Failed to update carousel:', updateError)
+      logger.error({ carouselId, ...formatError(updateError) }, 'Failed to update carousel')
       return NextResponse.json(
         { error: 'Failed to update carousel' },
         { status: 500 }
@@ -165,7 +168,7 @@ export async function POST(request: NextRequest) {
         const campaignId = carouselData?.campaign_id
 
         if (listingId) {
-          console.log('Triggering post-delivery workflow for listing:', listingId)
+          logger.info({ listingId }, 'Triggering post-delivery workflow')
 
           // Execute workflow asynchronously (don't await - webhook should return quickly)
           executeWorkflow('post-delivery', {
@@ -179,12 +182,12 @@ export async function POST(request: NextRequest) {
               mediaTypes: ['carousel'],
             },
           }).catch(error => {
-            console.error('Post-delivery workflow failed:', error)
+            logger.error({ listingId, ...formatError(error) }, 'Post-delivery workflow failed')
           })
         }
       } catch (workflowError) {
         // Log but don't fail the webhook response
-        console.error('Error triggering post-delivery workflow:', workflowError)
+        logger.error({ carouselId, ...formatError(workflowError) }, 'Error triggering post-delivery workflow')
       }
     }
 
@@ -198,7 +201,7 @@ export async function POST(request: NextRequest) {
       workflowTriggered: allRendered,
     })
   } catch (error) {
-    console.error('Bannerbear webhook error:', error)
+    logger.error({ ...formatError(error) }, 'Bannerbear webhook error')
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

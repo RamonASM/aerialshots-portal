@@ -191,3 +191,121 @@ export interface VideoScriptOutput {
   totalDuration: number
   style: string
 }
+
+// =====================
+// CAROUSEL CONTENT TYPES
+// =====================
+
+/**
+ * Story archetype for carousel content
+ */
+export type StoryArchetype =
+  | 'just_listed'
+  | 'just_sold'
+  | 'open_house'
+  | 'price_reduction'
+  | 'coming_soon'
+  | 'neighborhood_guide'
+  | 'local_favorites'
+  | 'lifestyle'
+  | 'market_update'
+  | 'agent_spotlight'
+  | 'testimonial'
+  | 'tips_advice'
+
+/**
+ * Carousel content generation input
+ */
+export interface CarouselContentInput {
+  storyType: StoryArchetype
+  property?: PropertyData
+  neighborhood?: NeighborhoodData
+  lifeHereData?: {
+    score?: number
+    label?: string
+    dining?: Array<{ name: string; cuisine: string; rating: number }>
+    schools?: Array<{ name: string; type: string; rating: number }>
+    parks?: Array<{ name: string; type: string }>
+    attractions?: Array<{ name: string; type: string }>
+    commute?: { beach?: number; airport?: number; downtown?: number }
+    events?: Array<{ name: string; date: string; venue: string }>
+    highlights?: string[]
+  }
+  agentName?: string
+  slideCount?: number // Default 7
+  tone?: ContentStyle
+  customPrompt?: string
+}
+
+/**
+ * Single slide content
+ */
+export interface SlideContent {
+  position: number
+  slideType: 'hook' | 'narrative' | 'stats' | 'feature' | 'neighborhood' | 'testimonial' | 'cta'
+  headline: string
+  body?: string
+  visualSuggestion?: string
+  dataPoints?: Array<{ label: string; value: string }>
+}
+
+/**
+ * Carousel content output
+ */
+export interface CarouselContentOutput {
+  storyType: StoryArchetype
+  slides: SlideContent[]
+  theme: string
+  targetAudience: string
+}
+
+/**
+ * Hashtags generation input
+ */
+export interface HashtagsInput {
+  property?: PropertyData
+  storyType?: StoryArchetype
+  city?: string
+  state?: string
+  platform: SocialPlatform
+  customTags?: string[]
+  maxCount?: number // Default 15
+}
+
+/**
+ * Hashtags output
+ */
+export interface HashtagsOutput {
+  hashtags: string[]
+  categorized: {
+    location: string[]
+    realestate: string[]
+    lifestyle: string[]
+    trending: string[]
+  }
+  platform: SocialPlatform
+}
+
+/**
+ * Carousel caption input
+ */
+export interface CarouselCaptionInput {
+  storyType: StoryArchetype
+  property?: PropertyData
+  slides?: SlideContent[]
+  agentName?: string
+  platform: SocialPlatform
+  tone?: 'engaging' | 'informative' | 'urgent' | 'celebratory'
+  includeEmoji?: boolean
+  callToAction?: string
+}
+
+/**
+ * Carousel caption output
+ */
+export interface CarouselCaptionOutput {
+  caption: string
+  callToAction: string
+  characterCount: number
+  platform: SocialPlatform
+}

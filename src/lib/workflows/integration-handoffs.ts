@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { sendNotification } from '@/lib/notifications'
+import { executeWorkflow } from '@/lib/agents/orchestrator'
+import { integrationLogger, formatError } from '@/lib/logger'
 import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 
 /**
@@ -25,7 +27,7 @@ interface HandoffContext {
 export async function processIntegrationHandoff(context: HandoffContext): Promise<void> {
   const { listingId, integration, previousStatus, newStatus } = context
 
-  console.log(`[Integration Handoff] ${integration}: ${previousStatus} → ${newStatus} for listing ${listingId}`)
+  integrationLogger.info({ listingId, integration, previousStatus, newStatus }, `Integration status change: ${integration} ${previousStatus} → ${newStatus}`)
 
   const supabase = await createClient()
 
@@ -44,7 +46,7 @@ export async function processIntegrationHandoff(context: HandoffContext): Promis
     .single()
 
   if (error || !listing) {
-    console.error('[Integration Handoff] Listing not found:', listingId)
+    integrationLogger.warn({ listingId }, 'Listing not found for integration handoff')
     return
   }
 
@@ -106,8 +108,8 @@ async function handleIntegrationComplete(
             dashboardUrl: `/admin/ops/jobs/${listing.id}`,
           },
         })
-      } catch (error) {
-        console.error('[Integration Handoff] Failed to notify staff:', error)
+      } catch (notifyError) {
+        integrationLogger.error({ staffId: staff.id, listingId: listing.id, ...formatError(notifyError) }, 'Failed to notify staff of integration completion')
       }
     }
   }
@@ -116,7 +118,27 @@ async function handleIntegrationComplete(
   const allComplete = await checkAllIntegrationsComplete(listing)
 
   if (allComplete) {
-    console.log(`[Integration Handoff] All integrations complete for ${listing.id}, updating ops_status`)
+    integrationLogger.info({ listingId: listing.id }, 'All integrations complete, updating ops_status')
+
+    // Trigger integrations-complete workflow for any post-integration automation
+    try {
+      await executeWorkflow('integrations-complete', {
+        event: 'integrations.all_complete',
+        listingId: listing.id,
+        data: {
+          agentId: listing.agent_id,
+          address: listing.address,
+          completedIntegrations: ['cubicasa', 'zillow_3d'].filter(i => {
+            if (i === 'cubicasa') return listing.cubicasa_status === 'delivered'
+            if (i === 'zillow_3d') return listing.zillow_3d_status === 'live'
+            return false
+          }),
+        },
+      })
+    } catch (workflowError) {
+      // Log but don't block status update if workflow fails
+      integrationLogger.error({ listingId: listing.id, ...formatError(workflowError) }, 'Failed to trigger integrations-complete workflow')
+    }
 
     // If all integrations are done and we're in an earlier stage, advance to ready_for_qc
     if (['staged', 'processing'].includes(listing.ops_status)) {
@@ -128,7 +150,7 @@ async function handleIntegrationComplete(
         .eq('id', listing.id)
 
       if (updateError) {
-        console.error('[Integration Handoff] Failed to update ops_status:', updateError)
+        integrationLogger.error({ listingId: listing.id, ...formatError(updateError) }, 'Failed to update ops_status to ready_for_qc')
       } else {
         // Log the status change
         await supabase.from('job_events').insert({
@@ -166,8 +188,8 @@ async function handleIntegrationComplete(
                   message: 'All media processing is complete and your listing is entering quality review.',
                 },
               })
-            } catch (error) {
-              console.error('[Integration Handoff] Failed to notify agent:', error)
+            } catch (notifyError) {
+              integrationLogger.error({ agentId: listing.agent_id, listingId: listing.id, ...formatError(notifyError) }, 'Failed to notify agent of ready_for_qc status')
             }
           }
         }
@@ -224,8 +246,8 @@ async function handleIntegrationFailed(
             dashboardUrl: `/admin/ops/jobs/${listing.id}`,
           },
         })
-      } catch (error) {
-        console.error('[Integration Handoff] Failed to notify manager:', error)
+      } catch (notifyError) {
+        integrationLogger.error({ managerId: manager.id, listingId: listing.id, ...formatError(notifyError) }, 'Failed to notify manager of integration failure')
       }
     }
   }

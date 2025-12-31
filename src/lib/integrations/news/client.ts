@@ -3,6 +3,9 @@
 
 import type { NewsArticle, CommunityDiscussion, NewsData, CuratedUpdate } from '@/lib/api/types'
 import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'news' })
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY
 const NEWS_API_BASE = 'https://newsapi.org/v2'
@@ -56,7 +59,7 @@ async function fetchNews(
   } = {}
 ): Promise<NewsApiArticle[]> {
   if (!NEWS_API_KEY) {
-    console.warn('NEWS_API_KEY not configured')
+    logger.warn('NEWS_API_KEY not configured')
     return []
   }
 
@@ -74,14 +77,14 @@ async function fetchNews(
     })
 
     if (!response.ok) {
-      console.error('News API error:', response.status)
+      logger.error({ status: response.status }, 'News API error')
       return []
     }
 
     const data: NewsApiResponse = await response.json()
     return data.articles || []
   } catch (error) {
-    console.error('Error fetching news:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching news')
     return []
   }
 }
@@ -221,7 +224,7 @@ export async function getRedditDiscussions(
 
     return results.slice(0, limit)
   } catch (error) {
-    console.error('Error fetching Reddit:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching Reddit')
     return []
   }
 }

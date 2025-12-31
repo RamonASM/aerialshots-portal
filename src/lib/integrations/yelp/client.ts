@@ -2,6 +2,9 @@
 // Uses Google Places API (New) - better pricing and features
 
 import type { Restaurant, DiningData } from '@/lib/api/types'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'dining' })
 
 const PLACES_API_BASE = 'https://places.googleapis.com/v1'
 
@@ -178,7 +181,7 @@ async function searchRestaurants(
 ): Promise<Restaurant[]> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey) {
-    console.warn('GOOGLE_PLACES_API_KEY not configured')
+    logger.warn('GOOGLE_PLACES_API_KEY not configured')
     return []
   }
 
@@ -230,7 +233,7 @@ async function searchRestaurants(
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .map(place => placeToRestaurant(place, lat, lng))
   } catch (error) {
-    console.error('Error searching restaurants:', error)
+    logger.error({ ...formatError(error) }, 'Error searching restaurants')
     return []
   }
 }
@@ -249,7 +252,7 @@ export async function getDiningData(
 ): Promise<DiningData | null> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey) {
-    console.warn('GOOGLE_PLACES_API_KEY not configured - skipping dining data')
+    logger.warn('GOOGLE_PLACES_API_KEY not configured - skipping dining data')
     return null
   }
 
@@ -311,7 +314,7 @@ export async function getDiningData(
       byCategory,
     }
   } catch (error) {
-    console.error('Error fetching dining data:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching dining data')
     return null
   }
 }
@@ -362,7 +365,7 @@ export async function searchDining(
       .filter(p => p.businessStatus !== 'CLOSED_PERMANENTLY')
       .map(place => placeToRestaurant(place, lat, lng))
   } catch (error) {
-    console.error('Error searching dining:', error)
+    logger.error({ ...formatError(error) }, 'Error searching dining')
     return []
   }
 }
@@ -403,7 +406,7 @@ export async function getRestaurantDetails(placeId: string): Promise<Restaurant 
       highlights: [],
     }
   } catch (error) {
-    console.error('Error fetching restaurant details:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching restaurant details')
     return null
   }
 }

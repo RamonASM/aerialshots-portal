@@ -1,6 +1,10 @@
 // Instagram oEmbed integration for embedding public posts
 // Documentation: https://developers.facebook.com/docs/instagram/oembed
 
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'instagram-oembed' })
+
 interface OEmbedResponse {
   version: string
   title: string
@@ -33,7 +37,7 @@ export async function getInstagramEmbed(postUrl: string): Promise<EmbedData | nu
   const accessToken = process.env.META_APP_TOKEN || process.env.INSTAGRAM_ACCESS_TOKEN
 
   if (!accessToken) {
-    console.warn('No Instagram/Meta access token configured for oEmbed')
+    logger.warn('No Instagram/Meta access token configured for oEmbed')
     // Fall back to basic embed without oEmbed API
     return getBasicEmbed(postUrl)
   }
@@ -45,7 +49,7 @@ export async function getInstagramEmbed(postUrl: string): Promise<EmbedData | nu
     )
 
     if (!response.ok) {
-      console.error('Instagram oEmbed error:', response.status)
+      logger.error({ status: response.status }, 'Instagram oEmbed error')
       return getBasicEmbed(postUrl)
     }
 
@@ -59,7 +63,7 @@ export async function getInstagramEmbed(postUrl: string): Promise<EmbedData | nu
       mediaId: data.media_id,
     }
   } catch (error) {
-    console.error('Error fetching Instagram oEmbed:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching Instagram oEmbed')
     return getBasicEmbed(postUrl)
   }
 }

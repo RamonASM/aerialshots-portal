@@ -18,7 +18,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { apiLogger, formatError } from '@/lib/logger'
 
 // Import task functions
-import { getPendingRequests, sendReviewRequest, getReviewSettings } from '@/lib/marketing/reviews/service'
+import { getPendingRequests, sendReviewRequest, getReviewSettings, type ReviewRequest } from '@/lib/marketing/reviews/service'
 import { getDuePendingSteps, processEnrollmentStep } from '@/lib/marketing/drip/service'
 import { processScheduledNotifications } from '@/lib/notifications/auto-triggers'
 import { sendLowBalanceEmail } from '@/lib/email/resend'
@@ -59,8 +59,7 @@ async function runReviewRequests(): Promise<TaskResult> {
       try {
         let listingAddress = ''
         if (request.listing_id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: listing } = await (supabase as any)
+          const { data: listing } = await supabase
             .from('listings')
             .select('address')
             .eq('id', request.listing_id)
@@ -68,8 +67,7 @@ async function runReviewRequests(): Promise<TaskResult> {
           listingAddress = listing?.address || ''
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const success = await sendReviewRequest(request as any, listingAddress)
+        const success = await sendReviewRequest(request as ReviewRequest & { agent: { name: string; email: string; phone?: string } }, listingAddress)
         if (success) sentCount++
       } catch (error) {
         errors.push(`Request ${request.id}: ${error}`)
@@ -151,8 +149,7 @@ async function runLowBalanceCheck(): Promise<TaskResult> {
       return { task: 'low-balance', success: true, processed: 0 }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: recentNotifications } = await (supabase as any)
+    const { data: recentNotifications } = await supabase
       .from('notification_logs')
       .select('recipient_email')
       .eq('notification_type', 'low_balance')

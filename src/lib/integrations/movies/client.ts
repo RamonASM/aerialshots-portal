@@ -3,6 +3,9 @@
 
 import type { Movie, MoviesData, Theater } from '@/lib/api/types'
 import { searchNearbyPlaces } from '@/lib/integrations/google-places/client'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'tmdb' })
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_API_BASE = 'https://api.themoviedb.org/3'
@@ -64,7 +67,7 @@ async function fetchTMDb(
   params: Record<string, string> = {}
 ): Promise<TMDbResponse | null> {
   if (!TMDB_API_KEY) {
-    console.warn('TMDB_API_KEY not configured')
+    logger.warn('TMDB_API_KEY not configured')
     return null
   }
 
@@ -82,13 +85,13 @@ async function fetchTMDb(
     })
 
     if (!response.ok) {
-      console.error('TMDb API error:', response.status)
+      logger.error({ status: response.status }, 'TMDb API error')
       return null
     }
 
     return response.json()
   } catch (error) {
-    console.error('Error fetching TMDb:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching TMDb')
     return null
   }
 }

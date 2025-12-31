@@ -4,21 +4,21 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-// Type for Phase 1 migration table (not yet in generated types)
-// TODO: Remove this after types are regenerated with `npx supabase gen types`
-interface BookingReferenceFile {
-  id: string
-  listing_id: string | null
-  booking_token: string | null
-  file_name: string
+// Note: The generated types may not match the migration schema exactly.
+// Using a custom interface based on the actual migration schema.
+interface BookingReferenceFileInsert {
+  id?: string
+  listing_id?: string | null
+  seller_schedule_id?: string | null
   file_type: string
-  file_size: number
-  mime_type: string
   storage_path: string
-  public_url: string
-  notes: string | null
-  uploaded_by: string | null
-  created_at: string
+  storage_bucket?: string | null
+  original_filename?: string | null
+  file_size_bytes?: number | null
+  mime_type?: string | null
+  notes?: string | null
+  uploaded_by_email?: string | null
+  uploaded_at?: string | null
 }
 
 const ALLOWED_TYPES = [
@@ -136,23 +136,22 @@ export async function POST(request: NextRequest) {
         .getPublicUrl(uploadData.path)
 
       // Save metadata to database
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: fileRecord, error: dbError } = await (supabase as any)
+      const { data: fileRecord, error: dbError } = await supabase
         .from('booking_reference_files')
-        .insert({
+        .insert<BookingReferenceFileInsert>({
           listing_id: listingId || null,
-          booking_token: bookingToken || null,
-          file_name: file.name,
+          seller_schedule_id: bookingToken || null, // Using seller_schedule_id for backward compat with bookingToken
           file_type: fileType,
-          file_size: file.size,
-          mime_type: file.type,
           storage_path: uploadData.path,
-          public_url: publicUrl,
+          storage_bucket: 'booking-attachments',
+          original_filename: file.name,
+          file_size_bytes: file.size,
+          mime_type: file.type,
           notes: notes || null,
-          uploaded_by: user?.id || null,
+          uploaded_by_email: user?.email || null,
         })
         .select('id')
-        .single() as { data: { id: string } | null; error: Error | null }
+        .single()
 
       if (dbError || !fileRecord) {
         console.error('[Reference Files] DB error:', dbError)
@@ -208,19 +207,18 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
+    let query = supabase
       .from('booking_reference_files')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('uploaded_at', { ascending: false })
 
     if (listingId) {
       query = query.eq('listing_id', listingId)
     } else if (bookingToken) {
-      query = query.eq('booking_token', bookingToken)
+      query = query.eq('seller_schedule_id', bookingToken) // Using seller_schedule_id for backward compat
     }
 
-    const { data: files, error } = await query as { data: BookingReferenceFile[] | null; error: Error | null }
+    const { data: files, error } = await query
 
     if (error || !files) {
       throw error || new Error('Failed to fetch files')
@@ -230,14 +228,14 @@ export async function GET(request: NextRequest) {
       success: true,
       files: files.map((file) => ({
         id: file.id,
-        filename: file.file_name,
+        filename: file.original_filename || 'Unknown',
         type: file.file_type,
         typeLabel: FILE_TYPE_LABELS[file.file_type] || 'Other',
-        size: file.file_size,
-        mimeType: file.mime_type,
-        url: file.public_url,
+        size: file.file_size_bytes || 0,
+        mimeType: file.mime_type || 'application/octet-stream',
+        url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${file.storage_bucket || 'booking-attachments'}/${file.storage_path}`,
         notes: file.notes,
-        uploadedAt: file.created_at,
+        uploadedAt: file.uploaded_at,
       })),
     })
   } catch (error) {
@@ -268,12 +266,11 @@ export async function DELETE(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Get file record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: file, error: fetchError } = await (supabase as any)
+    const { data: file, error: fetchError } = await supabase
       .from('booking_reference_files')
-      .select('storage_path')
+      .select('storage_path, storage_bucket')
       .eq('id', fileId)
-      .single() as { data: { storage_path: string } | null; error: Error | null }
+      .single()
 
     if (fetchError || !file) {
       return NextResponse.json(
@@ -283,8 +280,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete from storage
+    const bucket = file.storage_bucket || 'booking-attachments'
     const { error: storageError } = await supabase.storage
-      .from('booking-attachments')
+      .from(bucket)
       .remove([file.storage_path])
 
     if (storageError) {
@@ -292,8 +290,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete from database
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: dbError } = await (supabase as any)
+    const { error: dbError } = await supabase
       .from('booking_reference_files')
       .delete()
       .eq('id', fileId)

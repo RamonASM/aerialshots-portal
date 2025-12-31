@@ -2,6 +2,34 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Define inline types for tables not yet in generated types
+interface OrderService {
+  id: string
+  listing_id: string
+  service_name: string
+  price: number
+  status: string
+  created_at: string
+}
+
+interface ClientMessage {
+  id: string
+  listing_id: string
+  message: string
+  created_at: string
+}
+
+interface MergedOrder {
+  id: string
+  primary_listing_id: string
+  merged_listing_id: string
+  merged_by: string
+  merged_at: string
+  reason: string
+  merged_services: OrderService[]
+  merged_media_count: number
+}
+
 // POST /api/admin/listings/merge - Merge two listings
 export async function POST(request: Request) {
   try {
@@ -66,11 +94,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get services from merged listing (use type cast for table not in generated types)
-    const { data: mergedServices } = await (adminSupabase as any)
+    // Get services from merged listing
+    const { data: mergedServicesData } = await adminSupabase
       .from('order_services')
       .select('*')
       .eq('listing_id', merged_listing_id)
+
+    const mergedServices = mergedServicesData as OrderService[] | null
 
     // Get media from merged listing
     const { data: mergedMedia } = await adminSupabase
@@ -80,7 +110,7 @@ export async function POST(request: Request) {
 
     // Move services from merged listing to primary listing
     if (mergedServices && mergedServices.length > 0) {
-      await (adminSupabase as any)
+      await adminSupabase
         .from('order_services')
         .update({ listing_id: primary_listing_id })
         .eq('listing_id', merged_listing_id)
@@ -101,13 +131,13 @@ export async function POST(request: Request) {
       .eq('listing_id', merged_listing_id)
 
     // Move any messages
-    await (adminSupabase as any)
+    await adminSupabase
       .from('client_messages')
       .update({ listing_id: primary_listing_id })
       .eq('listing_id', merged_listing_id)
 
-    // Create merge record (use type cast for new table)
-    const { data: mergeRecord, error: mergeError } = await (adminSupabase as any)
+    // Create merge record
+    const { data: mergeRecordData, error: mergeError } = await adminSupabase
       .from('merged_orders')
       .insert({
         primary_listing_id,
@@ -119,6 +149,8 @@ export async function POST(request: Request) {
       })
       .select()
       .single()
+
+    const mergeRecord = mergeRecordData as MergedOrder | null
 
     if (mergeError) {
       throw mergeError
@@ -179,8 +211,8 @@ export async function GET(request: Request) {
 
     const adminSupabase = createAdminClient()
 
-    // Build query (use type cast for new table)
-    let query = (adminSupabase as any)
+    // Build query
+    let query = adminSupabase
       .from('merged_orders')
       .select(`
         id,
@@ -198,7 +230,9 @@ export async function GET(request: Request) {
       query = query.or(`primary_listing_id.eq.${listing_id},merged_listing_id.eq.${listing_id}`)
     }
 
-    const { data: merges, error } = await query.limit(50)
+    const { data: mergesData, error } = await query.limit(50)
+
+    const merges = mergesData as MergedOrder[] | null
 
     if (error) {
       throw error
@@ -245,12 +279,14 @@ export async function DELETE(request: Request) {
 
     const adminSupabase = createAdminClient()
 
-    // Get merge record (use type cast for new table)
-    const { data: merge } = await (adminSupabase as any)
+    // Get merge record
+    const { data: mergeData } = await adminSupabase
       .from('merged_orders')
       .select('*')
       .eq('id', mergeId)
       .single()
+
+    const merge = mergeData as MergedOrder | null
 
     if (!merge) {
       return NextResponse.json({ error: 'Merge record not found' }, { status: 404 })
@@ -267,15 +303,15 @@ export async function DELETE(request: Request) {
 
     // Move services back (based on stored merged_services)
     if (merge.merged_services && merge.merged_services.length > 0) {
-      const serviceIds = merge.merged_services.map((s: any) => s.id)
-      await (adminSupabase as any)
+      const serviceIds = merge.merged_services.map((s) => s.id)
+      await adminSupabase
         .from('order_services')
         .update({ listing_id: merge.merged_listing_id })
         .in('id', serviceIds)
     }
 
     // Delete merge record
-    await (adminSupabase as any)
+    await adminSupabase
       .from('merged_orders')
       .delete()
       .eq('id', mergeId)

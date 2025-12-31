@@ -1,6 +1,10 @@
 // Instagram OAuth flow via Facebook Login
 // Documentation: https://developers.facebook.com/docs/instagram-api/getting-started
 
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'instagram-oauth' })
+
 const INSTAGRAM_SCOPES = [
   'instagram_basic',
   'instagram_content_publish',
@@ -72,7 +76,7 @@ export async function exchangeCodeForToken(code: string): Promise<TokenResponse>
 
   if (!response.ok) {
     const error = await response.text()
-    console.error('Token exchange error:', error)
+    logger.error({ error }, 'Token exchange error')
     throw new Error('Failed to exchange code for token')
   }
 
@@ -99,7 +103,7 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<LongLi
 
   if (!response.ok) {
     const error = await response.text()
-    console.error('Long-lived token error:', error)
+    logger.error({ error }, 'Long-lived token error')
     throw new Error('Failed to get long-lived token')
   }
 

@@ -21,6 +21,7 @@ import { getWalkScore } from '@/lib/integrations/walkscore/client'
 
 import type { LocationOverview, AttractionsData, EventsData, LifestyleData, EssentialsData } from '@/lib/api/types'
 import { withLocationCache } from '@/lib/api/cache'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Overview API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'Overview API error')
     const response = apiError('INTERNAL_ERROR', 'Failed to fetch location data.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }

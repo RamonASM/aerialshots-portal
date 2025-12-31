@@ -265,8 +265,43 @@ export async function isTimeSlotAvailable(
     }
   }
 
-  // TODO: Check if specific slot is already booked
-  // This would query seller_schedules for conflicts
+  // Check if specific slot is already booked
+  // Query seller_schedules for confirmed bookings at this time
+  try {
+    const supabase = createAdminClient()
+    const dateString = date.toISOString().split('T')[0]
+
+    // Get listings in this territory via zip codes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: territory } = await (supabase as any)
+      .from('service_territories')
+      .select('zip_codes')
+      .eq('id', territoryId)
+      .single() as { data: { zip_codes: string[] } | null; error: Error | null }
+
+    if (!territory?.zip_codes?.length) {
+      return true // No zip codes to check, slot is available
+    }
+
+    // Count confirmed bookings for this date/time in territory
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (supabase as any)
+      .from('seller_schedules')
+      .select('id, listing:listings!inner(zip)', { count: 'exact', head: true })
+      .in('listing.zip', territory.zip_codes)
+      .eq('status', 'confirmed')
+      .not('selected_slot', 'is', null)
+      .filter('selected_slot->date', 'eq', dateString)
+      .filter('selected_slot->start_time', 'eq', time) as { count: number | null; error: Error | null }
+
+    // Check against max appointments for this schedule
+    if (count && schedule.max_appointments && count >= schedule.max_appointments) {
+      return false
+    }
+  } catch (bookingCheckError) {
+    // Don't fail availability check if booking query fails
+    console.warn('[Territory] Error checking slot bookings:', bookingCheckError)
+  }
 
   return true
 }

@@ -13,8 +13,7 @@ export async function GET() {
 
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: schedules, error } = await (supabase as any)
+    const { data: schedules, error } = await supabase
       .from('ai_agent_schedules')
       .select('*')
       .order('created_at', { ascending: false })
@@ -58,8 +57,7 @@ export async function POST(request: NextRequest) {
       nextRunAt = null
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: schedule, error } = await (supabase as any)
+    const { data: schedule, error } = await supabase
       .from('ai_agent_schedules')
       .insert({
         agent_slug: body.agent_slug,

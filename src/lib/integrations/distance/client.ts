@@ -2,6 +2,9 @@
 // Provides real-time travel times with traffic consideration
 
 import { CENTRAL_FL_DESTINATIONS, TravelTime, CommuteDestination, AirportProximity } from '@/lib/api/types'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'distance' })
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_PLACES_API_KEY // Reuse existing key
 
@@ -50,14 +53,14 @@ export async function getDistanceMatrix(
     })
 
     if (!response.ok) {
-      console.error('Distance Matrix API error:', response.status)
+      logger.error({ status: response.status }, 'Distance Matrix API error')
       return new Map()
     }
 
     const data: DistanceMatrixResponse = await response.json()
 
     if (data.status !== 'OK') {
-      console.error('Distance Matrix API status:', data.status)
+      logger.error({ apiStatus: data.status }, 'Distance Matrix API returned non-OK status')
       return new Map()
     }
 
@@ -81,7 +84,7 @@ export async function getDistanceMatrix(
 
     return results
   } catch (error) {
-    console.error('Error fetching distance matrix:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching distance matrix')
     return new Map()
   }
 }

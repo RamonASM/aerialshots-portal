@@ -45,8 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check recent notifications for these agents
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: recentNotifications } = await (supabase as any)
+    const { data: recentNotifications } = await supabase
       .from('notification_logs')
       .select('recipient_email')
       .eq('notification_type', 'low_balance')

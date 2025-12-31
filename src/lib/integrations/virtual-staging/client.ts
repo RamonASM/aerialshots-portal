@@ -1,4 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'virtual-staging' })
 
 /**
  * AI Provider types
@@ -313,7 +316,7 @@ export async function generateStagedImage(request: StagingRequest): Promise<{
       staged_url: stagedUrl,
     }
   } catch (error) {
-    console.error('[VirtualStaging] Error generating staged image:', error)
+    logger.error({ ...formatError(error) }, 'Error generating staged image')
     return {
       success: false,
       error: 'An unexpected error occurred.',
@@ -436,7 +439,7 @@ export async function getStagingStatus(stagingId: string): Promise<StagingResult
 
     return data
   } catch (error) {
-    console.error('[VirtualStaging] Error getting status:', error)
+    logger.error({ ...formatError(error) }, 'Error getting status')
     return null
   }
 }
@@ -472,7 +475,7 @@ export async function getStagingHistory(
 
     return data
   } catch (error) {
-    console.error('[VirtualStaging] Error getting history:', error)
+    logger.error({ ...formatError(error) }, 'Error getting history')
     return []
   }
 }
@@ -530,7 +533,7 @@ export async function retryStaging(stagingId: string): Promise<{
       new_staging_id: result.staging_id,
     }
   } catch (error) {
-    console.error('[VirtualStaging] Error retrying staging:', error)
+    logger.error({ ...formatError(error) }, 'Error retrying staging')
     return {
       success: false,
       error: 'An unexpected error occurred.',
@@ -599,7 +602,7 @@ export async function deleteStagingResult(stagingId: string): Promise<{
 
     return { success: true }
   } catch (error) {
-    console.error('[VirtualStaging] Error deleting result:', error)
+    logger.error({ ...formatError(error) }, 'Error deleting result')
     return {
       success: false,
       error: 'An unexpected error occurred.',

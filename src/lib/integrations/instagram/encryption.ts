@@ -1,4 +1,7 @@
 import crypto from 'crypto'
+import { integrationLogger } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'instagram-encryption' })
 
 // Encryption configuration
 const ALGORITHM = 'aes-256-gcm'
@@ -93,7 +96,7 @@ export function getUsableToken(token: string): string {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('INSTAGRAM_TOKEN_ENCRYPTION_KEY must be configured in production')
     }
-    console.warn('Token encryption not configured - development mode only')
+    logger.warn('Token encryption not configured - development mode only')
     return token
   }
 
@@ -103,7 +106,7 @@ export function getUsableToken(token: string): string {
   }
 
   // Unencrypted token in database - this is a legacy issue
-  console.warn('Found unencrypted token - should be re-encrypted')
+  logger.warn('Found unencrypted token - should be re-encrypted')
   return token
 }
 

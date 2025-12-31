@@ -166,9 +166,8 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Save to media_uploads table (table not yet in generated types)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: dbError } = await (supabase as any).from('media_uploads').insert({
+      // Save to media_uploads table
+      const { error: dbError } = await supabase.from('media_uploads').insert({
         listing_id: listingId,
         filename: uploadResult.media!.path.split('/').pop() || file.name,
         original_filename: file.name,

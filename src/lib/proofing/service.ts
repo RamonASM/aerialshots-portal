@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { nanoid } from 'nanoid'
+import { sendProofingShareEmail } from '@/lib/email/resend'
 
 export interface ProofingSession {
   id: string
@@ -601,9 +602,38 @@ export async function shareSessionWithSeller(
 
     // Send email if requested
     let emailSent = false
-    if (send_email) {
-      // TODO: Implement email sending
-      emailSent = true
+    if (send_email && seller_email) {
+      try {
+        // Fetch session with listing and agent details for email
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: sessionData } = await (supabase as any)
+          .from('proofing_sessions')
+          .select(`
+            id,
+            listing:listings(address, city, state),
+            agent:agents(name)
+          `)
+          .eq('id', session_id)
+          .single()
+
+        const propertyAddress = sessionData?.listing
+          ? `${sessionData.listing.address}, ${sessionData.listing.city}, ${sessionData.listing.state}`
+          : 'Your Property'
+        const agentName = sessionData?.agent?.name || 'Your Agent'
+
+        await sendProofingShareEmail({
+          to: seller_email,
+          clientName: seller_name || 'Homeowner',
+          agentName,
+          propertyAddress,
+          proofingUrl: shareLink,
+        })
+        emailSent = true
+      } catch (emailError) {
+        // Don't fail the share if email fails - log and continue
+        console.error('[Proofing] Failed to send share email:', emailError)
+        emailSent = false
+      }
     }
 
     return {

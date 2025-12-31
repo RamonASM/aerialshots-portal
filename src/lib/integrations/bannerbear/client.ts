@@ -1,6 +1,10 @@
 // Bannerbear API Client for carousel image rendering
 // Documentation: https://developers.bannerbear.com/
 
+import { integrationLogger } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'bannerbear' })
+
 const BANNERBEAR_API_BASE = 'https://api.bannerbear.com/v2'
 
 interface BannerbearModification {
@@ -77,8 +81,8 @@ export async function createImage(
   })
 
   if (!response.ok) {
-    const error = await response.text()
-    console.error('Bannerbear API error:', error)
+    const errorText = await response.text()
+    logger.error({ status: response.status, error: errorText }, 'Bannerbear API error')
     throw new Error('Failed to create Bannerbear image')
   }
 
@@ -109,8 +113,8 @@ export async function createCollection(
   })
 
   if (!response.ok) {
-    const error = await response.text()
-    console.error('Bannerbear API error:', error)
+    const errorText = await response.text()
+    logger.error({ status: response.status, error: errorText }, 'Bannerbear API error')
     throw new Error('Failed to create Bannerbear collection')
   }
 

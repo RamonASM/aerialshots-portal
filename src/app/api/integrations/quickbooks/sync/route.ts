@@ -38,6 +38,12 @@ interface InvoiceSyncStatus {
   created_at: string
 }
 
+interface IntegrationSetting {
+  key: string
+  value: QuickBooksSettings
+  updated_at: string
+}
+
 const SyncInvoiceSchema = z.object({
   invoiceId: z.string().uuid('Invalid invoice ID'),
 })
@@ -81,11 +87,13 @@ export async function POST(request: NextRequest) {
 
     // Get QuickBooks settings
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settings, error: settingsError } = await (supabase as any)
+    const { data: settingsData, error: settingsError } = await (supabase as any)
       .from('integration_settings')
       .select('value')
       .eq('key', 'quickbooks')
       .single()
+
+    const settings = settingsData as Pick<IntegrationSetting, 'value'> | null
 
     if (settingsError || !settings) {
       return NextResponse.json(
@@ -113,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     // Get invoice with agent and order details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: invoiceData, error: invoiceError } = await (supabase as any)
+    const { data: invoiceRawData, error: invoiceError } = await (supabase as any)
       .from('invoices')
       .select(`
         id,
@@ -127,7 +135,7 @@ export async function POST(request: NextRequest) {
       .eq('id', invoiceId)
       .single()
 
-    const invoice = invoiceData as InvoiceData | null
+    const invoice = invoiceRawData as InvoiceData | null
 
     if (invoiceError || !invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
@@ -179,12 +187,12 @@ export async function POST(request: NextRequest) {
 
     // Get invoice line items if available
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: lineItemsData } = await (supabase as any)
+    const { data: lineItemsRawData } = await (supabase as any)
       .from('invoice_items')
       .select('description, amount, quantity')
       .eq('invoice_id', invoiceId)
 
-    const lineItems = lineItemsData as InvoiceItem[] | null
+    const lineItems = lineItemsRawData as InvoiceItem[] | null
 
     // Sync to QuickBooks
     const agent = invoice.agent
@@ -265,13 +273,13 @@ export async function GET() {
 
     // Get recent invoices with sync status
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: invoicesData, error: invoicesError } = await (supabase as any)
+    const { data: invoicesRawData, error: invoicesError } = await (supabase as any)
       .from('invoices')
       .select('id, amount, status, quickbooks_invoice_id, quickbooks_synced_at, created_at')
       .order('created_at', { ascending: false })
       .limit(50)
 
-    const invoices = invoicesData as InvoiceSyncStatus[] | null
+    const invoices = invoicesRawData as InvoiceSyncStatus[] | null
 
     if (invoicesError) {
       return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 })

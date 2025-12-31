@@ -6,6 +6,9 @@ import type {
   ZapierPayload,
   ZapierTriggerResult,
 } from './types'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'zapier' })
 
 const WEBHOOK_TIMEOUT = 10000 // 10 seconds
 
@@ -55,7 +58,7 @@ export async function triggerWebhooks(
 
     return results
   } catch (error) {
-    console.error('Error triggering webhooks:', error)
+    logger.error({ ...formatError(error) }, 'Error triggering webhooks')
     return results
   }
 }

@@ -191,6 +191,7 @@ export const dbLogger = logger.child({ component: 'database' })
 export const webhookLogger = logger.child({ component: 'webhook' })
 export const cronLogger = logger.child({ component: 'cron' })
 export const integrationLogger = logger.child({ component: 'integration' })
+export const qcLogger = logger.child({ component: 'qc' })
 
 // Type definitions for structured log data
 export interface LogContextData {

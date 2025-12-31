@@ -1,6 +1,10 @@
 // Walk Score API Client
 // Documentation: https://www.walkscore.com/professional/api.php
 
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'walkscore' })
+
 export interface WalkScoreResult {
   status: number
   walkscore: number
@@ -81,7 +85,7 @@ export async function getWalkScore(
   const apiKey = process.env.WALKSCORE_API_KEY
 
   if (!apiKey) {
-    console.warn('WALKSCORE_API_KEY not configured - returning null')
+    logger.warn('WALKSCORE_API_KEY not configured')
     return null
   }
 
@@ -101,7 +105,7 @@ export async function getWalkScore(
     const response = await fetch(url)
 
     if (!response.ok) {
-      console.error('Walk Score API error:', response.statusText)
+      logger.error({ status: response.status, statusText: response.statusText }, 'Walk Score API error')
       return null
     }
 
@@ -116,7 +120,7 @@ export async function getWalkScore(
     // 41 = Daily API limit exceeded
 
     if (data.status !== 1) {
-      console.warn(`Walk Score API returned status ${data.status}`)
+      logger.warn({ apiStatus: data.status }, `Walk Score API returned non-success status`)
       return null
     }
 
@@ -133,7 +137,7 @@ export async function getWalkScore(
         : undefined,
     }
   } catch (error) {
-    console.error('Error fetching Walk Score:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching Walk Score')
     return null
   }
 }

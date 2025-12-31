@@ -2,6 +2,9 @@
 // Uses ThemeParks.wiki API (free, no key required)
 
 import { CENTRAL_FL_DESTINATIONS, ThemeParkWithWaits, RideWaitTime } from '@/lib/api/types'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'themeparks' })
 
 const THEMEPARKS_API_BASE = 'https://api.themeparks.wiki/v1'
 
@@ -127,7 +130,7 @@ function getParkId(slug: string): string | null {
 export async function getParkWaitTimes(parkSlug: string): Promise<RideWaitTime[]> {
   const parkId = getParkId(parkSlug)
   if (!parkId) {
-    console.warn(`Unknown park slug: ${parkSlug}`)
+    logger.warn({ parkSlug }, 'Unknown park slug')
     return []
   }
 
@@ -137,7 +140,7 @@ export async function getParkWaitTimes(parkSlug: string): Promise<RideWaitTime[]
     })
 
     if (!response.ok) {
-      console.error(`ThemeParks API error: ${response.status}`)
+      logger.error({ status: response.status }, 'ThemeParks API error')
       return []
     }
 
@@ -167,7 +170,7 @@ export async function getParkWaitTimes(parkSlug: string): Promise<RideWaitTime[]
 
     return waitTimes
   } catch (error) {
-    console.error('Error fetching park wait times:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching park wait times')
     return []
   }
 }
@@ -207,7 +210,7 @@ export async function getParkSchedule(
       close: formatTime(todaySchedule.closingTime),
     }
   } catch (error) {
-    console.error('Error fetching park schedule:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching park schedule')
     return null
   }
 }

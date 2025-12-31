@@ -15,6 +15,7 @@ import {
   getRealEstateNews,
   getBusinessNews,
 } from '@/lib/integrations/news/client'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('News API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'News API error')
     const response = apiError('INTERNAL_ERROR', 'Failed to fetch news data.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }

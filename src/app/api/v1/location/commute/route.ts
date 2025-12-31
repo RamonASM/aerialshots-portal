@@ -16,6 +16,7 @@ import {
 } from '@/lib/integrations/distance/client'
 import { CENTRAL_FL_DESTINATIONS } from '@/lib/api/types'
 import { withLocationCache, createApiCacheKey, withCache } from '@/lib/api/cache'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -225,7 +226,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Commute API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'Commute API error')
     const response = apiError('INTERNAL_ERROR', 'Failed to fetch commute data.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }

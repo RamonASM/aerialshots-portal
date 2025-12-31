@@ -33,6 +33,9 @@ export type AIProvider =
   | 'ffmpeg'
   | 'bannerbear'
   | 'stable_diffusion'
+  | 'satori_sharp'      // Text-to-image rendering (Satori + Sharp)
+  | 'puppeteer_chrome'  // Complex template rendering
+  | 'life_here'         // Location data API
 
 /**
  * Skill configuration
@@ -286,6 +289,7 @@ export interface ProviderConfig {
     outputTokens?: number
     imageGeneration?: number
     videoSecond?: number
+    apiCall?: number        // Cost per API call (for internal/external APIs)
   }
 }
 
@@ -325,6 +329,13 @@ export type BuiltInSkillId =
   | 'integrate-founddr-hdr'
   | 'integrate-bannerbear'
   | 'integrate-storage-upload'
+  | 'integrate-life-here'
+  // Render skills
+  | 'render-template'
+  | 'render-carousel'
+  | 'render-compose-text'
+  | 'render-apply-brand-kit'
+  | 'render-optimize-image'
   // Notification skills
   | 'notify-email'
   | 'notify-sms'

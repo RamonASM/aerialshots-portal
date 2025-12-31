@@ -11,6 +11,7 @@ import { getCommunityEvents, getEventsByCategory } from '@/lib/integrations/even
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import type { LocalEvent } from '@/lib/api/types'
 import { withLocationCache, createApiCacheKey, withCache } from '@/lib/api/cache'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Events API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'Events API error')
     const response = apiError('INTERNAL_ERROR', 'Failed to fetch events data.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }

@@ -2,20 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { apiLogger, formatError } from '@/lib/logger'
 
-interface CreditPackage {
-  id: string
-  name: string
-  description: string | null
-  credit_amount: number
-  price_cents: number
-  discount_percent: number
-  is_popular: boolean
-  is_active: boolean
-  sort_order: number
-  created_at: string
-  updated_at: string
-}
-
 /**
  * GET /api/credits/packages
  * Get available credit packages for purchase
@@ -24,9 +10,7 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Cast to any since credit_packages table isn't in generated types yet
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: packages, error } = await (supabase as any)
+    const { data: packages, error } = await supabase
       .from('credit_packages')
       .select('*')
       .eq('is_active', true)
@@ -38,11 +22,11 @@ export async function GET() {
     }
 
     // Add computed fields for display
-    const packagesWithDisplay = (packages as CreditPackage[] | null)?.map((pkg) => ({
+    const packagesWithDisplay = packages?.map((pkg) => ({
       ...pkg,
       price_dollars: pkg.price_cents / 100,
       price_per_credit: (pkg.price_cents / 100 / pkg.credit_amount).toFixed(3),
-      savings_amount: pkg.discount_percent > 0
+      savings_amount: pkg.discount_percent && pkg.discount_percent > 0
         ? (pkg.credit_amount * (pkg.discount_percent / 100)).toFixed(2)
         : null,
     }))

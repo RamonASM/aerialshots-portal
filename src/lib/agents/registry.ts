@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { unstable_cache } from 'next/cache'
+import { agentLogger, formatError } from '@/lib/logger'
 import type { AgentDefinition, AIAgent, AgentMetrics, AIAgentCategory } from './types'
 import {
   CACHE_REVALIDATION,
@@ -50,7 +51,7 @@ async function fetchAgent(slug: string): Promise<AIAgent | null> {
     .single()
 
   if (error) {
-    console.error('Error fetching agent:', error)
+    agentLogger.error({ slug, ...formatError(error) }, 'Error fetching agent')
     return null
   }
 
@@ -92,7 +93,7 @@ async function fetchAllAgents(options?: {
   const { data, error } = await query.order('category').order('name')
 
   if (error) {
-    console.error('Error fetching agents:', error)
+    agentLogger.error({ ...formatError(error) }, 'Error fetching agents')
     return []
   }
 
@@ -142,7 +143,7 @@ async function fetchAgentMetrics(slug?: string): Promise<AgentMetrics[]> {
   const { data: executions } = executionsResult
 
   if (agentsError || !agents) {
-    console.error('Error fetching agents:', agentsError)
+    agentLogger.error({ ...formatError(agentsError) }, 'Error fetching agents for metrics')
     return []
   }
 
@@ -223,7 +224,7 @@ async function fetchRecentExecutions(agentSlug: string, limit: number = 10) {
     .limit(limit)
 
   if (error) {
-    console.error('Error fetching executions:', error)
+    agentLogger.error({ agentSlug, ...formatError(error) }, 'Error fetching executions')
     return []
   }
 
@@ -258,7 +259,7 @@ export async function updateAgentStatus(
     .eq('slug', slug)
 
   if (error) {
-    console.error('Error updating agent status:', error)
+    agentLogger.error({ slug, isActive, ...formatError(error) }, 'Error updating agent status')
     return false
   }
 
@@ -280,7 +281,7 @@ export async function updateAgentConfig(
     .eq('slug', slug)
 
   if (error) {
-    console.error('Error updating agent config:', error)
+    agentLogger.error({ slug, ...formatError(error) }, 'Error updating agent config')
     return false
   }
 

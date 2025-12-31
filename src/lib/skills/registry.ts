@@ -267,6 +267,36 @@ registerProvider({
   },
 })
 
+registerProvider({
+  id: 'satori_sharp',
+  name: 'Satori + Sharp',
+  apiKeyEnvVar: '',  // No API key needed
+  isConfigured: true,  // Always available (local processing)
+  costPerUnit: {
+    imageGeneration: 0.001,  // Minimal compute cost
+  },
+})
+
+registerProvider({
+  id: 'puppeteer_chrome',
+  name: 'Puppeteer Chrome',
+  apiKeyEnvVar: '',  // No API key needed
+  isConfigured: true,  // Always available (local processing)
+  costPerUnit: {
+    imageGeneration: 0.005,  // Higher compute cost than Satori
+  },
+})
+
+registerProvider({
+  id: 'life_here',
+  name: 'Life Here API',
+  apiKeyEnvVar: '',  // Uses internal API, no external key
+  isConfigured: true,  // Always available (internal API)
+  costPerUnit: {
+    apiCall: 0.0005,  // Minimal cost per API call
+  },
+})
+
 // ============================================
 // Database Integration (Supabase)
 // ============================================

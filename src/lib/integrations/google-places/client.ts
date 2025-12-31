@@ -2,6 +2,9 @@
 // Documentation: https://developers.google.com/maps/documentation/places/web-service/nearby-search
 
 import { PLACE_CATEGORIES, type PlaceCategory, type NearbyPlace } from '@/lib/utils/category-info'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'google-places' })
 
 // Re-export for convenience
 export { PLACE_CATEGORIES, type PlaceCategory, type NearbyPlace }
@@ -97,7 +100,7 @@ export async function searchNearbyPlaces(
 ): Promise<NearbyPlace[]> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey) {
-    console.warn('GOOGLE_PLACES_API_KEY not configured')
+    logger.warn('GOOGLE_PLACES_API_KEY not configured')
     return []
   }
 
@@ -172,7 +175,7 @@ export async function searchNearbyPlaces(
       }
     }
   } catch (error) {
-    console.error(`Error fetching ${category} places:`, error)
+    logger.error({ category, ...formatError(error) }, `Error fetching ${category} places`)
   }
 
   // Sort by rating and return top results

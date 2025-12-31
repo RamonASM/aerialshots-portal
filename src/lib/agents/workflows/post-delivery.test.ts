@@ -12,7 +12,7 @@ import type { WorkflowContext, WorkflowStep } from '../types'
 function createContext(overrides: Partial<WorkflowContext> = {}): WorkflowContext {
   return {
     workflowId: 'wf-1',
-    triggerEvent: 'carousel.rendered',
+    triggerEvent: 'qc.approved',
     currentStep: 0,
     stepResults: {},
     sharedContext: {},
@@ -34,7 +34,7 @@ describe('Post-Delivery Workflow', () => {
 
   it('should have correct workflow metadata', () => {
     expect(postDeliveryWorkflow.id).toBe('post-delivery')
-    expect(postDeliveryWorkflow.triggerEvent).toBe('carousel.rendered')
+    expect(postDeliveryWorkflow.triggerEvent).toBe('qc.approved')
     expect(postDeliveryWorkflow.onError).toBe('continue')
   })
 

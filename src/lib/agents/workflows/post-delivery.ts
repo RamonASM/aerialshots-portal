@@ -7,20 +7,22 @@ import type { WorkflowDefinition, WorkflowContext } from '../types'
 /**
  * Post-Delivery Workflow
  *
- * Trigger: carousel.rendered
+ * Trigger: qc.approved (when QC staff approves media for delivery)
  *
  * Steps:
- * 1. QC Assistant - Pre-screens photos for quality issues
+ * 1. QC Assistant - Analyzes approved media for quality insights
  * 2. Media Tips - Generates usage tips for the agent (parallel with QC)
  * 3. Delivery Notifier - Sends delivery notification to agent
  * 4. Care Task Generator - Creates follow-up tasks for VA team
- * 5. Campaign Launcher - Auto-launches marketing campaign (conditional)
+ * 5. Video Creator - Creates slideshow video if 3+ photos
+ * 6. Content Writer - Generates descriptions and social captions
+ * 7. Campaign Launcher - Auto-launches marketing campaign (conditional)
  */
 const postDeliveryWorkflow: WorkflowDefinition = {
   id: 'post-delivery',
   name: 'Post-Delivery Automation',
-  description: 'Full automation workflow triggered after media delivery and carousel rendering',
-  triggerEvent: 'carousel.rendered',
+  description: 'Full automation workflow triggered after QC approval of media for delivery',
+  triggerEvent: 'qc.approved',
   onError: 'continue', // Continue even if individual steps fail
 
   steps: [

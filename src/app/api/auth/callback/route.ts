@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/supabase/types'
+import { apiLogger, formatError } from '@/lib/logger'
 
+const logger = apiLogger.child({ route: 'auth/callback' })
 const STAFF_DOMAIN = '@aerialshots.media'
 
 export async function GET(request: NextRequest) {
@@ -15,19 +17,16 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description')
 
   // Debug logging
-  console.log('Auth callback received:', {
-    url: request.url,
-    code: code ? `present (${code.substring(0, 10)}...)` : 'missing',
-    token: token ? `present (${token.substring(0, 10)}...)` : 'missing',
+  logger.debug({
+    code: code ? 'present' : 'missing',
+    token: token ? 'present' : 'missing',
     type,
     error: errorParam,
-    errorDescription,
-    allParams: Object.fromEntries(searchParams.entries()),
-  })
+  }, 'Auth callback received')
 
   // Handle error from Supabase
   if (errorParam) {
-    console.error('Supabase auth error:', errorParam, errorDescription)
+    logger.error({ error: errorParam, description: errorDescription }, 'Supabase auth error')
     return NextResponse.redirect(`${origin}/login?error=auth_failed&message=${encodeURIComponent(errorDescription || errorParam)}`)
   }
 
@@ -60,60 +59,60 @@ export async function GET(request: NextRequest) {
 
   // Handle PKCE flow (OAuth callbacks with code)
   if (code) {
-    console.log('Attempting PKCE code exchange...')
+    logger.debug('Attempting PKCE code exchange')
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     authError = error
     if (error) {
-      console.error('PKCE exchange failed:', error)
+      logger.error({ ...formatError(error) }, 'PKCE exchange failed')
     } else {
-      console.log('PKCE exchange successful')
+      logger.debug('PKCE exchange successful')
     }
   }
   // Handle magic link flow with token_hash
   else if (token && type === 'magiclink') {
-    console.log('Attempting magic link verification...')
+    logger.debug('Attempting magic link verification')
     const { error } = await supabase.auth.verifyOtp({
       token_hash: token,
       type: 'magiclink',
     })
     authError = error
     if (error) {
-      console.error('Magic link verification failed:', error)
+      logger.error({ ...formatError(error) }, 'Magic link verification failed')
     } else {
-      console.log('Magic link verification successful')
+      logger.debug('Magic link verification successful')
     }
   }
   // Handle email OTP flow
   else if (token && type === 'email') {
-    console.log('Attempting email OTP verification...')
+    logger.debug('Attempting email OTP verification')
     const { error } = await supabase.auth.verifyOtp({
       token_hash: token,
       type: 'email',
     })
     authError = error
     if (error) {
-      console.error('Email OTP verification failed:', error)
+      logger.error({ ...formatError(error) }, 'Email OTP verification failed')
     } else {
-      console.log('Email OTP verification successful')
+      logger.debug('Email OTP verification successful')
     }
   }
   // Handle signup flow
   else if (token && type === 'signup') {
-    console.log('Attempting signup verification...')
+    logger.debug('Attempting signup verification')
     const { error } = await supabase.auth.verifyOtp({
       token_hash: token,
       type: 'signup',
     })
     authError = error
     if (error) {
-      console.error('Signup verification failed:', error)
+      logger.error({ ...formatError(error) }, 'Signup verification failed')
     } else {
-      console.log('Signup verification successful')
+      logger.debug('Signup verification successful')
     }
   }
   // No valid auth params
   else {
-    console.error('No valid auth params found in callback')
+    logger.error('No valid auth params found in callback')
     return NextResponse.redirect(`${origin}/login?error=auth_failed&message=no_auth_params`)
   }
 
@@ -122,11 +121,11 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError) {
-      console.error('Failed to get user after auth:', userError)
+      logger.error({ ...formatError(userError) }, 'Failed to get user after auth')
       return NextResponse.redirect(`${origin}/login?error=auth_failed&message=user_fetch_failed`)
     }
 
-    console.log('User authenticated:', user?.email)
+    logger.info({ email: user?.email }, 'User authenticated')
 
     if (user?.email) {
       const userEmail = user.email.toLowerCase()
@@ -153,16 +152,16 @@ export async function GET(request: NextRequest) {
               role: 'photographer', // Default role for new staff
               is_active: true,
             })
-            console.log('Created new staff record for:', userEmail)
+            logger.info({ email: userEmail }, 'Created new staff record')
           }
         } catch (dbError) {
-          console.error('Database error for staff:', dbError)
+          logger.error({ ...formatError(dbError) }, 'Database error for staff')
           // Continue anyway - user is authenticated
         }
 
         // Redirect staff to admin (unless they requested a specific page)
         const redirectTo = requestedNext || '/admin'
-        console.log('Redirecting staff to:', redirectTo)
+        logger.debug({ redirectTo }, 'Redirecting staff')
         return NextResponse.redirect(`${origin}${redirectTo}`)
       }
 
@@ -184,21 +183,21 @@ export async function GET(request: NextRequest) {
             name: user.user_metadata?.full_name || userEmail.split('@')[0],
             slug: `${slug}-${Date.now().toString(36)}`,
           })
-          console.log('Created new agent record for:', userEmail)
+          logger.info({ email: userEmail }, 'Created new agent record')
         }
       } catch (dbError) {
-        console.error('Database error for agent:', dbError)
+        logger.error({ ...formatError(dbError) }, 'Database error for agent')
         // Continue anyway - user is authenticated
       }
     }
 
     // Redirect to requested page or dashboard
     const redirectTo = requestedNext || '/dashboard'
-    console.log('Redirecting user to:', redirectTo)
+    logger.debug({ redirectTo }, 'Redirecting user')
     return NextResponse.redirect(`${origin}${redirectTo}`)
   }
 
   // Return to login on error
-  console.error('Auth callback final error:', authError)
+  logger.error({ ...formatError(authError) }, 'Auth callback final error')
   return NextResponse.redirect(`${origin}/login?error=auth_failed&message=${encodeURIComponent(authError?.message || 'unknown')}`)
 }

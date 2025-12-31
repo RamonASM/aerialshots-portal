@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { integrationLogger, formatError } from '@/lib/logger'
 import type {
   Coordinates,
   DriveTimeResult,
@@ -6,6 +7,8 @@ import type {
   RouteStop,
   OptimizedRoute,
 } from './types'
+
+const logger = integrationLogger.child({ integration: 'google-maps' })
 
 const GOOGLE_MAPS_API_URL = 'https://maps.googleapis.com/maps/api'
 const CACHE_DURATION_HOURS = 24
@@ -22,7 +25,7 @@ export async function getDriveTime(
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
-      console.error('GOOGLE_MAPS_API_KEY not configured')
+      logger.warn('GOOGLE_MAPS_API_KEY not configured')
       return null
     }
 
@@ -79,7 +82,7 @@ export async function getDriveTime(
       data.rows[0].elements.length === 0 ||
       data.rows[0].elements[0].status !== 'OK'
     ) {
-      console.error('No route found:', data)
+      logger.warn({ response: data }, 'No route found')
       return null
     }
 
@@ -110,7 +113,7 @@ export async function getDriveTime(
 
     return result
   } catch (error) {
-    console.error('Drive time calculation error:', error)
+    logger.error({ ...formatError(error) }, 'Drive time calculation error')
     return null
   }
 }
@@ -127,7 +130,7 @@ export async function getDriveTimeMatrix(
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
-      console.error('GOOGLE_MAPS_API_KEY not configured')
+      logger.warn('GOOGLE_MAPS_API_KEY not configured')
       return null
     }
 
@@ -163,7 +166,7 @@ export async function getDriveTimeMatrix(
     const data = await response.json() as DriveTimeMatrix
     return data
   } catch (error) {
-    console.error('Drive time matrix error:', error)
+    logger.error({ ...formatError(error) }, 'Drive time matrix error')
     return null
   }
 }
@@ -178,7 +181,7 @@ export async function geocodeAddress(
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
-      console.error('GOOGLE_MAPS_API_KEY not configured')
+      logger.warn('GOOGLE_MAPS_API_KEY not configured')
       return null
     }
 
@@ -207,7 +210,7 @@ export async function geocodeAddress(
       lng: location.lng,
     }
   } catch (error) {
-    console.error('Geocoding error:', error)
+    logger.error({ ...formatError(error) }, 'Geocoding error')
     return null
   }
 }
@@ -420,7 +423,7 @@ async function cacheDriveTime(
       }
     )
   } catch (error) {
-    console.error('Cache drive time error:', error)
+    logger.error({ ...formatError(error) }, 'Cache drive time error')
   }
 }
 

@@ -35,7 +35,7 @@ const isQBProduction = qbEnvironment === 'production'
 
 // SECURITY: Warn if NODE_ENV=production but QUICKBOOKS_ENVIRONMENT is not explicitly set
 if (isNodeProduction && !qbEnvironment) {
-  console.warn('[QuickBooks] QUICKBOOKS_ENVIRONMENT not set in production - defaulting to sandbox. Set to "production" for live invoices.')
+  apiLogger.warn('QUICKBOOKS_ENVIRONMENT not set in production - defaulting to sandbox. Set to "production" for live invoices.')
 }
 
 const apiBase = isQBProduction ? QBO_PRODUCTION_BASE : QBO_SANDBOX_BASE

@@ -35,15 +35,30 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     // Verify open house exists and is accepting RSVPs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: openHouse, error: openHouseError } = await (supabase as any)
+    // Note: Using explicit type for joined query since relationships not fully typed
+    type OpenHouseWithListing = {
+      id: string
+      status: string
+      event_date: string
+      max_attendees: number | null
+      require_registration: boolean
+      listing: {
+        id: string
+        address: string
+        city: string
+        state: string
+        agent: { name: string; phone: string | null } | null
+      } | null
+    }
+
+    const { data: openHouse, error: openHouseError } = await supabase
       .from('open_houses')
       .select(`
         id, status, event_date, max_attendees, require_registration,
         listing:listings(id, address, city, state, agent:agents(name, phone))
       `)
       .eq('id', openHouseId)
-      .single()
+      .single() as unknown as { data: OpenHouseWithListing | null; error: Error | null }
 
     if (openHouseError || !openHouse) {
       return NextResponse.json(
@@ -73,8 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Check if max attendees reached
     if (openHouse.max_attendees) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count } = await (supabase as any)
+      const { count } = await supabase
         .from('open_house_rsvps')
         .select('*', { count: 'exact', head: true })
         .eq('open_house_id', openHouseId)
@@ -89,8 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing RSVP
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingRsvp } = await (supabase as any)
+    const { data: existingRsvp } = await supabase
       .from('open_house_rsvps')
       .select('id, status')
       .eq('open_house_id', openHouseId)
@@ -100,11 +113,10 @@ export async function POST(request: NextRequest) {
     if (existingRsvp) {
       if (existingRsvp.status === 'cancelled') {
         // Re-activate cancelled RSVP
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: updateError } = await (supabase as any)
+        const { error: updateError } = await supabase
           .from('open_house_rsvps')
           .update({
-            status: 'registered',
+            status: 'registered' as const,
             name,
             phone,
             party_size: partySize,
@@ -134,8 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new RSVP
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rsvp, error: insertError } = await (supabase as any)
+    const { data: rsvp, error: insertError } = await supabase
       .from('open_house_rsvps')
       .insert({
         open_house_id: openHouseId,
@@ -144,7 +155,6 @@ export async function POST(request: NextRequest) {
         phone,
         party_size: partySize,
         notes,
-        source: 'website',
       })
       .select('id')
       .single()
@@ -169,7 +179,7 @@ export async function POST(request: NextRequest) {
         propertyAddress,
         eventDate: openHouse.event_date,
         agentName: agent?.name || 'Aerial Shots Media',
-        agentPhone: agent?.phone,
+        agentPhone: agent?.phone ?? undefined,
       }).catch((err) => {
         // Don't fail the RSVP if email fails
         console.error('Failed to send RSVP confirmation email:', err)
@@ -205,8 +215,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rsvp, error } = await (supabase as any)
+  const { data: rsvp, error } = await supabase
     .from('open_house_rsvps')
     .select('id, status, party_size, created_at')
     .eq('open_house_id', openHouseId)

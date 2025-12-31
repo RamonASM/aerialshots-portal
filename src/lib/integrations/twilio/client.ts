@@ -1,4 +1,8 @@
 // SMS templates for different scenarios
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'twilio' })
+
 export const smsTemplates = {
   // Review request - sent 2 hours after delivery
   review_request_initial: {
@@ -66,7 +70,7 @@ export async function sendSMS(params: SendSMSParams): Promise<SMSResult> {
   const reviewLink = process.env.GOOGLE_REVIEW_LINK || ''
 
   if (!accountSid || !authToken || !fromNumber) {
-    console.error('Twilio credentials not configured')
+    logger.error('Twilio credentials not configured')
     return { success: false, error: 'SMS not configured' }
   }
 
@@ -142,15 +146,15 @@ export async function sendSMS(params: SendSMSParams): Promise<SMSResult> {
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Twilio error:', error)
+      const errorText = await response.text()
+      logger.error({ error: errorText }, 'Twilio API error')
       return { success: false, error: 'Failed to send SMS' }
     }
 
     const result = await response.json()
     return { success: true, messageId: result.sid }
   } catch (error) {
-    console.error('SMS error:', error)
+    logger.error({ ...formatError(error) }, 'SMS send error')
     return { success: false, error: 'Failed to send SMS' }
   }
 }

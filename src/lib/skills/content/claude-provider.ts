@@ -2,7 +2,10 @@
  * Claude Provider
  *
  * Wrapper for Anthropic Claude API that can be mocked in tests.
+ * Includes circuit breaker protection for resilience.
  */
+
+import { withCircuitBreaker, CircuitOpenError } from '@/lib/resilience/circuit-breaker'
 
 interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -17,6 +20,7 @@ interface ClaudeResponse {
 
 /**
  * Generate content with Claude
+ * Wrapped with circuit breaker for resilience against API failures.
  */
 export async function generateWithClaude(
   prompt: string,
@@ -52,37 +56,47 @@ export async function generateWithClaude(
     body.system = systemPrompt
   }
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  })
+  try {
+    return await withCircuitBreaker('claude-api', async () => {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(body),
+      })
 
-  if (!response.ok) {
-    const errorText = await response.text()
+      if (!response.ok) {
+        const errorText = await response.text()
 
-    // Parse error for specific error codes
-    if (response.status === 401) {
-      throw new Error('Invalid API key')
-    } else if (response.status === 429) {
-      throw new Error('Rate limited')
-    } else if (response.status === 400) {
-      throw new Error(`Bad request: ${errorText}`)
+        // Parse error for specific error codes
+        if (response.status === 401) {
+          throw new Error('Invalid API key')
+        } else if (response.status === 429) {
+          throw new Error('Rate limited')
+        } else if (response.status === 400) {
+          throw new Error(`Bad request: ${errorText}`)
+        }
+
+        throw new Error(`Claude API error: ${response.status} - ${errorText}`)
+      }
+
+      const data = await response.json()
+
+      return {
+        content: data.content[0].text,
+        tokensUsed: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
+        model,
+      }
+    }, { timeout: 60000 }) // 60 second timeout for Claude API calls
+  } catch (error) {
+    // Re-throw CircuitOpenError with more context
+    if (error instanceof CircuitOpenError) {
+      throw new Error(`Claude API circuit is open due to repeated failures. Please try again later.`)
     }
-
-    throw new Error(`Claude API error: ${response.status} - ${errorText}`)
-  }
-
-  const data = await response.json()
-
-  return {
-    content: data.content[0].text,
-    tokensUsed: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
-    model,
+    throw error
   }
 }
 

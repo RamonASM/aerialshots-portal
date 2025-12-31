@@ -2,6 +2,159 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2024-12-31
+
+### Added - Phase 8: Workflow Connectivity
+
+#### Critical Workflow Integration Fixes
+Connected orphaned workflows to their trigger points for end-to-end automation:
+
+**Post-Delivery Workflow** (`src/lib/agents/workflows/post-delivery.ts`)
+- Changed trigger event from `carousel.rendered` to `qc.approved`
+- Updated QC approval endpoint (`/api/admin/qc/listings/[id]/approve`) to trigger workflow
+- Workflow now runs after QC approval with:
+  - QC Assistant analysis
+  - Media tips generation
+  - Delivery notification
+  - Care task creation
+  - Video slideshow creation (if 3+ photos)
+  - Content generation
+  - Campaign auto-launch (if enabled)
+
+**New-Listing Workflow** (`src/lib/agents/workflows/new-listing.ts`)
+- Added trigger point in orders API (`/api/orders`)
+- Creates listing when order is placed
+- Triggers workflow with:
+  - Listing data enrichment (geocoding)
+  - Neighborhood research
+  - Initial content generation
+  - Template selection
+  - Scheduling recommendations
+  - Agent welcome notification
+
+**Workflow Utility Functions** (`src/lib/agents/workflows/index.ts`)
+- `triggerNewListingWorkflow()` - Reusable trigger for new listings
+- `triggerPostDeliveryWorkflow()` - Reusable trigger for delivery completion
+
+### Added - Phase 9: Environment Variables Documentation
+
+Updated `.env.example` with:
+- All 70+ environment variables organized by category
+- Clear documentation of required vs optional variables
+- Notes on deprecated integrations (Aryeo, Fotello)
+- RunPod configuration for HDR processing
+- VAPID keys for push notifications
+- Security key generation instructions
+
+### Improved - Structured Logging
+
+Added `qcLogger` to the structured logging system for QC-related operations.
+
+Updated the following files to use structured logging:
+- `src/app/api/admin/qc/listings/[id]/approve/route.ts` - QC approval logging
+- `src/app/api/orders/route.ts` - Order and listing creation logging
+
+---
+
+### Added - Phase 6: Code Quality Improvements
+
+#### Structured Logging
+Replaced console.log/error/warn with structured logger in critical files:
+- `src/lib/agents/orchestrator.ts` - Agent workflow execution logging
+- `src/lib/agents/registry.ts` - Agent registry operations
+- `src/lib/integrations/founddr/client.ts` - HDR processing logs
+- `src/lib/queries/listings.ts` - Database query logging
+- `src/app/api/webhooks/cubicasa/route.ts` - Webhook event logging
+
+**Logger features:**
+- JSON format in production for log aggregation
+- Pretty-printed colored output in development
+- Sensitive field redaction (passwords, tokens, API keys)
+- Pre-configured child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `webhookLogger`, `cronLogger`, `integrationLogger`
+
+---
+
+### Added - Phase 5: Enabled Features
+
+#### Voice Recording for Storywork
+- `useVoiceRecording` hook with pause/resume, waveform visualization
+- `VoiceRecorder` component with Web Audio API
+- `/api/storywork/transcribe` endpoint using OpenAI Whisper
+- `src/lib/transcription/service.ts` with file validation
+
+#### Analytics Dashboard (Already Integrated)
+- `PropertyPageTracker` component in property pages
+- `DeliveryPageTracker` component in delivery pages
+- `/api/analytics/track` for page_view, download, lead_conversion events
+- `/api/analytics/dashboard` returns full analytics data
+- Dashboard at `/dashboard/analytics` with charts and metrics
+
+#### Content Retainer Booking Flow
+- `/book/retainer` page with three package tiers (Momentum, Dominance, Elite)
+- Video breakdown and shoot schedule visualization
+- À la carte pricing and optional add-ons
+- Enabled Content Retainer link on `/book` page
+
+---
+
+### Added - Storywork Image Carousel API
+
+Complete text-to-image rendering API for Instagram-style carousels with Bannerbear-like capabilities.
+
+#### Core Rendering Engine (`src/lib/render/engine/`)
+- **Satori + Sharp Renderer** - Primary renderer for text overlays and templates
+- Font loading with LRU cache for performance
+- Variable resolver with Handlebars-style syntax (`{{variable}}`)
+- SSRF prevention for image URLs
+- Prototype pollution protection in variable resolution
+
+#### Render API Endpoints (`src/app/api/v1/render/`)
+- `POST /image` - Single image render with template + variables
+- `POST /carousel` - Multi-slide parallel rendering
+- `GET /job/[jobId]` - Job status polling
+- `POST /template` - Create template
+- `GET /template/[templateId]` - Get template (by ID or slug)
+- `PUT /template/[templateId]` - Update template
+- `DELETE /template/[templateId]` - Delete template
+
+**Security**: X-ASM-Secret authentication, rate limiting, sanitized error responses
+
+#### Render Skills (`src/lib/skills/render/`)
+- `render-template` - Render single image from template
+- `render-carousel` - Render multi-slide carousel with parallel processing
+
+#### Content Generation Skills (`src/lib/skills/content/`)
+- `generate-carousel-content` - AI-powered slide headlines and body text
+- `generate-hashtags` - Platform-optimized hashtag generation
+- `generate-carousel-caption` - Social media caption with CTA
+
+#### AI Agents (`src/lib/agents/definitions/content/`)
+- **carousel-creator** - End-to-end carousel generation:
+  - Story type detection (just_listed, neighborhood, lifestyle, etc.)
+  - Life Here API integration for neighborhood data
+  - AI content generation for slides
+  - Parallel slide rendering
+  - Caption and hashtag generation
+- **property-marketing** - Complete marketing asset suite:
+  - Package-based generation (basic, standard, premium, luxury)
+  - Listing descriptions, social carousels, captions, email copy
+  - Life Here data integration
+
+#### Database Schema (`supabase/migrations/20250102_004_render_api.sql`)
+- `render_templates` - Template definitions with inheritance
+- `render_jobs` - Job tracking with status
+- `render_job_slides` - Per-slide tracking
+- `render_fonts` - Font registry
+- `render_template_sets` - Template groupings
+- `render_template_set_items` - Set membership
+- RLS policies and triggers
+
+#### Provider Registration
+- `satori_sharp` - Text-to-image rendering
+- `life_here` - Location data API
+
+---
+
 ## [Unreleased] - 2024-12-30
 
 ### Platform Audit & Cleanup

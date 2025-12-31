@@ -2,6 +2,9 @@
 // Community events, classes, workshops, and local happenings
 
 import type { LocalEvent } from '@/lib/api/types'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'eventbrite' })
 
 const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY
 const EVENTBRITE_API_BASE = 'https://www.eventbriteapi.com/v3'
@@ -94,7 +97,7 @@ async function searchEventbrite(
   } = {}
 ): Promise<{ events: EventbriteEvent[]; hasMore: boolean }> {
   if (!EVENTBRITE_API_KEY) {
-    console.warn('EVENTBRITE_API_KEY not configured')
+    logger.warn('EVENTBRITE_API_KEY not configured')
     return { events: [], hasMore: false }
   }
 
@@ -137,7 +140,7 @@ async function searchEventbrite(
     )
 
     if (!response.ok) {
-      console.error('Eventbrite API error:', response.status)
+      logger.error({ status: response.status }, 'Eventbrite API error')
       return { events: [], hasMore: false }
     }
 
@@ -147,7 +150,7 @@ async function searchEventbrite(
       hasMore: data.pagination?.has_more_items || false,
     }
   } catch (error) {
-    console.error('Error searching Eventbrite:', error)
+    logger.error({ ...formatError(error) }, 'Error searching Eventbrite')
     return { events: [], hasMore: false }
   }
 }

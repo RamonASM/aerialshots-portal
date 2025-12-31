@@ -14,8 +14,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get preferences (use type cast for new table)
-    const { data: preferences } = await (supabase as any)
+    // Get preferences
+    const { data: preferences } = await supabase
       .from('notification_preferences')
       .select('*')
       .eq('user_id', user.id)
@@ -75,8 +75,8 @@ export async function PUT(request: Request) {
       quiet_hours_end,
     } = body
 
-    // Upsert preferences (use type cast for new table)
-    const { data: preferences, error } = await (supabase as any)
+    // Upsert preferences
+    const { data: preferences, error } = await supabase
       .from('notification_preferences')
       .upsert(
         {

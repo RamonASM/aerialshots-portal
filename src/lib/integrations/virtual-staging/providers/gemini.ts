@@ -4,6 +4,9 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'gemini-staging' })
 
 interface GeminiStagingParams {
   imageUrl: string
@@ -150,7 +153,7 @@ The staging should:
       status: 'error',
     }
   } catch (error) {
-    console.error('[Gemini] Error generating staged image:', error)
+    logger.error({ ...formatError(error) }, 'Error generating staged image')
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

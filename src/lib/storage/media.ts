@@ -3,9 +3,11 @@
  *
  * Native media storage using Supabase Storage to replace Aryeo CDN.
  * Provides organized bucket structure for different media types.
+ * Includes circuit breaker protection for resilience.
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { withCircuitBreaker, CircuitOpenError } from '@/lib/resilience/circuit-breaker'
 
 // Media type definitions
 export type MediaType =
@@ -233,6 +235,7 @@ export class MediaStorageService {
 
   /**
    * Upload a file to storage
+   * Wrapped with circuit breaker for resilience.
    */
   async upload(options: MediaUploadOptions): Promise<UploadResult> {
     const { listingId, type, file, filename, contentType, category, metadata } = options
@@ -240,46 +243,50 @@ export class MediaStorageService {
     try {
       const bucket = getMediaBucket(type)
       const path = generateStoragePath(listingId, type, filename, category)
-
       const buffer = file instanceof ArrayBuffer ? Buffer.from(file) : file
 
-      const { data, error } = await this.supabase.storage
-        .from(bucket)
-        .upload(path, buffer, {
-          contentType,
-          upsert: false,
-        })
+      return await withCircuitBreaker('supabase-storage', async () => {
+        const { data, error } = await this.supabase.storage
+          .from(bucket)
+          .upload(path, buffer, {
+            contentType,
+            upsert: false,
+          })
 
-      if (error) {
+        if (error) {
+          throw new Error(error.message)
+        }
+
+        const { data: urlData } = this.supabase.storage
+          .from(bucket)
+          .getPublicUrl(data.path)
+
+        const media: StoredMedia = {
+          id: `${bucket}:${data.path}`,
+          url: urlData.publicUrl,
+          path: data.path,
+          bucket,
+          type,
+          filename,
+          size: buffer.length,
+          contentType,
+          category,
+          metadata,
+          createdAt: new Date().toISOString(),
+        }
+
+        return {
+          success: true,
+          media,
+        }
+      }, { timeout: 30000 })
+    } catch (err) {
+      if (err instanceof CircuitOpenError) {
         return {
           success: false,
-          error: error.message,
+          error: 'Storage service temporarily unavailable. Please try again later.',
         }
       }
-
-      const { data: urlData } = this.supabase.storage
-        .from(bucket)
-        .getPublicUrl(data.path)
-
-      const media: StoredMedia = {
-        id: `${bucket}:${data.path}`,
-        url: urlData.publicUrl,
-        path: data.path,
-        bucket,
-        type,
-        filename,
-        size: buffer.length,
-        contentType,
-        category,
-        metadata,
-        createdAt: new Date().toISOString(),
-      }
-
-      return {
-        success: true,
-        media,
-      }
-    } catch (err) {
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Upload failed',
@@ -324,22 +331,28 @@ export class MediaStorageService {
 
   /**
    * Delete a file from storage
+   * Wrapped with circuit breaker for resilience.
    */
   async delete(bucket: string, path: string): Promise<DeleteResult> {
     try {
-      const { error } = await this.supabase.storage
-        .from(bucket)
-        .remove([path])
+      return await withCircuitBreaker('supabase-storage', async () => {
+        const { error } = await this.supabase.storage
+          .from(bucket)
+          .remove([path])
 
-      if (error) {
+        if (error) {
+          throw new Error(error.message)
+        }
+
+        return { success: true }
+      }, { timeout: 15000 })
+    } catch (err) {
+      if (err instanceof CircuitOpenError) {
         return {
           success: false,
-          error: error.message,
+          error: 'Storage service temporarily unavailable. Please try again later.',
         }
       }
-
-      return { success: true }
-    } catch (err) {
       return {
         success: false,
         error: err instanceof Error ? err.message : 'Delete failed',

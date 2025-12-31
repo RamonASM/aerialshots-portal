@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { VoiceRecorder } from '@/components/storywork/VoiceRecorder'
 import type { Database } from '@/lib/supabase/types'
 import { storyTypes } from '@/lib/storywork/prompts'
 
@@ -199,7 +200,7 @@ export default function NewStoryPage() {
                   inputType === 'voice' ? 'text-[#ff4533]' : 'text-neutral-600'
                 }
               >
-                Voice (Coming Soon)
+                Voice
               </span>
             </button>
           </div>
@@ -234,12 +235,13 @@ export default function NewStoryPage() {
             )}
 
             {inputType === 'voice' && (
-              <div className="rounded-lg bg-neutral-100 p-8 text-center">
-                <Mic className="mx-auto h-12 w-12 text-neutral-400" />
-                <p className="mt-4 text-neutral-600">
-                  Voice input coming soon! For now, please use text input.
-                </p>
-              </div>
+              <VoiceRecorder
+                onTranscriptionComplete={(transcript) => {
+                  setTextInput(transcript)
+                  setInputType('text') // Switch to text view to show transcript
+                }}
+                onCancel={() => setInputType('text')}
+              />
             )}
           </div>
 
@@ -249,12 +251,14 @@ export default function NewStoryPage() {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end">
-            <Button onClick={handleInputSubmit} disabled={inputType === 'voice'}>
-              Continue
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          {inputType === 'text' && (
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handleInputSubmit}>
+                Continue
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

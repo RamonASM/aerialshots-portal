@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    // Type assertion for listing and agent
-    const listingData = listing as any
+    // Extract agent data
+    const listingData = listing
     const agent = (Array.isArray(listingData.agents) ? listingData.agents[0] : listingData.agents) as {
       id: string
       name: string
@@ -123,10 +123,10 @@ export async function POST(request: NextRequest) {
       webhookUrl
     )
 
-    // Store pending assets in database (if table exists)
+    // Store pending assets in database
     if (result.success) {
       for (const asset of result.assets) {
-        await (supabase as any).from('marketing_assets').insert({
+        await supabase.from('marketing_assets').insert({
           listing_id: listingId,
           agent_id: agent.id,
           type: 'just_listed',
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
           status: 'rendering',
           bannerbear_uid: asset.bannerbearUid,
         }).catch(() => {
-          // Table might not exist yet
+          // Silently fail if table doesn't exist
         })
       }
     }

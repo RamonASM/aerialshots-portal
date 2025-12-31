@@ -205,8 +205,10 @@ const workflow = createComposition('post-delivery')
 
 **Skill Categories:**
 - `image/` - Image generation, analysis, inpainting, twilight conversion
-- `content/` - Listing descriptions, social captions, email copy
+- `content/` - Listing descriptions, social captions, email copy, carousel content, hashtags
 - `video/` - Slideshow creation, motion effects, audio sync
+- `render/` - Template rendering, carousel generation (Satori + Sharp engine)
+- `data/` - Life Here API integration for neighborhood/lifestyle data
 
 **Expert Agents:**
 - `video-creator` - Composes video skills for slideshow/reel generation
@@ -215,6 +217,8 @@ const workflow = createComposition('post-delivery')
 - `media-tips` - Analyzes media assets and generates quality improvement tips
 - `neighborhood-data` - Researches local area, attractions, schools
 - `qc-assistant` - AI-powered quality control review
+- `carousel-creator` - End-to-end Instagram carousel generation with AI content and Life Here data
+- `property-marketing` - Complete marketing asset suite (descriptions, carousels, email copy)
 
 **Workflows:**
 - `post-delivery` - Runs after media delivery (QC → notify → video → content → campaign)
@@ -237,6 +241,7 @@ NEXT_PUBLIC_APP_URL=https://app.aerialshots.media
 # AI
 ANTHROPIC_API_KEY=
 GOOGLE_AI_API_KEY=         # Gemini for staging, inpainting, vision
+OPENAI_API_KEY=            # Whisper for voice transcription in Storywork
 
 # Email/SMS
 RESEND_API_KEY=
@@ -359,7 +364,7 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 
 | Metric | Count |
 |--------|-------|
-| API Routes | 206 |
+| API Routes | 211 |
 | Test Files | 272 |
 | SQL Migrations | 53 |
 | Integrations | 27 |
@@ -373,7 +378,7 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 | **Cubicasa** | Floor plan generation | ⏳ Manual upload for now |
 | **Aloft** | Drone airspace checks | ✅ Works (free FAA fallback) |
 | **QuickBooks** | Invoice sync | ⏸️ Not in use |
-| **Bannerbear** | Social carousel generation | ⏸️ Building replacement |
+| **Satori Renderer** | Social carousel generation | ✅ Active (Bannerbear replacement) |
 | Supabase Storage | Native media storage | Active |
 | Google Places | Address autocomplete | Active |
 | Google Maps | Distance/travel times | Active |
@@ -451,9 +456,29 @@ Endpoints at `/api/founddr/`:
 | Life Here API | ✅ Complete |
 | Skills Framework | ✅ Complete |
 | AI Agents | ✅ Complete |
+| Analytics Dashboard | ✅ Complete (PropertyPageTracker, DeliveryPageTracker) |
 | HDR Processing (RunPod) | ✅ Ready (add env vars) |
 | Airspace Checks | ✅ Works (free FAA) |
 | Floor Plans | ⏳ Manual upload |
-| Storywork Voice Input | Coming Soon |
-| Carousel Generation | Building replacement |
-| Content Retainer Booking | Coming Soon |
+| Storywork Voice Input | ✅ Complete (OpenAI Whisper) |
+| Carousel Generation | ✅ Complete (Satori renderer) |
+| Content Retainer Booking | ✅ Complete (/book/retainer) |
+
+### Logging
+
+The platform uses structured logging for production debugging. Import from `@/lib/logger`:
+
+```typescript
+import { apiLogger, dbLogger, webhookLogger, formatError } from '@/lib/logger'
+
+// Simple log
+apiLogger.info('Processing request')
+
+// With context
+apiLogger.info({ userId, orderId }, 'Processing order')
+
+// Error logging
+apiLogger.error({ ...formatError(error) }, 'Failed to process')
+```
+
+Available child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `webhookLogger`, `cronLogger`, `integrationLogger`

@@ -9,6 +9,7 @@ import { checkRateLimit, addRateLimitHeaders } from '@/lib/api/middleware/rate-l
 import { addCorsHeaders, handleCorsPrelight } from '@/lib/api/middleware/cors'
 import { getDiningData, searchDining } from '@/lib/integrations/yelp/client'
 import { withLocationCache, createApiCacheKey, withCache } from '@/lib/api/cache'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Dining API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'Dining API error')
     const response = apiError('INTERNAL_ERROR', 'Failed to fetch dining data.', 500, requestId)
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   }

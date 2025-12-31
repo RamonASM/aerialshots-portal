@@ -14,8 +14,7 @@ export async function GET() {
     const supabase = await createClient()
 
     // Get all alerts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: alerts, error: alertsError } = await (supabase as any)
+    const { data: alerts, error: alertsError } = await supabase
       .from('analytics_alerts')
       .select('*')
       .order('created_at', { ascending: false })
@@ -26,8 +25,7 @@ export async function GET() {
     }
 
     // Get recent alert history
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: history, error: historyError } = await (supabase as any)
+    const { data: history, error: historyError } = await supabase
       .from('analytics_alert_history')
       .select(`
         *,
@@ -40,8 +38,7 @@ export async function GET() {
       console.error('Error fetching history:', historyError)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formattedHistory = history?.map((h: any) => ({
+    const formattedHistory = history?.map((h) => ({
       ...h,
       alert_name: h.alert?.name || 'Unknown Alert',
     })) || []
@@ -74,8 +71,7 @@ export async function POST(request: NextRequest) {
       .eq('auth_user_id', user.id)
       .single()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: alert, error } = await (supabase as any)
+    const { data: alert, error } = await supabase
       .from('analytics_alerts')
       .insert({
         name: body.name,

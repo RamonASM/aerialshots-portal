@@ -82,9 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert location
-    // Note: photographer_locations table is new, types not regenerated
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: location, error } = await (adminClient as any)
+    const { data: location, error } = await adminClient
       .from('photographer_locations')
       .upsert({
         staff_id: staff.id,
@@ -162,9 +160,7 @@ export async function GET(request: NextRequest) {
 
     if (staff) {
       // Staff member - can view their own location or all locations
-      // Note: photographer_locations table is new, types not regenerated
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (adminClient as any)
+      let query = adminClient
         .from('photographer_locations')
         .select(`
           *,
@@ -190,13 +186,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is a client
-    // Note: clients table may need type regeneration
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: client } = await (adminClient as any)
+    const { data: client } = await adminClient
       .from('clients')
       .select('id')
       .eq('email', user.email!)
-      .single() as { data: { id: string } | null }
+      .single()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
@@ -211,13 +205,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify client owns this listing
-    // Note: listings.client_id may need type regeneration
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: listing } = await (adminClient as any)
+    const { data: listing } = await adminClient
       .from('listings')
       .select('id, client_id')
       .eq('id', listingId)
-      .single() as { data: { id: string; client_id: string | null } | null }
+      .single()
 
     if (!listing || listing.client_id !== client.id) {
       return NextResponse.json(
@@ -227,9 +219,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get photographer location for this listing
-    // Note: photographer_locations table is new, types not regenerated
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: location, error } = await (adminClient as any)
+    const { data: location, error } = await adminClient
       .from('photographer_locations')
       .select(`
         id,
@@ -293,9 +283,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Update status to offline
-    // Note: photographer_locations table is new, types not regenerated
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (adminClient as any)
+    await adminClient
       .from('photographer_locations')
       .update({ status: 'offline', last_updated_at: new Date().toISOString() })
       .eq('staff_id', staff.id)

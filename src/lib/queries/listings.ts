@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { unstable_cache } from 'next/cache'
+import { dbLogger, formatError } from '@/lib/logger'
 import type { Database } from '@/lib/supabase/types'
 import {
   CACHE_REVALIDATION,
@@ -54,7 +55,7 @@ async function fetchListingById(listingId: string): Promise<ListingWithDetails |
     .single()
 
   if (error || !listing) {
-    console.error('Error fetching listing:', error)
+    dbLogger.error({ listingId, ...formatError(error) }, 'Error fetching listing')
     return null
   }
 
@@ -77,7 +78,7 @@ export const getListingById = unstable_cache(
  * This function is kept for backwards compatibility but will be removed in a future release.
  */
 async function fetchListingByAryeoId(aryeoListingId: string): Promise<ListingWithDetails | null> {
-  console.warn('fetchListingByAryeoId is deprecated. Use getListingById instead.')
+  dbLogger.warn({ aryeoListingId }, 'fetchListingByAryeoId is deprecated - use getListingById instead')
   const supabase = await createClient()
 
   const { data: listing, error } = await supabase
@@ -91,7 +92,7 @@ async function fetchListingByAryeoId(aryeoListingId: string): Promise<ListingWit
     .single()
 
   if (error || !listing) {
-    console.error('Error fetching listing by legacy Aryeo ID:', error)
+    dbLogger.error({ aryeoListingId, ...formatError(error) }, 'Error fetching listing by legacy Aryeo ID')
     return null
   }
 
@@ -125,7 +126,7 @@ async function fetchAgentListings(agentId: string): Promise<ListingWithDetails[]
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching agent listings:', error)
+    dbLogger.error({ agentId, ...formatError(error) }, 'Error fetching agent listings')
     return []
   }
 

@@ -12,6 +12,7 @@ import { getAirportProximity, getBeachProximity } from '@/lib/integrations/dista
 import { searchNearbyPlaces } from '@/lib/integrations/google-places/client'
 import type { AttractionsData, NearbyAttraction } from '@/lib/api/types'
 import { withLocationCache } from '@/lib/api/cache'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function OPTIONS(request: NextRequest) {
   return handleCorsPrelight(request)
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
 
     return addRateLimitHeaders(addCorsHeaders(response, request), validation.keyData, rateLimitResult)
   } catch (error) {
-    console.error('Attractions API error:', error)
+    apiLogger.error({ requestId, lat, lng, ...formatError(error) }, 'Attractions API error')
 
     const response = apiError(
       'INTERNAL_ERROR',

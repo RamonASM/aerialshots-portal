@@ -73,11 +73,12 @@ export default function BookPage() {
           </Link>
 
           {/* Content Retainer */}
-          <div className="relative bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 opacity-70">
+          <Link
+            href="/book/retainer"
+            className="group relative bg-neutral-900 border border-neutral-800 rounded-2xl p-8 hover:border-purple-500/50 transition-all"
+          >
             <div className="absolute top-4 right-4">
-              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full">
-                Coming Soon
-              </span>
+              <ArrowRight className="w-5 h-5 text-neutral-500 group-hover:text-purple-400 transition-colors" />
             </div>
 
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-purple-500/10 mb-6">
@@ -113,14 +114,11 @@ export default function BookPage() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-neutral-800">
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 text-neutral-400 font-medium hover:text-purple-400 transition-colors"
-              >
-                View Pricing <ArrowRight className="w-4 h-4" />
-              </Link>
+              <span className="inline-flex items-center gap-2 text-purple-400 font-medium group-hover:gap-3 transition-all">
+                View Packages <ArrowRight className="w-4 h-4" />
+              </span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Trust Indicators */}

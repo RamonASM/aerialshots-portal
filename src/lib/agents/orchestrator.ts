@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { executeAgent } from './executor'
 import { AppError } from '@/lib/utils/errors'
+import { agentLogger, formatError } from '@/lib/logger'
 import type {
   WorkflowDefinition,
   WorkflowTrigger,
@@ -22,7 +23,7 @@ const workflowDefinitions = new Map<string, WorkflowDefinition>()
  */
 export function registerWorkflow(definition: WorkflowDefinition): void {
   workflowDefinitions.set(definition.id, definition)
-  console.log(`Registered workflow: ${definition.id} (${definition.name})`)
+  agentLogger.debug({ workflowId: definition.id, workflowName: definition.name }, 'Registered workflow')
 }
 
 /**
@@ -94,7 +95,7 @@ export async function executeWorkflow(
     )
   }
 
-  console.log(`Starting workflow execution: ${workflowExecution.id} (${definition.name})`)
+  agentLogger.info({ workflowId: workflowExecution.id, workflowName: definition.name }, 'Starting workflow execution')
 
   // Initialize workflow context
   const context: WorkflowContext = {
@@ -123,9 +124,11 @@ export async function executeWorkflow(
     for (let groupIndex = 0; groupIndex < stepGroups.length; groupIndex++) {
       const stepGroup = stepGroups[groupIndex]
 
-      console.log(
-        `Executing step group ${groupIndex + 1}/${stepGroups.length}: ${stepGroup.length} step(s)`
-      )
+      agentLogger.debug({
+        groupIndex: groupIndex + 1,
+        totalGroups: stepGroups.length,
+        stepCount: stepGroup.length,
+      }, 'Executing step group')
 
       // Execute steps in the group (parallel if applicable)
       const groupResults = await executeStepGroup(
@@ -145,10 +148,10 @@ export async function executeWorkflow(
           try {
             await step.onComplete(result, context)
           } catch (error) {
-            console.error(
-              `Error in onComplete callback for ${step.agentSlug}:`,
-              error
-            )
+            agentLogger.error({
+              agentSlug: step.agentSlug,
+              ...formatError(error),
+            }, 'Error in onComplete callback')
           }
         }
 
@@ -174,12 +177,12 @@ export async function executeWorkflow(
 
     // All steps completed successfully
     status = 'completed'
-    console.log(`Workflow ${workflowExecution.id} completed successfully`)
+    agentLogger.info({ workflowId: workflowExecution.id }, 'Workflow completed successfully')
   } catch (error) {
     status = 'failed'
     errorMessage =
       error instanceof Error ? error.message : 'Unknown workflow error'
-    console.error(`Workflow ${workflowExecution.id} failed:`, error)
+    agentLogger.error({ workflowId: workflowExecution.id, ...formatError(error) }, 'Workflow failed')
   }
 
   // Update final workflow status
@@ -265,7 +268,7 @@ async function executeStepGroup(
       if (step.condition) {
         const shouldExecute = await step.condition(context)
         if (!shouldExecute) {
-          console.log(`Skipping step ${step.agentSlug} (condition not met)`)
+          agentLogger.debug({ agentSlug: step.agentSlug }, 'Skipping step (condition not met)')
           executionStep.status = 'cancelled'
           executionStep.completedAt = new Date().toISOString()
           return {
@@ -280,7 +283,7 @@ async function executeStepGroup(
         ? await step.inputMapper(context)
         : { ...context.sharedContext }
 
-      console.log(`Executing agent: ${step.agentSlug}`)
+      agentLogger.debug({ agentSlug: step.agentSlug }, 'Executing agent')
       executionStep.status = 'running'
 
       // Execute the agent
@@ -316,7 +319,7 @@ async function executeStepGroup(
       executionStep.error = errorMessage
       executionStep.completedAt = new Date().toISOString()
 
-      console.error(`Error executing agent ${step.agentSlug}:`, error)
+      agentLogger.error({ agentSlug: step.agentSlug, ...formatError(error) }, 'Error executing agent')
 
       return {
         success: false,
@@ -357,7 +360,7 @@ async function updateWorkflowStatus(
     .eq('id', workflowId)
 
   if (error) {
-    console.error('Failed to update workflow status:', error)
+    agentLogger.error({ workflowId, ...formatError(error) }, 'Failed to update workflow status')
     throw new AppError(
       'Failed to update workflow status',
       'WORKFLOW_UPDATE_FAILED',
@@ -382,7 +385,7 @@ export async function getWorkflowExecution(
     .single()
 
   if (error) {
-    console.error('Error fetching workflow execution:', error)
+    agentLogger.error({ workflowId, ...formatError(error) }, 'Error fetching workflow execution')
     return null
   }
 
@@ -473,7 +476,7 @@ export async function getWorkflowsForResource(
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching workflows:', error)
+    agentLogger.error({ resourceType, resourceId, ...formatError(error) }, 'Error fetching workflows')
     return []
   }
 

@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
+import type { DiscountCode } from '@/lib/supabase/types'
 
 const validateSchema = z.object({
   code: z.string().min(1).max(50),
   subtotal: z.number().min(0),
 })
-
-type CouponData = {
-  expires_at: string | null
-  max_uses: number | null
-  current_uses: number
-  min_order_cents: number | null
-  discount_type: string
-  discount_value: number
-  max_discount_cents: number | null
-  description: string | null
-}
 
 /**
  * POST /api/coupons/validate
@@ -37,16 +27,13 @@ export async function POST(request: NextRequest) {
     const { code, subtotal } = parseResult.data
     const supabase = createAdminClient()
 
-    // Look up the coupon - use any to bypass type check for missing table type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    // Look up the coupon
+    const { data: coupon, error } = await supabase
       .from('discount_codes')
       .select('*')
       .eq('code', code.toUpperCase())
       .eq('is_active', true)
       .single()
-
-    const coupon = data as CouponData | null
 
     if (error || !coupon) {
       return NextResponse.json({
@@ -83,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate discount
     let discount = 0
-    if (coupon.discount_type === 'percent') {
+    if (coupon.discount_type === 'percentage') {
       discount = coupon.discount_value
       // Cap percentage discounts if there's a max
       if (coupon.max_discount_cents) {
@@ -99,7 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       valid: true,
       discount,
-      type: coupon.discount_type as 'percent' | 'fixed',
+      type: coupon.discount_type,
       message: coupon.description || 'Coupon applied!',
       minOrder: coupon.min_order_cents ? coupon.min_order_cents / 100 : undefined,
       expiresAt: coupon.expires_at,

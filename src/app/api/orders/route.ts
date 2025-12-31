@@ -5,6 +5,8 @@ import {
   sendOrderConfirmationEmail,
   sendOrderNotificationEmail,
 } from '@/lib/email/resend'
+import { executeWorkflow } from '@/lib/agents/orchestrator'
+import { apiLogger, formatError } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -102,11 +104,72 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Order creation error:', error)
+      apiLogger.error({ ...formatError(error) }, 'Order creation error')
       return NextResponse.json(
         { error: 'Failed to create order' },
         { status: 500 }
       )
+    }
+
+    // Create a listing for this order (so shoot can be scheduled)
+    let listingId: string | null = null
+    try {
+      const { data: listing, error: listingError } = await supabase
+        .from('listings')
+        .insert({
+          agent_id: agentId || null,
+          address: propertyAddress,
+          city: propertyCity,
+          state: propertyState,
+          zip: propertyZip,
+          sqft: propertySqft,
+          beds: propertyBeds,
+          baths: propertyBaths,
+          ops_status: 'pending',
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
+          scheduled_at: scheduledAt,
+          special_instructions: specialInstructions,
+        })
+        .select('id')
+        .single()
+
+      if (!listingError && listing) {
+        listingId = listing.id
+
+        // Link order to listing
+        await supabase
+          .from('orders')
+          .update({ listing_id: listing.id })
+          .eq('id', order.id)
+
+        // Trigger new-listing workflow in background (don't block response)
+        executeWorkflow('new-listing', {
+          event: 'listing.created',
+          listingId: listing.id,
+          data: {
+            agentId: agentId,
+            address: propertyAddress,
+            city: propertyCity,
+            state: propertyState,
+            zip: propertyZip,
+            sqft: propertySqft,
+            beds: propertyBeds,
+            baths: propertyBaths,
+            services: addons,
+            isFirstOrder: false, // Could check order history
+          },
+        }).catch((workflowError) => {
+          apiLogger.error({ listingId: listing.id, ...formatError(workflowError) }, 'Failed to trigger new-listing workflow')
+        })
+
+        apiLogger.info({ orderId: order.id, listingId: listing.id }, 'Created listing for order')
+      } else {
+        apiLogger.error({ orderId: order.id, ...formatError(listingError) }, 'Failed to create listing for order')
+      }
+    } catch (listingErr) {
+      apiLogger.error({ orderId: order.id, ...formatError(listingErr) }, 'Error creating listing')
     }
 
     // Send confirmation emails (don't block on these)
@@ -136,7 +199,7 @@ export async function POST(request: NextRequest) {
         total: subtotalCents / 100,
       }),
     ]).catch((emailError) => {
-      console.error('Failed to send order emails:', emailError)
+      apiLogger.error({ orderId: order.id, ...formatError(emailError) }, 'Failed to send order emails')
     })
 
     return NextResponse.json({
@@ -145,10 +208,11 @@ export async function POST(request: NextRequest) {
         id: order.id,
         status: order.status,
         total: order.total_cents,
+        listing_id: listingId,
       },
     })
   } catch (error) {
-    console.error('Order API error:', error)
+    apiLogger.error({ ...formatError(error) }, 'Order API error')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -218,7 +282,7 @@ export async function GET(request: NextRequest) {
     const { data: orders, error } = await query
 
     if (error) {
-      console.error('Orders fetch error:', error)
+      apiLogger.error({ ...formatError(error) }, 'Orders fetch error')
       return NextResponse.json(
         { error: 'Failed to fetch orders' },
         { status: 500 }
@@ -227,7 +291,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ orders })
   } catch (error) {
-    console.error('Orders API error:', error)
+    apiLogger.error({ ...formatError(error) }, 'Orders API error')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

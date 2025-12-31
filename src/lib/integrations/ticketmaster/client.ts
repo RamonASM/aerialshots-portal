@@ -1,6 +1,10 @@
 // Ticketmaster Discovery API Client
 // Documentation: https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
 
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'ticketmaster' })
+
 export interface TicketmasterEvent {
   id: string
   name: string
@@ -134,7 +138,7 @@ export async function searchLocalEvents(
 ): Promise<LocalEvent[]> {
   const apiKey = process.env.TICKETMASTER_API_KEY
   if (!apiKey) {
-    console.warn('TICKETMASTER_API_KEY not configured')
+    logger.warn('TICKETMASTER_API_KEY not configured')
     return []
   }
 
@@ -182,7 +186,7 @@ export async function searchLocalEvents(
       }
     })
   } catch (error) {
-    console.error('Error fetching Ticketmaster events:', error)
+    logger.error({ ...formatError(error) }, 'Error fetching Ticketmaster events')
     return []
   }
 }

@@ -3,6 +3,9 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/payments/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { apiLogger, formatError } from '@/lib/logger'
+
+const logger = apiLogger.child({ route: 'payments/webhook' })
 
 /**
  * Check if a Stripe event has already been processed (idempotency check)
@@ -51,7 +54,7 @@ async function recordWebhookEvent(
   )
 
   if (dbError) {
-    console.error('Error recording webhook event:', dbError)
+    logger.error({ ...formatError(dbError) }, 'Error recording webhook event')
   }
 }
 
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
     event = getStripe().webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+    logger.error({ ...formatError(err) }, 'Webhook signature verification failed')
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   // Idempotency check: Skip if already processed
   if (await isEventProcessed(supabase, event.id)) {
-    console.log(`Stripe webhook ${event.id} already processed, skipping`)
+    logger.debug({ eventId: event.id }, 'Stripe webhook already processed, skipping')
     return NextResponse.json({ received: true, skipped: true })
   }
 
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log('Payment succeeded:', paymentIntent.id)
+        logger.info({ paymentIntentId: paymentIntent.id }, 'Payment succeeded')
 
         // Update order status
         const { error } = await supabase
@@ -111,7 +114,7 @@ export async function POST(request: NextRequest) {
           .eq('payment_intent_id', paymentIntent.id)
 
         if (error) {
-          console.error('Error updating order:', error)
+          logger.error({ paymentIntentId: paymentIntent.id, ...formatError(error) }, 'Error updating order')
         }
 
         // Add to status history
@@ -136,7 +139,7 @@ export async function POST(request: NextRequest) {
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log('Payment failed:', paymentIntent.id)
+        logger.warn({ paymentIntentId: paymentIntent.id }, 'Payment failed')
 
         // Update order status
         const { error } = await supabase
@@ -147,7 +150,7 @@ export async function POST(request: NextRequest) {
           .eq('payment_intent_id', paymentIntent.id)
 
         if (error) {
-          console.error('Error updating order:', error)
+          logger.error({ paymentIntentId: paymentIntent.id, ...formatError(error) }, 'Error updating order')
         }
 
         break
@@ -155,7 +158,7 @@ export async function POST(request: NextRequest) {
 
       case 'payment_intent.canceled': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log('Payment canceled:', paymentIntent.id)
+        logger.info({ paymentIntentId: paymentIntent.id }, 'Payment canceled')
 
         // Update order status
         const { error } = await supabase
@@ -167,7 +170,7 @@ export async function POST(request: NextRequest) {
           .eq('payment_intent_id', paymentIntent.id)
 
         if (error) {
-          console.error('Error updating order:', error)
+          logger.error({ paymentIntentId: paymentIntent.id, ...formatError(error) }, 'Error updating order')
         }
 
         break
@@ -176,7 +179,7 @@ export async function POST(request: NextRequest) {
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge
         const paymentIntentId = charge.payment_intent as string
-        console.log('Charge refunded:', paymentIntentId)
+        logger.info({ paymentIntentId }, 'Charge refunded')
 
         // Update order status
         const { error } = await supabase
@@ -188,14 +191,14 @@ export async function POST(request: NextRequest) {
           .eq('payment_intent_id', paymentIntentId)
 
         if (error) {
-          console.error('Error updating order:', error)
+          logger.error({ paymentIntentId, ...formatError(error) }, 'Error updating order')
         }
 
         break
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        logger.debug({ eventType: event.type }, 'Unhandled event type')
     }
 
     // Mark event as successfully processed
@@ -203,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook handler error:', error)
+    logger.error({ ...formatError(error) }, 'Webhook handler error')
 
     // Mark event as failed
     await recordWebhookEvent(

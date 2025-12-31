@@ -30,8 +30,7 @@ export async function GET() {
     const supabase = await createClient()
     await requireStaff(supabase)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('review_request_settings')
       .select('*')
       .limit(1)
@@ -68,8 +67,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if settings exist
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
+    const { data: existing } = await supabase
       .from('review_request_settings')
       .select('id')
       .limit(1)
@@ -79,8 +77,7 @@ export async function PATCH(request: NextRequest) {
 
     if (existing) {
       // Update existing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = await (supabase as any)
+      result = await supabase
         .from('review_request_settings')
         .update({
           ...parsed.data,
@@ -91,8 +88,7 @@ export async function PATCH(request: NextRequest) {
         .single()
     } else {
       // Create new
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result = await (supabase as any)
+      result = await supabase
         .from('review_request_settings')
         .insert(parsed.data)
         .select()

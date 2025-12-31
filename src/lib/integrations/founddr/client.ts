@@ -38,7 +38,7 @@ export class FoundDRClient {
 
     // SECURITY: Require explicit URL in production - never default to localhost
     if (isProduction && !apiUrl) {
-      console.warn('[FoundDR] FOUNDDR_API_URL not configured - FoundDR integration disabled in production')
+      apiLogger.warn('FOUNDDR_API_URL not configured - FoundDR integration disabled in production')
     }
 
     this.config = {

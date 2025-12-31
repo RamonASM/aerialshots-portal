@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { webhookLogger, formatError } from '@/lib/logger'
 import crypto from 'crypto'
 
 /**
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     if (webhookSecret) {
       // Secret is configured - require valid signature
       if (!signature) {
-        console.error('Cubicasa webhook signature missing')
+        webhookLogger.error({ source: 'cubicasa' }, 'Webhook signature missing')
         return NextResponse.json(
           { error: 'Signature required' },
           { status: 401 }
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
       const isValid = verifySignature(rawBody, signature, webhookSecret)
       if (!isValid) {
-        console.error('Invalid Cubicasa webhook signature')
+        webhookLogger.error({ source: 'cubicasa' }, 'Invalid webhook signature')
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       }
     } else if (isProduction) {
       // No secret in production - reject request
-      console.error('CUBICASA_WEBHOOK_SECRET not configured in production')
+      webhookLogger.error({ source: 'cubicasa' }, 'CUBICASA_WEBHOOK_SECRET not configured in production')
       return NextResponse.json(
         { error: 'Webhook secret not configured' },
         { status: 500 }
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     const payload: CubicasaWebhookPayload = JSON.parse(rawBody)
     const { event, order_id, data, timestamp } = payload
 
-    console.log(`[Cubicasa Webhook] Received event: ${event} for order: ${order_id}`)
+    webhookLogger.info({ source: 'cubicasa', event, orderId: order_id }, 'Received Cubicasa webhook')
 
     const supabase = await createClient()
 
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (findError || !listing) {
-      console.warn(`[Cubicasa Webhook] No listing found for order_id: ${order_id}`)
+      webhookLogger.warn({ source: 'cubicasa', orderId: order_id }, 'No listing found for Cubicasa order')
       // Still return 200 to acknowledge receipt
       return NextResponse.json({
         acknowledged: true,
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
       .eq('id', listing.id)
 
     if (updateError) {
-      console.error('[Cubicasa Webhook] Error updating listing:', updateError)
+      webhookLogger.error({ source: 'cubicasa', listingId: listing.id, ...formatError(updateError) }, 'Error updating listing')
       throw updateError
     }
 
@@ -236,11 +237,11 @@ export async function POST(request: NextRequest) {
         actor_type: 'system',
       })
       if (eventError) {
-        console.error('[Cubicasa Webhook] Failed to create QC handoff event:', eventError)
+        webhookLogger.error({ source: 'cubicasa', listingId: listing.id, ...formatError(eventError) }, 'Failed to create QC handoff event')
       }
     }
 
-    console.log(`[Cubicasa Webhook] Successfully processed ${event} for listing ${listing.id}`)
+    webhookLogger.info({ source: 'cubicasa', event, listingId: listing.id, status: newStatus }, 'Successfully processed Cubicasa webhook')
 
     return NextResponse.json({
       success: true,
@@ -249,7 +250,7 @@ export async function POST(request: NextRequest) {
       new_status: newStatus,
     })
   } catch (error) {
-    console.error('[Cubicasa Webhook] Error processing webhook:', error)
+    webhookLogger.error({ source: 'cubicasa', ...formatError(error) }, 'Error processing Cubicasa webhook')
     return NextResponse.json(
       { error: 'Failed to process webhook' },
       { status: 500 }

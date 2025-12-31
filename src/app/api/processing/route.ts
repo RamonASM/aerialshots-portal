@@ -8,6 +8,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRunPodClient } from '@/lib/integrations/founddr'
+import { apiLogger, formatError } from '@/lib/logger'
+
+const logger = apiLogger.child({ route: 'processing' })
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (jobError) {
-      console.error('Failed to create processing job:', jobError)
+      logger.error({ ...formatError(jobError) }, 'Failed to create processing job')
       return NextResponse.json({ error: 'Failed to create processing job' }, { status: 500 })
     }
 
@@ -94,13 +97,13 @@ export async function POST(request: NextRequest) {
         .createSignedUrl(path, 300) // 5 minute expiry
 
       if (signError || !signedUrl?.signedUrl) {
-        console.error('Failed to create signed URL:', path, signError)
+        logger.error({ path, ...formatError(signError) }, 'Failed to create signed URL')
         return NextResponse.json({ error: `Failed to access image: ${path}` }, { status: 500 })
       }
       signedUrls.push(signedUrl.signedUrl)
     }
 
-    console.log(`Starting RunPod HDR processing for listing ${listing_id} with ${storage_paths.length} brackets`)
+    logger.info({ listingId: listing_id, bracketCount: storage_paths.length }, 'Starting RunPod HDR processing')
 
     try {
       // Process via RunPod using signed URLs
@@ -125,7 +128,7 @@ export async function POST(request: NextRequest) {
           })
 
         if (uploadError) {
-          console.error('Failed to upload processed image:', uploadError)
+          logger.error({ ...formatError(uploadError) }, 'Failed to upload processed image')
           throw new Error('Failed to upload processed image')
         }
 
@@ -169,7 +172,10 @@ export async function POST(request: NextRequest) {
           actor_type: 'staff',
         })
 
-        console.log(`RunPod HDR processing completed for listing ${listing_id} in ${result.output.metrics.total_time_ms}ms`)
+        logger.info({
+          listingId: listing_id,
+          processingTimeMs: result.output.metrics.total_time_ms
+        }, 'RunPod HDR processing completed')
 
         return NextResponse.json({
           success: true,
@@ -192,7 +198,7 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', processingJob.id)
 
-        console.error(`RunPod HDR processing failed for listing ${listing_id}:`, result.error)
+        logger.error({ listingId: listing_id, error: result.error }, 'RunPod HDR processing failed')
 
         return NextResponse.json({
           success: false,
@@ -210,7 +216,7 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', processingJob.id)
 
-      console.error('RunPod request failed:', runpodError)
+      logger.error({ ...formatError(runpodError) }, 'RunPod request failed')
 
       return NextResponse.json(
         { error: 'HDR processing request failed', details: runpodError instanceof Error ? runpodError.message : 'Unknown error' },
@@ -218,7 +224,7 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error('Processing API error:', error)
+    logger.error({ ...formatError(error) }, 'Processing API error')
     return NextResponse.json(
       { error: 'Failed to start HDR processing' },
       { status: 500 }
@@ -265,7 +271,7 @@ export async function GET(request: NextRequest) {
       processing_time_ms: job.processing_time_ms,
     })
   } catch (error) {
-    console.error('Get processing status error:', error)
+    logger.error({ ...formatError(error) }, 'Get processing status error')
     return NextResponse.json(
       { error: 'Failed to get processing status' },
       { status: 500 }

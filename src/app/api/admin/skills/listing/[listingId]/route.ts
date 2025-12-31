@@ -32,8 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const adminClient = createAdminClient()
 
     // Get all executions for this listing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: executions, error: execError } = await (adminClient as any)
+    const { data: executions, error: execError } = await adminClient
       .from('skill_executions')
       .select('*')
       .eq('listing_id', listingId)
@@ -45,8 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get skill outputs for this listing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: outputs, error: outputError } = await (adminClient as any)
+    const { data: outputs, error: outputError } = await adminClient
       .from('listing_skill_outputs')
       .select('*')
       .eq('listing_id', listingId)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { Database } from '@/lib/supabase/types'
 
 // GET /api/admin/team/staff - List all staff members
 export async function GET() {
@@ -57,23 +58,28 @@ export async function GET() {
     }> = []
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: assignments } = await (adminSupabase as any)
+      type StaffTerritoryRow = Database['public']['Tables']['staff_territories']['Row']
+      type ServiceTerritoryRow = Database['public']['Tables']['service_territories']['Row']
+
+      const assignmentsQuery = await adminSupabase
         .from('staff_territories')
         .select('staff_id, territory_id, is_primary')
 
+      const assignments = assignmentsQuery.data as Pick<StaffTerritoryRow, 'staff_id' | 'territory_id' | 'is_primary'>[] | null
+
       if (assignments) {
         // Get territory names
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: territories } = await (adminSupabase as any)
+        const territoriesQuery = await adminSupabase
           .from('service_territories')
           .select('id, name')
 
+        const territories = territoriesQuery.data as Pick<ServiceTerritoryRow, 'id' | 'name'>[] | null
+
         const territoryMap = new Map(
-          territories?.map((t: { id: string; name: string }) => [t.id, t.name]) || []
+          territories?.map(t => [t.id, t.name]) || []
         )
 
-        staffTerritories = assignments.map((a: { staff_id: string; territory_id: string; is_primary: boolean }) => ({
+        staffTerritories = assignments.map(a => ({
           ...a,
           territory_name: territoryMap.get(a.territory_id),
         }))

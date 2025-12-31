@@ -29,13 +29,14 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Cast to any since credit_packages table isn't in generated types yet
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: packages, error } = await (supabase as any)
+    // Fetch active credit packages
+    const { data: packagesData, error } = await supabase
       .from('credit_packages')
       .select('*')
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
+
+    const packages = packagesData as CreditPackage[] | null
 
     if (error) {
       apiLogger.error({ error: formatError(error) }, 'Error fetching credit packages')
@@ -43,7 +44,7 @@ export async function GET() {
     }
 
     // Add computed fields for display
-    const packagesWithDisplay = (packages as CreditPackage[] | null)?.map((pkg) => ({
+    const packagesWithDisplay = packages?.map((pkg) => ({
       ...pkg,
       price_dollars: pkg.price_cents / 100,
       price_per_credit: (pkg.price_cents / 100 / pkg.credit_amount).toFixed(3),
@@ -103,14 +104,15 @@ export async function POST(request: NextRequest) {
 
     const { packageId } = parseResult.data
 
-    // Get package from database (cast to any since table not in types yet)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: selectedPackage, error: pkgError } = await (supabase as any)
+    // Get package from database
+    const { data: selectedPackageData, error: pkgError } = await supabase
       .from('credit_packages')
       .select('*')
       .eq('id', packageId)
       .eq('is_active', true)
       .single()
+
+    const selectedPackage = selectedPackageData as CreditPackage | null
 
     if (pkgError || !selectedPackage) {
       return NextResponse.json({ error: 'Package not found' }, { status: 404 })

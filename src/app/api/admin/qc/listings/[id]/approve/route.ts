@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { notifyDeliveryReady } from '@/lib/notifications'
+import { executeWorkflow } from '@/lib/agents/orchestrator'
+import { qcLogger, formatError } from '@/lib/logger'
 
 export async function POST(
   request: Request,
@@ -56,7 +57,7 @@ export async function POST(
       .eq('listing_id', id)
 
     if (assetsError) {
-      console.error('Error updating media assets:', assetsError)
+      qcLogger.error({ listingId: id, ...formatError(assetsError) }, 'Error updating media assets')
     }
 
     // Log the event
@@ -68,33 +69,43 @@ export async function POST(
       actor_type: 'staff',
     })
 
-    // Send delivery notification to the agent
+    // Get approved media count and types for workflow
+    const { data: mediaAssets } = await supabase
+      .from('media_assets')
+      .select('id, type, media_url')
+      .eq('listing_id', id)
+      .eq('qc_status', 'approved')
+
+    const approvedCount = mediaAssets?.length || 0
+    const mediaTypes = [...new Set(mediaAssets?.map(a => a.type).filter(Boolean) || [])]
+    const photoUrls = mediaAssets
+      ?.filter(a => a.type === 'photo' && a.media_url)
+      .map(a => a.media_url) || []
+
+    // Trigger post-delivery workflow
+    // This workflow handles: QC analysis, media tips, delivery notification,
+    // care tasks, video creation, content generation, and campaign launch
     try {
-      // Fetch agent details
-      if (!listing.agent_id) throw new Error('No agent on listing')
+      qcLogger.info({ listingId: id, approvedCount, mediaTypes }, 'Triggering post-delivery workflow')
 
-      const { data: agent } = await supabase
-        .from('agents')
-        .select('id, name, email')
-        .eq('id', listing.agent_id)
-        .single()
+      await executeWorkflow('post-delivery', {
+        event: 'qc.approved',
+        listingId: id,
+        data: {
+          agentId: listing.agent_id,
+          address: listing.address,
+          approvedCount,
+          mediaTypes,
+          photos: photoUrls,
+          approvedAt: new Date().toISOString(),
+          approvedBy: staff.id,
+        },
+      })
 
-      if (agent?.email) {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://portal.aerialshots.media'
-        const deliveryUrl = `${baseUrl}/delivery/${id}`
-
-        await notifyDeliveryReady(
-          { email: agent.email, name: agent.name || 'Agent' },
-          {
-            agentName: agent.name || 'Agent',
-            listingAddress: listing.address || 'Your property',
-            deliveryUrl,
-          }
-        )
-      }
-    } catch (notifyError) {
-      // Log but don't fail the request if notification fails
-      console.error('Failed to send delivery notification:', notifyError)
+      qcLogger.info({ listingId: id }, 'Post-delivery workflow triggered successfully')
+    } catch (workflowError) {
+      // Log but don't fail the request if workflow fails
+      qcLogger.error({ listingId: id, ...formatError(workflowError) }, 'Failed to trigger post-delivery workflow')
     }
 
     return NextResponse.json({
@@ -102,7 +113,7 @@ export async function POST(
       listing,
     })
   } catch (error) {
-    console.error('Error approving listing:', error)
+    qcLogger.error({ ...formatError(error) }, 'Error approving listing')
     return NextResponse.json(
       { error: 'Failed to approve listing' },
       { status: 500 }

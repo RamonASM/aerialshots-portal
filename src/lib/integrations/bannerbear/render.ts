@@ -2,6 +2,9 @@
 // Handles the full rendering process for ListingLaunch carousels
 
 import { createImage, buildSlideModifications, type BannerbearImage } from './client'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'bannerbear' })
 import { TEMPLATES } from './templates'
 import { resolveMediaUrl } from '@/lib/storage/resolve-url'
 import type { CarouselSlide } from '@/lib/supabase/types'
@@ -124,7 +127,7 @@ export async function renderCarousel(
 
       pendingRenders.push(render)
     } catch (error) {
-      console.error(`Error rendering slide ${i + 1}:`, error)
+      logger.error({ slideNumber: i + 1, ...formatError(error) }, 'Error rendering slide')
       errors.push(`Failed to render slide ${i + 1}`)
     }
 

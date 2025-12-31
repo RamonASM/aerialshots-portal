@@ -5,6 +5,9 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'canva' })
 import { CanvaTokens, getAuthorizationUrl, exchangeCodeForTokens, refreshAccessToken } from './client'
 
 // Store OAuth state in database for CSRF protection
@@ -177,7 +180,7 @@ export async function refreshAgentTokensIfNeeded(
 
     return newTokens
   } catch (error) {
-    console.error('Failed to refresh Canva tokens:', error)
+    logger.error({ ...formatError(error) }, 'Failed to refresh Canva tokens')
     return null
   }
 }

@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
       // Get listing address if available
       let listingAddress = ''
       if (request.listing_id) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: listing } = await (supabase as any)
+        const { data: listing } = await supabase
           .from('listings')
           .select('address')
           .eq('id', request.listing_id)
@@ -59,8 +58,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Send the request
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const success = await sendReviewRequest(request as any, listingAddress)
+      const success = await sendReviewRequest(request, listingAddress)
 
       if (success) {
         sentCount++

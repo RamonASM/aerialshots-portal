@@ -74,6 +74,7 @@ export interface AgentExecutionResult {
   error?: string
   errorCode?: string
   tokensUsed?: number
+  warnings?: string[]
 }
 
 // Request to execute an agent

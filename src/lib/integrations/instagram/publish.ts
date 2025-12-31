@@ -1,6 +1,10 @@
 // Instagram Content Publishing via Graph API
 // Documentation: https://developers.facebook.com/docs/instagram-api/guides/content-publishing
 
+import { integrationLogger, formatError } from '@/lib/logger'
+
+const logger = integrationLogger.child({ integration: 'instagram-publish' })
+
 interface MediaContainer {
   id: string
 }
@@ -45,7 +49,7 @@ export async function createImageContainer(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('Create container error:', error)
+    logger.error({ error }, 'Create container error')
     throw new Error(`Failed to create image container: ${error.error?.message || 'Unknown error'}`)
   }
 
@@ -80,7 +84,7 @@ export async function createCarouselContainer(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('Create carousel container error:', error)
+    logger.error({ error }, 'Create carousel container error')
     throw new Error(`Failed to create carousel container: ${error.error?.message || 'Unknown error'}`)
   }
 
@@ -107,7 +111,7 @@ export async function publishMedia(
 
   if (!response.ok) {
     const error = await response.json()
-    console.error('Publish media error:', error)
+    logger.error({ error }, 'Publish media error')
     throw new Error(`Failed to publish media: ${error.error?.message || 'Unknown error'}`)
   }
 
@@ -183,7 +187,7 @@ export async function publishCarousel(
         await new Promise(resolve => setTimeout(resolve, 500))
       } catch (containerError) {
         // Log which item failed for debugging
-        console.error(`Failed to create container for item ${i + 1}:`, containerError)
+        logger.error({ itemIndex: i + 1, ...formatError(containerError) }, 'Failed to create container for item')
         throw new Error(`Failed to create image container for item ${i + 1}: ${containerError instanceof Error ? containerError.message : 'Unknown error'}`)
       }
     }
@@ -199,7 +203,7 @@ export async function publishCarousel(
       )
       createdContainerIds.push(carouselContainer.id)
     } catch (carouselError) {
-      console.error('Failed to create carousel container:', carouselError)
+      logger.error({ ...formatError(carouselError) }, 'Failed to create carousel container')
       throw new Error(`Failed to create carousel container: ${carouselError instanceof Error ? carouselError.message : 'Unknown error'}`)
     }
 
@@ -215,7 +219,7 @@ export async function publishCarousel(
         carouselContainer.id
       )
     } catch (publishError) {
-      console.error('Failed to publish carousel:', publishError)
+      logger.error({ ...formatError(publishError) }, 'Failed to publish carousel')
       throw new Error(`Failed to publish carousel: ${publishError instanceof Error ? publishError.message : 'Unknown error'}`)
     }
 
@@ -229,8 +233,8 @@ export async function publishCarousel(
   } catch (error) {
     // Log the orphaned containers for cleanup (Instagram will auto-delete after 24 hours)
     if (createdContainerIds.length > 0) {
-      console.error('Publishing failed. Orphaned container IDs:', createdContainerIds.join(', '))
-      console.warn('Note: Instagram auto-deletes unpublished containers after 24 hours')
+      logger.error({ orphanedContainerIds: createdContainerIds }, 'Publishing failed with orphaned containers')
+      logger.warn('Instagram auto-deletes unpublished containers after 24 hours')
     }
 
     // Re-throw the original error
