@@ -17,17 +17,13 @@ export type ZapierEventType =
 // Matches database schema for zapier_webhooks table
 export interface ZapierWebhook {
   id: string
-  name: string
-  url: string  // webhook URL
-  events: string[]  // list of event types to trigger on
-  is_active: boolean
-  secret: string | null  // webhook secret for verification
-  last_triggered_at: string | null
-  created_at: string
-  updated_at: string
+  agent_id: string | null
+  event_type: string
+  webhook_url: string
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
   // Computed properties (not in DB)
-  description?: string | null
-  trigger_count?: number
   filter_conditions?: Record<string, unknown>
 }
 

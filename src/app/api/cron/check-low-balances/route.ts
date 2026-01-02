@@ -52,7 +52,9 @@ export async function GET(request: NextRequest) {
       .gte('sent_at', cooldownDate.toISOString())
 
     const recentlyNotified = new Set(
-      recentNotifications?.map((n: { recipient_email: string }) => n.recipient_email) || []
+      recentNotifications
+        ?.map((n: { recipient_email: string | null }) => n.recipient_email)
+        .filter((email): email is string => email !== null) || []
     )
 
     // Filter out recently notified agents

@@ -2,7 +2,51 @@
 // Generates SEO-optimized blog content from listing and neighborhood data
 
 import { generateWithAI } from '@/lib/ai/client'
-import type { NeighborhoodResearchData, GeneratedQuestion } from '@/lib/supabase/types'
+
+interface PlaceData {
+  name: string
+  rating?: number
+  types?: string[]
+  [key: string]: unknown
+}
+
+interface EventData {
+  name: string
+  date?: string
+  venue?: string
+  [key: string]: unknown
+}
+
+interface CuratedItemData {
+  title: string
+  description?: string
+  [key: string]: unknown
+}
+
+interface NeighborhoodResearchData {
+  overview?: string
+  dining?: PlaceData[]
+  shopping?: PlaceData[]
+  fitness?: PlaceData[]
+  entertainment?: PlaceData[]
+  services?: PlaceData[]
+  education?: PlaceData[]
+  events?: EventData[]
+  curatedItems?: CuratedItemData[]
+  demographics?: Record<string, unknown>
+  walkScore?: number
+  transitScore?: number
+  bikeScore?: number
+  researchedAt?: string
+  [key: string]: unknown
+}
+
+interface GeneratedQuestion {
+  id: string
+  question: string
+  category?: string
+  answer?: string
+}
 
 interface ListingContext {
   address: string

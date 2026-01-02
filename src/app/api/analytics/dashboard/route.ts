@@ -2,23 +2,30 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { AnalyticsDashboardData, ViewTrend } from '@/lib/analytics/types'
 
-import type { Database } from '@/lib/supabase/types'
-
-// Use actual database types
-type PageViewRow = Database['public']['Tables']['page_views']['Row']
-type MediaDownloadRow = Database['public']['Tables']['media_downloads']['Row']
-
-// Extended interface for computed properties
-interface PageView extends PageViewRow {
-  // Computed properties for UI (may not be in DB)
+// Page view type (table not in generated types)
+interface PageView {
+  id: string
+  created_at: string
+  listing_id: string
+  page_type: string
+  session_id?: string | null
   visitor_id?: string | null
   duration_seconds?: number | null
   scroll_depth?: number | null
   device_type?: string | null
+  referrer?: string | null
+  agent_id?: string | null
 }
 
-interface MediaDownload extends MediaDownloadRow {
-  // Additional computed properties
+// Media download type (table not in generated types)
+interface MediaDownload {
+  id: string
+  created_at: string
+  listing_id: string
+  media_type: string
+  download_type: string
+  file_name?: string | null
+  agent_id?: string | null
 }
 
 // Lead uses standard leads table
@@ -64,6 +71,8 @@ export async function GET() {
     }
 
     // Fetch analytics data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const [
       pageViewsResult,
       downloadsResult,
@@ -73,19 +82,19 @@ export async function GET() {
       viewTrendsResult
     ] = await Promise.all([
       // Page view metrics
-      supabase
+      anySupabase
         .from('page_views')
         .select('*')
         .eq('agent_id', agent.id),
 
       // Download metrics
-      supabase
+      anySupabase
         .from('media_downloads')
         .select('*')
         .eq('listing_id', agent.id), // Note: media_downloads doesn't have agent_id directly
 
       // Lead metrics - using leads table since lead_conversions doesn't exist
-      supabase
+      anySupabase
         .from('leads')
         .select('*')
         .eq('agent_id', agent.id),
@@ -102,7 +111,7 @@ export async function GET() {
         .limit(10),
 
       // View trends (last 30 days)
-      supabase
+      anySupabase
         .from('page_views')
         .select('created_at, session_id')
         .eq('agent_id', agent.id)
@@ -212,17 +221,17 @@ export async function GET() {
     // Calculate listing analytics
     const topListings = await Promise.all(
       listings.map(async (listing) => {
-        const { data: listingViews } = await supabase
+        const { data: listingViews } = await anySupabase
           .from('page_views')
           .select('*')
           .eq('listing_id', listing.id)
 
-        const { data: listingDownloads } = await supabase
+        const { data: listingDownloads } = await anySupabase
           .from('media_downloads')
           .select('id')
           .eq('listing_id', listing.id)
 
-        const { data: listingLeads } = await supabase
+        const { data: listingLeads } = await anySupabase
           .from('leads')
           .select('id')
           .eq('listing_id', listing.id)

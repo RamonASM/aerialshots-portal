@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build query with filters (using simple select to avoid deep type issues)
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('edit_requests')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch related data for each request
     const editRequests = requestsData ? await Promise.all(
-      requestsData.map(async (req) => {
+      requestsData.map(async (req: { agent_id?: string | null; listing_id?: string | null; assigned_to?: string | null; resolved_by?: string | null; [key: string]: unknown }) => {
         const [agentResult, listingResult, assignedStaffResult, resolverResult] = await Promise.all([
           req.agent_id
             ? supabase.from('agents').select('id, name, email').eq('id', req.agent_id).single()
@@ -120,16 +121,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get stats
-    const { data: allRequests } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: allRequests } = await (supabase as any)
       .from('edit_requests')
       .select('status, resolved_at')
 
     const today = new Date().toISOString().split('T')[0]
     const stats = {
       total: allRequests?.length || 0,
-      pending: allRequests?.filter(r => r.status === 'pending').length || 0,
-      inProgress: allRequests?.filter(r => ['reviewing', 'approved', 'in_progress'].includes(r.status)).length || 0,
-      completedToday: allRequests?.filter(r =>
+      pending: allRequests?.filter((r: { status: string }) => r.status === 'pending').length || 0,
+      inProgress: allRequests?.filter((r: { status: string }) => ['reviewing', 'approved', 'in_progress'].includes(r.status)).length || 0,
+      completedToday: allRequests?.filter((r: { status: string; resolved_at?: string | null }) =>
         r.status === 'completed' && r.resolved_at?.startsWith(today)
       ).length || 0,
     }

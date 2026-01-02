@@ -133,7 +133,7 @@ export function OrderMessages({ listingId, messages: initialMessages, agentName 
                       : message.sender_name || 'Client'}
                   </span>
                   <span className="text-xs text-neutral-500">
-                    {formatTime(message.created_at)}
+                    {message.created_at ? formatTime(message.created_at) : ''}
                   </span>
                 </div>
                 <div

@@ -2,7 +2,46 @@
 // Generates questions based on neighborhood research data
 
 import { generateWithAI } from '@/lib/ai/client'
-import type { NeighborhoodResearchData, GeneratedQuestion } from '@/lib/supabase/types'
+
+interface PlaceData {
+  name: string
+  rating?: number
+  types?: string[]
+  [key: string]: unknown
+}
+
+interface EventData {
+  name: string
+  venue: string
+  [key: string]: unknown
+}
+
+interface CuratedItemData {
+  title: string
+  [key: string]: unknown
+}
+
+interface NeighborhoodResearchData {
+  dining?: PlaceData[]
+  shopping?: PlaceData[]
+  fitness?: PlaceData[]
+  entertainment?: PlaceData[]
+  services?: PlaceData[]
+  education?: PlaceData[]
+  events?: EventData[]
+  curatedItems?: CuratedItemData[]
+  researchedAt?: string
+  [key: string]: unknown
+}
+
+interface GeneratedQuestion {
+  id: string
+  question: string
+  category?: string
+  answer?: string
+  context?: string
+  suggestedFollowUp?: string
+}
 
 interface ListingContext {
   address: string

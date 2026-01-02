@@ -190,8 +190,8 @@ interface QueueJobCardProps {
     state: string | null
     sqft: number | null
     ops_status: string | null
-    is_rush: boolean
-    updated_at: string
+    is_rush: boolean | null
+    updated_at: string | null
     agent: { name: string } | null
   }
   photoStats?: {

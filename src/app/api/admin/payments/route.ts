@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Calculate due date (14 days from order creation)
-      const dueDate = new Date(order.created_at)
+      const dueDate = new Date(order.created_at || new Date())
       dueDate.setDate(dueDate.getDate() + 14)
 
       return {

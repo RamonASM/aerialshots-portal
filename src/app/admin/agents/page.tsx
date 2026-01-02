@@ -15,7 +15,7 @@ import {
   PlayCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { AIAgentCategory } from '@/lib/supabase/types'
+import type { AIAgentCategory } from '@/lib/agents/types'
 import { CACHE_REVALIDATION, CACHE_TAGS } from '@/lib/utils/cache'
 
 const categoryConfig: Record<
@@ -41,6 +41,21 @@ const categoryConfig: Record<
     label: 'Lifestyle',
     icon: Map,
     color: 'text-orange-500 bg-orange-500/10',
+  },
+  analytics: {
+    label: 'Analytics',
+    icon: Activity,
+    color: 'text-cyan-500 bg-cyan-500/10',
+  },
+  marketing: {
+    label: 'Marketing',
+    icon: Zap,
+    color: 'text-pink-500 bg-pink-500/10',
+  },
+  communication: {
+    label: 'Communication',
+    icon: Bot,
+    color: 'text-yellow-500 bg-yellow-500/10',
   },
 }
 
@@ -232,10 +247,10 @@ function RecentExecutionsList({
 }: {
   executions: {
     agent_slug: string
-    status: string
+    status: string | null
     duration_ms: number | null
-    tokens_used: number
-    created_at: string
+    tokens_used: number | null
+    created_at: string | null
   }[]
 }) {
   if (executions.length === 0) {
@@ -259,13 +274,13 @@ function RecentExecutionsList({
             <div>
               <p className="text-sm font-medium text-neutral-900">{exec.agent_slug}</p>
               <p className="text-xs text-neutral-500">
-                {new Date(exec.created_at).toLocaleString()}
+                {exec.created_at ? new Date(exec.created_at).toLocaleString() : 'N/A'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-neutral-500">
             {exec.duration_ms && <span>{exec.duration_ms}ms</span>}
-            {exec.tokens_used > 0 && <span>{exec.tokens_used} tokens</span>}
+            {exec.tokens_used && exec.tokens_used > 0 && <span>{exec.tokens_used} tokens</span>}
           </div>
         </div>
       ))}
@@ -283,6 +298,9 @@ async function AgentsDashboard() {
     content: [],
     development: [],
     lifestyle: [],
+    analytics: [],
+    marketing: [],
+    communication: [],
   }
 
   for (const agent of agents) {

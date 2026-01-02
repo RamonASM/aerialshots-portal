@@ -283,7 +283,7 @@ registerAgent({
   name: 'Video Creator',
   description: 'Creates real estate marketing videos from listing photos using slideshow, motion, and audio skills',
   category: 'content',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: VIDEO_CREATOR_PROMPT,
   config: {
     timeout: 300000, // 5 minutes for video processing

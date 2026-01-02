@@ -261,7 +261,7 @@ registerAgent({
   name: 'Content Writer',
   description: 'Generates real estate marketing content including descriptions, social captions, and emails',
   category: 'content',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: CONTENT_WRITER_PROMPT,
   config: {
     maxTokens: 2000,

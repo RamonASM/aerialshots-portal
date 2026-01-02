@@ -34,7 +34,8 @@ export async function GET(
 
     // Get edit request with all related data
     // Using separate queries to avoid deep type instantiation
-    const { data: editRequestData, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editRequestData, error } = await (supabase as any)
       .from('edit_requests')
       .select('*')
       .eq('id', id)
@@ -79,7 +80,8 @@ export async function GET(
     }
 
     // Get comments
-    const { data: comments } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: comments } = await (supabase as any)
       .from('edit_request_comments')
       .select('*')
       .eq('edit_request_id', id)
@@ -169,7 +171,8 @@ export async function PATCH(
     if (body.actual_cost !== undefined) updateData.actual_cost = body.actual_cost
     if (body.due_date !== undefined) updateData.due_date = body.due_date
 
-    const { data: updatedRequest, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: updatedRequest, error } = await (supabase as any)
       .from('edit_requests')
       .update(updateData)
       .eq('id', id)
@@ -250,7 +253,8 @@ export async function POST(
     }
 
     // Create comment
-    const { data: comment, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: comment, error } = await (supabase as any)
       .from('edit_request_comments')
       .insert({
         edit_request_id: id,

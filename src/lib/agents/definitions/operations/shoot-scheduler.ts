@@ -369,7 +369,7 @@ registerAgent({
   name: 'Shoot Scheduler',
   description: 'Generates optimal schedule recommendations for photography shoots based on services, property details, and lighting conditions',
   category: 'operations',
-  executionMode: 'sync',
+  executionMode: 'immediate',
   systemPrompt: SCHEDULER_PROMPT,
   config: {
     maxTokens: 800,

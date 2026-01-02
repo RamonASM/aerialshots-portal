@@ -40,11 +40,13 @@ export async function POST(request: NextRequest) {
     }, 'Inpaint webhook received')
 
     const supabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const now = new Date().toISOString()
 
     if (payload.status === 'completed') {
       // Update inpainting job
-      await supabase
+      await anySupabase
         .from('inpainting_jobs')
         .update({
           status: 'completed',
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
       // Update media asset with edited path
       if (payload.media_asset_id && payload.output_path) {
         // Fetch current edit_history and append new entry
-        const { data: currentAsset } = await supabase
+        const { data: currentAsset } = await anySupabase
           .from('media_assets')
           .select('edit_history')
           .eq('id', payload.media_asset_id)
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
           } as Json,
         ]
 
-        await supabase
+        await anySupabase
           .from('media_assets')
           .update({
             edit_history: newHistory,
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
       }, 'Inpainting completed')
     } else if (payload.status === 'failed') {
       // Update inpainting job
-      await supabase
+      await anySupabase
         .from('inpainting_jobs')
         .update({
           status: 'failed',

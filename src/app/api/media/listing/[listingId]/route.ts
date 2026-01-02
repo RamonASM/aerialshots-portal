@@ -72,15 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       tipText: asset.tip_text,
       qcStatus: asset.qc_status,
       qcNotes: asset.qc_notes,
-      needsEditing: asset.needs_editing,
-      migrationStatus: asset.migration_status,
       createdAt: asset.created_at,
-      // Dimensions if available
-      width: asset.image_width,
-      height: asset.image_height,
-      // Original file info
-      originalFilename: asset.original_filename,
-      fileSize: asset.file_size_bytes,
     }))
 
     // Group by type

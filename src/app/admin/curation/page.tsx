@@ -68,7 +68,7 @@ export default async function CurationPage() {
           {items && items.length > 0 ? (
             <div className="space-y-4">
               {items.map((item) => {
-                const categoryInfo = getCuratedCategoryInfo(item.category)
+                const categoryInfo = getCuratedCategoryInfo(item.category || 'development')
 
                 return (
                   <div

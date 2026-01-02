@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get campaign
-    const { data: campaign, error: campaignError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: campaign, error: campaignError } = await (supabase as any)
       .from('marketing_campaigns')
       .select('*')
       .eq('id', body.campaign_id)
@@ -134,7 +135,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update campaign status to sending
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('marketing_campaigns')
       .update({
         status: 'sending',
@@ -160,7 +162,8 @@ export async function POST(request: NextRequest) {
 
       // Try to insert sends
       try {
-        await supabase.from('campaign_sends').insert(sends)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from('campaign_sends').insert(sends)
       } catch {
         // Table may not exist yet
       }
@@ -186,7 +189,8 @@ export async function POST(request: NextRequest) {
 
           // Update send status
           try {
-            await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
               .from('campaign_sends')
               .update({
                 status: 'sent',
@@ -203,7 +207,8 @@ export async function POST(request: NextRequest) {
 
           // Update send status
           try {
-            await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
               .from('campaign_sends')
               .update({
                 status: 'bounced',
@@ -219,7 +224,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update campaign status
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('marketing_campaigns')
       .update({
         status: 'sent',

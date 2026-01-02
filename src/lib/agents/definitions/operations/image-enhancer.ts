@@ -275,7 +275,7 @@ registerAgent({
   name: 'Image Enhancer',
   description: 'Enhances real estate photos using AI analysis, staging, inpainting, and twilight conversion',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: IMAGE_ENHANCER_PROMPT,
   config: {
     timeout: 180000, // 3 minutes for multiple AI image operations

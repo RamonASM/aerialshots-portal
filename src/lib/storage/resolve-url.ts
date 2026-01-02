@@ -12,37 +12,37 @@ type MediaAsset = Database['public']['Tables']['media_assets']['Row']
  * Partial type for resolveMediaUrl - allows for partial asset objects
  * Useful when only specific fields are selected from the database
  */
-type PartialMediaAsset = {
+export type PartialMediaAsset = {
+  aryeo_url?: string | null
+  storage_path?: string | null
   media_url?: string | null
-  approved_storage_path?: string | null
-  processed_storage_path?: string | null
 }
 
 /**
  * Resolves the best available URL for a media asset.
  * Priority order:
- * 1. Native media_url (ASM Supabase Storage)
- * 2. Approved storage path (post-processing)
- * 3. Processed storage path (FoundDR output)
+ * 1. aryeo_url (external CDN URL)
+ * 2. storage_path (Supabase Storage path)
  *
  * @param asset - The media asset record (can be partial)
  * @returns The resolved URL or null if no URL is available
  */
 export function resolveMediaUrl(asset: PartialMediaAsset | MediaAsset | null | undefined): string | null {
   if (!asset) return null
-  // 1. Prefer native storage URL
-  if (asset.media_url) {
+
+  // 1. Prefer media URL (native storage)
+  if ('media_url' in asset && asset.media_url) {
     return asset.media_url
   }
 
-  // 2. Use approved storage path if available
-  if (asset.approved_storage_path) {
-    return asset.approved_storage_path
+  // 2. Prefer aryeo URL (external CDN)
+  if ('aryeo_url' in asset && asset.aryeo_url) {
+    return asset.aryeo_url
   }
 
-  // 3. Use processed storage path
-  if (asset.processed_storage_path) {
-    return asset.processed_storage_path
+  // 3. Use storage path (Supabase Storage)
+  if ('storage_path' in asset && asset.storage_path) {
+    return asset.storage_path
   }
 
   return null

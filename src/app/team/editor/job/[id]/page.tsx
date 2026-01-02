@@ -204,7 +204,7 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
       {/* Editor Client Component - handles all interactive functionality */}
       <EditorJobClient
         listingId={listing.id}
-        isRush={listing.is_rush}
+        isRush={listing.is_rush ?? false}
         photos={photos.map(p => ({
           id: p.id,
           url: p.media_url || p.aryeo_url || '',
@@ -219,7 +219,7 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string | null }) {
   const config: Record<string, { label: string; className: string }> = {
     staged: { label: 'Ready to Edit', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
     awaiting_editing: { label: 'Queued', className: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300' },
@@ -228,7 +228,7 @@ function StatusBadge({ status }: { status: string }) {
     ready_for_qc: { label: 'Ready for QC', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
   }
 
-  const { label, className } = config[status] || { label: status, className: 'bg-neutral-100 text-neutral-700' }
+  const { label, className } = (status && config[status]) || { label: status || 'Unknown', className: 'bg-neutral-100 text-neutral-700' }
 
   return (
     <Badge variant="secondary" className={className}>

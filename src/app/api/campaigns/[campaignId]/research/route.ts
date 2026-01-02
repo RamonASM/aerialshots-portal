@@ -4,7 +4,55 @@ import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
 import { LISTINGLAUNCH_CREDITS } from '@/lib/listinglaunch/credits'
-import type { NeighborhoodResearchData } from '@/lib/supabase/types'
+
+// Type not in generated Supabase types
+interface PlaceData {
+  place_id: string
+  name: string
+  vicinity: string
+  rating?: number
+  user_ratings_total?: number
+  types: string[]
+  geometry: { location: { lat: number; lng: number } }
+  price_level?: number
+  distance?: number
+}
+
+interface EventData {
+  id: string
+  name: string
+  url: string
+  imageUrl?: string | null
+  date: string
+  time?: string | null
+  venue: string
+  city: string
+  category: string
+  genre?: string | null
+  priceRange?: string | null
+  distance?: number | null
+}
+
+interface CuratedItemData {
+  id: string
+  title: string
+  description: string | null
+  sourceUrl?: string | null
+  category: string
+}
+
+interface NeighborhoodResearchData {
+  dining?: PlaceData[]
+  shopping?: PlaceData[]
+  fitness?: PlaceData[]
+  entertainment?: PlaceData[]
+  services?: PlaceData[]
+  education?: PlaceData[]
+  events?: EventData[]
+  curatedItems?: CuratedItemData[]
+  researchedAt?: string
+  [key: string]: unknown
+}
 
 interface RouteParams {
   params: Promise<{ campaignId: string }>
@@ -251,7 +299,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update campaign with research data and move to questions status
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('listing_campaigns')
       .update({
         neighborhood_data: neighborhoodData as unknown as Record<string, unknown>,
@@ -269,13 +318,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Deduct credits for research
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('agents')
       .update({ credit_balance: creditBalance - requiredCredits })
       .eq('id', campaign.agent_id)
 
     // Log the credit transaction
-    await supabase.from('credit_transactions').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('credit_transactions').insert({
       agent_id: campaign.agent_id,
       amount: -requiredCredits,
       type: 'asm_ai_tool',

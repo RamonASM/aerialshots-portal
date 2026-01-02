@@ -388,7 +388,7 @@ registerAgent({
   name: 'QC Assistant',
   description: 'Pre-screens photos for quality issues and calculates priority scores for the QC queue',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: QC_ASSISTANT_PROMPT,
   config: {
     maxTokens: 1500,

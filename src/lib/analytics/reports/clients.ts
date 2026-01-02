@@ -131,7 +131,7 @@ async function getClientsWithOrders(period: DateRange): Promise<TopClient[]> {
 
       // Get first and last order dates
       const sortedOrders = agentOrders.sort((a, b) =>
-        new Date(a.paid_at || a.created_at).getTime() - new Date(b.paid_at || b.created_at).getTime()
+        new Date(a.paid_at || a.created_at || 0).getTime() - new Date(b.paid_at || b.created_at || 0).getTime()
       )
       const firstOrderDate = sortedOrders[0]?.paid_at || sortedOrders[0]?.created_at
       const lastOrderDate = sortedOrders[sortedOrders.length - 1]?.paid_at || sortedOrders[sortedOrders.length - 1]?.created_at
@@ -148,8 +148,8 @@ async function getClientsWithOrders(period: DateRange): Promise<TopClient[]> {
         lifetime_revenue: centsToDollars(lifetimeRevenueCents),
         order_count: periodOrders.length,
         avg_order_value: periodOrders.length > 0 ? centsToDollars(periodRevenueCents / periodOrders.length) : 0,
-        first_order_date: firstOrderDate,
-        last_order_date: lastOrderDate,
+        first_order_date: firstOrderDate || '',
+        last_order_date: lastOrderDate || '',
         days_since_last_order: daysSince(lastOrderDate),
         orders_last_30_days: last30DaysOrders.length,
         orders_last_90_days: last90DaysOrders.length,

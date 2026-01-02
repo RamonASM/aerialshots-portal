@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     const roundedLat = Math.round(lat * 10000) / 10000
     const roundedLng = Math.round(lng * 10000) / 10000
 
-    const { data: cached } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cached } = await (supabase as any)
       .from('airspace_checks')
       .select('*')
       .eq('lat', roundedLat)
@@ -89,7 +90,8 @@ export async function POST(request: NextRequest) {
     // Cache the result
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     try {
-      await supabase.from('airspace_checks').upsert(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('airspace_checks').upsert(
         {
           lat: roundedLat,
           lng: roundedLng,

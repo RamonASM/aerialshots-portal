@@ -61,13 +61,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const campaign = carousel.campaign as {
+    const campaign = carousel.campaign as unknown as {
       id: string
       listing: {
         address: string
         media_assets: Array<{
           id: string
-          media_url: string | null
+          storage_path: string | null
+          aryeo_url: string | null
           type: string
           category: string | null
         }>
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const slides = carousel.slides as CarouselSlide[]
+    const slides = carousel.slides as unknown as CarouselSlide[]
 
     // Check agent credit balance
     const { data: agentData } = await supabase
@@ -137,10 +138,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Start rendering
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { pendingRenders, errors } = await renderCarousel({
       carouselId,
       slides,
-      mediaAssets: campaign.listing.media_assets,
+      mediaAssets: campaign.listing.media_assets as any,
       agentLogoUrl: campaign.agent.logo_url || undefined,
       brandColor: campaign.agent.brand_color || undefined,
       webhookUrl,

@@ -2,6 +2,92 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2025-01-01
+
+### Added - Stripe Connect & Team Payout System
+
+Complete payout infrastructure for photographers, videographers, and partners.
+
+#### Payout System Core
+- `src/lib/payments/stripe-connect.ts` - Connect account management
+  - `createConnectAccount()` - Create Express accounts
+  - `generateOnboardingLink()` - Stripe onboarding URLs
+  - `getAccountStatus()` - Check charges/payouts enabled
+  - `createTransfer()` - Transfer funds to connected accounts
+  - `reverseTransfer()` - Handle refund reversals
+- `src/lib/payments/payout-processor.ts` - Job payout orchestration
+  - `processJobPayouts()` - Main processor triggered on QC approval
+  - `calculateJobSplits()` - Configurable percentage splits
+  - `createContractorPayout()` - Staff Stripe transfers
+  - `createPartnerPayout()` - Partner Stripe transfers
+  - `allocateToCompanyPools()` - Pool fund allocation
+
+#### Time Tracking (QC Hourly)
+- `src/lib/time-tracking/service.ts` - Time clock service
+  - `clockIn()` / `clockOut()` - Time entry management
+  - `getCurrentPayPeriod()` - Bi-weekly period tracking
+  - `closePayPeriod()` - Calculate total hours and pay
+- `src/app/team/qc/time/page.tsx` - QC time clock UI
+- `src/components/team/TimeClock.tsx` - Clock in/out component
+
+#### Admin Payout Configuration UI
+- `src/app/admin/team/payouts/page.tsx` - Payout management dashboard
+  - Staff list with Connect status, payout rates
+  - Partner list with profit percentages
+  - System default settings panel
+  - Company pool status overview
+- `src/app/admin/team/payouts/PayoutsPageClient.tsx` - Interactive client component
+  - Edit dialogs for staff and partner payout config
+  - Real-time save with validation
+
+#### Payout Configuration API Routes
+- `/api/admin/payouts/settings` (GET/PUT) - System-wide payout settings
+  - `photographer_default_percent`, `videographer_default_percent`
+  - `partner_default_percent`, pool percentages
+  - `qc_hourly_rate`, `auto_payout_enabled`
+- `/api/admin/payouts/staff/[id]` (GET/PUT) - Individual staff config
+  - `payout_type` (w2/1099/hourly)
+  - `default_payout_percent`, `hourly_rate`
+  - `partner_id` assignment
+- `/api/admin/payouts/partners/[id]` (GET/PUT) - Individual partner config
+  - `default_profit_percent`
+  - `payout_schedule` (instant/daily/weekly)
+
+#### Connect Onboarding API Routes
+- `/api/connect/staff/account` (GET/POST) - Staff Connect accounts
+- `/api/connect/partner/account` (GET/POST) - Partner Connect accounts
+- `/api/connect/onboarding` (POST) - Generate onboarding links
+- `/api/connect/return` (GET) - Handle return from Stripe onboarding
+- `/api/webhooks/stripe-connect` (POST) - Handle Connect webhooks
+
+#### Database Migration
+- `supabase/migrations/20250101_001_stripe_connect.sql`
+  - `partners` table with Stripe Connect fields
+  - `staff` table extensions (connect_id, payout_type, hourly_rate, partner_id)
+  - `staff_payouts` - Contractor payout records
+  - `partner_payouts` - Partner payout records
+  - `company_pool` - Pool allocations
+  - `time_entries` - QC time tracking
+  - `pay_periods` - Bi-weekly pay periods
+  - `payout_settings` - Configurable defaults
+
+#### Revenue Split (Configurable)
+```
+Job Revenue
+├── Photographer: 40% → Stripe Connect transfer
+├── Videographer: 20% → Stripe Connect transfer
+├── Partner: 25% → Stripe Connect transfer
+└── Company Pools: 15%
+    ├── Video Editor Fund: 5%
+    ├── QC Fund: 5%
+    └── Operating: 5%
+```
+
+**Environment Variables:**
+- `STRIPE_CONNECT_WEBHOOK_SECRET` - Webhook signature verification
+
+---
+
 ## [Unreleased] - 2024-12-31
 
 ### Added - Phase 8: Workflow Connectivity

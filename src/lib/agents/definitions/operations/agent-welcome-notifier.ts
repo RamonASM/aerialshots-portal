@@ -264,7 +264,7 @@ registerAgent({
   name: 'Agent Welcome Notifier',
   description: 'Sends personalized welcome emails to new agents when they sign up',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: WELCOME_PROMPT,
   config: {
     maxTokens: 500,

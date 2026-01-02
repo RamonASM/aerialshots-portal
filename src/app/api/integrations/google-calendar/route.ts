@@ -10,6 +10,8 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const searchParams = request.nextUrl.searchParams
     const action = searchParams.get('action')
 
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     // List calendars for connected account
     if (action === 'calendars') {
-      const { data: connection } = await supabase
+      const { data: connection } = await anySupabase
         .from('calendar_connections')
         .select('*')
         .eq('staff_id', staff.id)
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Default: Get current connections
-    const { data: connections } = await supabase
+    const { data: connections } = await anySupabase
       .from('calendar_connections')
       .select('id, provider, calendar_id, calendar_name, sync_enabled, last_sync_at, created_at')
       .eq('staff_id', staff.id)
@@ -95,6 +97,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Check authentication
     const {
@@ -138,7 +142,7 @@ export async function POST(request: NextRequest) {
       if (syncEnabled !== undefined) updates.sync_enabled = syncEnabled
       if (syncDirection !== undefined) updates.sync_direction = syncDirection
 
-      const { error } = await supabase
+      const { error } = await anySupabase
         .from('calendar_connections')
         .update(updates)
         .eq('id', connectionId)
@@ -168,6 +172,8 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Check authentication
     const {
@@ -203,7 +209,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error } = await supabase
+    const { error } = await anySupabase
       .from('calendar_connections')
       .delete()
       .eq('id', connectionId)

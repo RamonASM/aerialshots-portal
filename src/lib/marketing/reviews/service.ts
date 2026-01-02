@@ -229,10 +229,15 @@ export async function scheduleReviewRequest(
   return data
 }
 
+// Type for review request with joined agent data
+export type ReviewRequestWithAgent = ReviewRequest & {
+  agent: { id: string; name: string; email: string; phone?: string | null }
+}
+
 /**
  * Get pending review requests ready to send
  */
-export async function getPendingRequests(): Promise<ReviewRequest[]> {
+export async function getPendingRequests(): Promise<ReviewRequestWithAgent[]> {
   const supabase = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,7 +264,7 @@ export async function getPendingRequests(): Promise<ReviewRequest[]> {
  * Send a review request
  */
 export async function sendReviewRequest(
-  request: ReviewRequest & { agent: { name: string; email: string; phone?: string } },
+  request: ReviewRequestWithAgent,
   listingAddress?: string
 ): Promise<boolean> {
   const supabase = createAdminClient()

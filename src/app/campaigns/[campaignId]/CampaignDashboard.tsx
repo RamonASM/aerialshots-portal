@@ -83,7 +83,7 @@ export function CampaignDashboard({ campaign, creditBalance = 0 }: CampaignDashb
   const [generationProgress, setGenerationProgress] = useState<string>('Starting...')
   const generationTriggered = useRef(false)
 
-  const currentStepIndex = getStepIndex(campaign.status)
+  const currentStepIndex = getStepIndex(campaign.status || 'draft')
   const listing = campaign.listing
 
   // Calculate estimated credits for campaign

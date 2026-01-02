@@ -140,7 +140,11 @@ export default async function CarouselsPage({ params }: PageProps) {
       campaignId={campaign.id}
       campaignName={campaign.name || 'Campaign'}
       listingAddress={`${listing.address}, ${listing.city || ''}, ${listing.state || ''}`}
-      carousels={campaign.carousels || []}
+      carousels={(campaign.carousels || []).map(c => ({
+        ...c,
+        slides: c.slides as unknown as import('@/lib/supabase/types').CarouselSlide[],
+        render_status: c.render_status || 'pending'
+      }))}
       mediaAssets={listing.media_assets}
       agent={agent}
       hasInstagramConnection={hasInstagramConnection}

@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     const {
       data: { user },
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     // Delete subscription
-    const { error } = await supabase
+    const { error } = await anySupabase
       .from('push_subscriptions')
       .delete()
       .eq('endpoint', endpoint)

@@ -41,7 +41,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify staff role
-    const { data: staff } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: staff } = await (supabase as any)
       .from('staff')
       .select('id, role, team_role')
       .eq('email', user.email)

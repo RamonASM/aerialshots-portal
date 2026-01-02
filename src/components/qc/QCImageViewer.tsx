@@ -23,10 +23,10 @@ interface MediaAsset {
   id: string
   listing_id: string
   aryeo_url?: string | null // DEPRECATED - no longer used
-  media_url: string | null // Native ASM storage URL
+  media_url?: string | null // Native ASM storage URL
   storage_path?: string | null
   processed_storage_path?: string | null
-  qc_status: string
+  qc_status: string | null
   qc_notes?: string | null
   category?: string | null
   type: string

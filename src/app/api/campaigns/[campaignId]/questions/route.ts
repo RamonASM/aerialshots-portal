@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generatePersonalizedQuestions } from '@/lib/listinglaunch/questions'
-import type { NeighborhoodResearchData } from '@/lib/supabase/types'
+
+// Type not in generated Supabase types
+interface NeighborhoodResearchData {
+  overview?: string
+  demographics?: Record<string, unknown>
+  amenities?: Record<string, unknown>[]
+  schools?: Record<string, unknown>[]
+  walkScore?: number
+  [key: string]: unknown
+}
 
 interface RouteParams {
   params: Promise<{ campaignId: string }>
@@ -126,7 +135,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
 
     // Store questions in campaign
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('listing_campaigns')
       .update({
         generated_questions: questions as unknown as Record<string, unknown>,

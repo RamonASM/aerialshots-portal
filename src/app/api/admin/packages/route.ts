@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/types'
 
-type ServicePackage = Database['public']['Tables']['service_packages']['Row']
-type PackageItem = Database['public']['Tables']['package_items']['Row']
-type PackageTier = Database['public']['Tables']['package_tiers']['Row']
+// Types for tables not yet in generated types
+interface ServicePackage {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  features: string[]
+  display_order: number
+  is_featured: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
 
 // GET - List all packages with their items and tiers
 export async function GET(request: NextRequest) {
@@ -37,7 +46,8 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('active') === 'true'
 
     // Build query
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('service_packages')
       .select('*')
       .order('display_order', { ascending: true })
@@ -53,15 +63,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get items and tiers for all packages
-    const packageIds = packages?.map((p) => p.id) || []
+    const packageIds = packages?.map((p: ServicePackage) => p.id) || []
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [itemsResult, tiersResult] = await Promise.all([
-      supabase
+      (supabase as any)
         .from('package_items')
         .select('*')
         .in('package_id', packageIds)
         .order('created_at', { ascending: true }),
-      supabase
+      (supabase as any)
         .from('package_tiers')
         .select('*')
         .in('package_id', packageIds)
@@ -69,10 +80,10 @@ export async function GET(request: NextRequest) {
     ])
 
     // Organize data by package
-    const packagesWithDetails = packages?.map((pkg) => ({
+    const packagesWithDetails = packages?.map((pkg: ServicePackage) => ({
       ...pkg,
-      items: itemsResult.data?.filter((item) => item.package_id === pkg.id) || [],
-      tiers: tiersResult.data?.filter((tier) => tier.package_id === pkg.id) || [],
+      items: itemsResult.data?.filter((item: { package_id: string }) => item.package_id === pkg.id) || [],
+      tiers: tiersResult.data?.filter((tier: { package_id: string }) => tier.package_id === pkg.id) || [],
     }))
 
     return NextResponse.json({ packages: packagesWithDetails })
@@ -122,7 +133,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug already exists
-    const { data: existing } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
       .from('service_packages')
       .select('id')
       .eq('slug', slug)
@@ -136,7 +148,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create package
-    const { data: newPackage, error: packageError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newPackage, error: packageError } = await (supabase as any)
       .from('service_packages')
       .insert({
         name,
@@ -163,7 +176,8 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity || 1,
       }))
 
-      const { error: itemsError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: itemsError } = await (supabase as any)
         .from('package_items')
         .insert(itemInserts)
 
@@ -182,7 +196,8 @@ export async function POST(request: NextRequest) {
         tier_name: tier.tier_name || null,
       }))
 
-      const { error: tiersError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: tiersError } = await (supabase as any)
         .from('package_tiers')
         .insert(tierInserts)
 
@@ -192,12 +207,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch complete package with items and tiers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [itemsResult, tiersResult] = await Promise.all([
-      supabase
+      (supabase as any)
         .from('package_items')
         .select('*')
         .eq('package_id', newPackage.id),
-      supabase
+      (supabase as any)
         .from('package_tiers')
         .select('*')
         .eq('package_id', newPackage.id)
@@ -258,7 +274,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if package exists
-    const { data: existing } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
       .from('service_packages')
       .select('id')
       .eq('id', id)
@@ -273,7 +290,8 @@ export async function PATCH(request: NextRequest) {
 
     // Check slug uniqueness if changing
     if (slug) {
-      const { data: slugCheck } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: slugCheck } = await (supabase as any)
         .from('service_packages')
         .select('id')
         .eq('slug', slug)
@@ -299,7 +317,8 @@ export async function PATCH(request: NextRequest) {
     if (is_active !== undefined) updates.is_active = is_active
 
     // Update package
-    const { data: updatedPackage, error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: updatedPackage, error: updateError } = await (supabase as any)
       .from('service_packages')
       .update(updates)
       .eq('id', id)
@@ -313,7 +332,8 @@ export async function PATCH(request: NextRequest) {
     // Update items if provided (replace all)
     if (items !== undefined) {
       // Delete existing items
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('package_items')
         .delete()
         .eq('package_id', id)
@@ -327,7 +347,8 @@ export async function PATCH(request: NextRequest) {
           quantity: item.quantity || 1,
         }))
 
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('package_items')
           .insert(itemInserts)
       }
@@ -336,7 +357,8 @@ export async function PATCH(request: NextRequest) {
     // Update tiers if provided (replace all)
     if (tiers !== undefined) {
       // Delete existing tiers
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('package_tiers')
         .delete()
         .eq('package_id', id)
@@ -351,19 +373,21 @@ export async function PATCH(request: NextRequest) {
           tier_name: tier.tier_name || null,
         }))
 
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('package_tiers')
           .insert(tierInserts)
       }
     }
 
     // Fetch complete package with items and tiers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [itemsResult, tiersResult] = await Promise.all([
-      supabase
+      (supabase as any)
         .from('package_items')
         .select('*')
         .eq('package_id', id),
-      supabase
+      (supabase as any)
         .from('package_tiers')
         .select('*')
         .eq('package_id', id)
@@ -423,7 +447,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if package exists
-    const { data: existing } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
       .from('service_packages')
       .select('id, name')
       .eq('id', id)
@@ -437,13 +462,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete package items and tiers first (cascade should handle this, but being explicit)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await Promise.all([
-      supabase.from('package_items').delete().eq('package_id', id),
-      supabase.from('package_tiers').delete().eq('package_id', id),
+      (supabase as any).from('package_items').delete().eq('package_id', id),
+      (supabase as any).from('package_tiers').delete().eq('package_id', id),
     ])
 
     // Delete package
-    const { error: deleteError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: deleteError } = await (supabase as any)
       .from('service_packages')
       .delete()
       .eq('id', id)

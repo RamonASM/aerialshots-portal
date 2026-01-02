@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get client account
-    const { data: clientData } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: clientData } = await (supabase as any)
       .from('client_accounts')
       .select('id')
       .eq('auth_user_id', user.id)
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get bookings
-    const { data: bookingsData, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: bookingsData, error } = await (supabase as any)
       .from('client_bookings')
       .select('*')
       .eq('client_id', client.id)
@@ -140,7 +142,8 @@ export async function POST(request: NextRequest) {
 
     if (user) {
       // Get existing client account
-      const { data: existingClientData } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingClientData } = await (supabase as any)
         .from('client_accounts')
         .select('id')
         .eq('auth_user_id', user.id)
@@ -151,9 +154,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or get client account
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
+
     if (!clientId) {
       // Check if client exists by email
-      const { data: existingClientByEmailData } = await supabase
+      const { data: existingClientByEmailData } = await anySupabase
         .from('client_accounts')
         .select('id')
         .eq('email', contactEmail.toLowerCase())
@@ -165,7 +171,7 @@ export async function POST(request: NextRequest) {
         clientId = existingClientByEmail.id
       } else {
         // Create new client account
-        const { data: newClientData, error: clientError } = await supabase
+        const { data: newClientData, error: clientError } = await anySupabase
           .from('client_accounts')
           .insert({
             email: contactEmail.toLowerCase(),
@@ -198,7 +204,7 @@ export async function POST(request: NextRequest) {
     // Validate discount code if provided
     let discountAmount = 0
     if (discountCode) {
-      const { data: discountData } = await supabase
+      const { data: discountData } = await anySupabase
         .from('discount_codes')
         .select('*')
         .eq('code', discountCode.toUpperCase())
@@ -223,7 +229,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Update usage count
-            await supabase
+            await anySupabase
               .from('discount_codes')
               .update({ uses_count: (discount.uses_count || 0) + 1 })
               .eq('id', discount.id)
@@ -233,7 +239,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the booking
-    const { data: bookingData, error: bookingError } = await supabase
+    const { data: bookingData, error: bookingError } = await anySupabase
       .from('client_bookings')
       .insert({
         client_id: clientId,

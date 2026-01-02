@@ -104,7 +104,7 @@ export default async function OrderDetailPage({
     clientMessages = messages || []
   }
 
-  const status = STATUS_STYLES[order.status] || STATUS_STYLES.pending
+  const status = STATUS_STYLES[order.status || 'pending'] || STATUS_STYLES.pending
   const services = (order.services as any[]) || []
 
   return (
@@ -338,7 +338,7 @@ export default async function OrderDetailPage({
                   {formatCurrency(toDollars(order.subtotal_cents))}
                 </span>
               </div>
-              {order.discount_cents > 0 && (
+              {order.discount_cents && order.discount_cents > 0 && (
                 <div className="flex justify-between">
                   <span className="text-neutral-400">Discount</span>
                   <span className="text-green-400">

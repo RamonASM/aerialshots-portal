@@ -29,7 +29,8 @@ export async function GET() {
 
     const adminSupabase = createAdminClient()
 
-    const { data: webhooks, error } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: webhooks, error } = await (adminSupabase as any)
       .from('zapier_webhooks')
       .select('*')
       .order('created_at', { ascending: false })
@@ -83,7 +84,8 @@ export async function POST(request: Request) {
 
     const adminSupabase = createAdminClient()
 
-    const { data: webhook, error } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: webhook, error } = await (adminSupabase as any)
       .from('zapier_webhooks')
       .insert({
         name,

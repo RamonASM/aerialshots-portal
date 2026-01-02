@@ -170,15 +170,14 @@ export async function POST(request: NextRequest) {
       const { error: dbError } = await supabase.from('media_uploads').insert({
         listing_id: listingId,
         filename: uploadResult.media!.path.split('/').pop() || file.name,
-        original_filename: file.name,
+        original_name: file.name,
         content_type: file.type,
-        file_size_bytes: file.size,
-        bucket: uploadResult.media!.bucket,
-        storage_path: uploadResult.media!.path,
-        public_url: uploadResult.media!.url,
+        size_bytes: file.size,
+        storage_bucket: uploadResult.media!.bucket,
+        storage_key: uploadResult.media!.path,
         media_type: mediaType,
-        category: category || null,
         uploaded_by: user.id,
+        metadata: { category: category || null, public_url: uploadResult.media!.url },
       })
 
       if (dbError) {

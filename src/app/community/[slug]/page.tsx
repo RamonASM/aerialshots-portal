@@ -6,6 +6,7 @@ import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
 import { getLifeHereData, type LifeHereData } from '@/lib/queries/life-here'
+import type { CommunitySubdivision, CommunityQuickFacts, CommunityMarketSnapshot, CommunityOverviewContent, CommunitySchoolsInfo } from '@/lib/supabase/types'
 import { CommunityHero } from '@/components/community/CommunityHero'
 import { OverviewSection } from '@/components/community/OverviewSection'
 import { MarketSnapshot } from '@/components/community/MarketSnapshot'
@@ -180,7 +181,7 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
           tagline={community.tagline}
           heroImage={community.hero_image_url}
           galleryImages={community.gallery_urls || []}
-          quickFacts={community.quick_facts}
+          quickFacts={community.quick_facts as CommunityQuickFacts | null}
           city={community.city}
           state={community.state}
         />
@@ -194,21 +195,21 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
               <OverviewSection
                 name={community.name}
                 description={community.description}
-                overviewContent={community.overview_content}
-                quickFacts={community.quick_facts}
+                overviewContent={community.overview_content as CommunityOverviewContent | null}
+                quickFacts={community.quick_facts as CommunityQuickFacts | null}
               />
 
               {/* Subdivisions */}
-              {community.subdivisions && community.subdivisions.length > 0 && (
+              {Array.isArray(community.subdivisions) && community.subdivisions.length > 0 && (
                 <SubdivisionsGrid
-                  subdivisions={community.subdivisions}
+                  subdivisions={community.subdivisions as unknown as CommunitySubdivision[]}
                   communityName={community.name}
                 />
               )}
 
               {/* Schools */}
               {community.schools_info && (
-                <SchoolsSection schoolsInfo={community.schools_info} />
+                <SchoolsSection schoolsInfo={community.schools_info as unknown as CommunitySchoolsInfo} />
               )}
 
               {/* Lifestyle - Places, Events, What's Coming, Life Here */}
@@ -233,7 +234,7 @@ export default async function CommunityPage({ params }: CommunityPageProps) {
             <div className="space-y-8">
               {/* Market Snapshot */}
               <MarketSnapshot
-                marketData={community.market_snapshot}
+                marketData={community.market_snapshot as CommunityMarketSnapshot | null}
                 communityName={community.name}
               />
 

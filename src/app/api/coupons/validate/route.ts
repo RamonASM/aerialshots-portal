@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
-import type { DiscountCode } from '@/lib/supabase/types'
 
 const validateSchema = z.object({
   code: z.string().min(1).max(50),
@@ -28,7 +27,8 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Look up the coupon
-    const { data: coupon, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: coupon, error } = await (supabase as any)
       .from('discount_codes')
       .select('*')
       .eq('code', code.toUpperCase())

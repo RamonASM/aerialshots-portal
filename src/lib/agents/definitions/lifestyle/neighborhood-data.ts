@@ -5,7 +5,48 @@ import { registerAgent } from '../../registry'
 import { generateWithAI } from '@/lib/ai/client'
 import type { AgentExecutionContext, AgentExecutionResult } from '../../types'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database, NeighborhoodResearchData, PlaceResult, EventResult } from '@/lib/supabase/types'
+import type { Database } from '@/lib/supabase/types'
+
+// Local type definitions for neighborhood data
+interface PlaceResult {
+  place_id: string
+  name: string
+  vicinity?: string
+  rating?: number
+  user_ratings_total?: number
+  types?: string[]
+  geometry?: {
+    location: {
+      lat: number
+      lng: number
+    }
+  }
+  distance?: number
+  opening_hours?: { open_now?: boolean }
+  price_level?: number
+}
+
+interface EventResult {
+  id: string
+  name: string
+  date: string
+  venue?: string
+  category?: string
+  url?: string
+}
+
+interface NeighborhoodResearchData {
+  overview?: string
+  dining?: PlaceResult[]
+  shopping?: PlaceResult[]
+  fitness?: PlaceResult[]
+  entertainment?: PlaceResult[]
+  services?: PlaceResult[]
+  education?: PlaceResult[]
+  events?: EventResult[]
+  walkScore?: number
+  researchedAt?: string
+}
 import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import { getWalkScore } from '@/lib/integrations/walkscore/client'
@@ -360,7 +401,7 @@ registerAgent({
   description:
     'Aggregates neighborhood data for lifestyle pages - nearby places (Google), events (Ticketmaster), Walk Score, and AI-generated neighborhood summary',
   category: 'lifestyle',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: NEIGHBORHOOD_SUMMARY_PROMPT,
   config: {
     maxTokens: 600,

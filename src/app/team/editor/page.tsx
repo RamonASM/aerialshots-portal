@@ -312,7 +312,7 @@ export default async function EditorDashboard() {
   )
 }
 
-function StatusBadge({ status, isRush }: { status: string; isRush: boolean }) {
+function StatusBadge({ status, isRush }: { status: string | null; isRush: boolean | null }) {
   if (isRush) {
     return (
       <Badge className="bg-red-100 text-red-700 border-red-200">
@@ -328,7 +328,7 @@ function StatusBadge({ status, isRush }: { status: string; isRush: boolean }) {
     in_editing: { label: 'Editing', className: 'bg-blue-100 text-blue-700' },
   }
 
-  const { label, className } = config[status] || config.awaiting_editing
+  const { label, className } = (status && config[status]) || config.awaiting_editing
 
   return (
     <Badge variant="secondary" className={className}>

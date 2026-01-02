@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 interface StatusHistoryItem {
   id: string
   event_type: string
-  created_at: string
+  created_at: string | null
   details?: Record<string, unknown>
 }
 
@@ -64,6 +64,7 @@ export function StatusTimeline({
 
     // Extract dates from status history
     statusHistory.forEach((event) => {
+      if (!event.created_at) return
       const eventType = event.event_type.toLowerCase()
       if (eventType.includes('scheduled')) dates['scheduled'] = event.created_at
       if (eventType.includes('shooting') || eventType.includes('photo')) dates['shooting'] = event.created_at

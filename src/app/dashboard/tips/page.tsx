@@ -16,7 +16,7 @@ interface ListingOption {
   id: string
   address: string
   city: string | null
-  state: string
+  state: string | null
 }
 
 interface TipFormData {

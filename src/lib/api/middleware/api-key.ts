@@ -187,9 +187,9 @@ export async function validateApiKey(
     userId: keyRecord.user_id,
     name: keyRecord.name,
     tier: keyRecord.tier as ApiTier,
-    monthlyLimit: keyRecord.monthly_limit,
-    isActive: keyRecord.is_active,
-    createdAt: keyRecord.created_at,
+    monthlyLimit: keyRecord.monthly_limit ?? 0,
+    isActive: keyRecord.is_active ?? false,
+    createdAt: keyRecord.created_at ?? new Date().toISOString(),
     lastUsedAt: keyRecord.last_used_at,
   }
 
@@ -309,7 +309,8 @@ async function logApiUsage(
     const supabase = createAdminClient()
     const url = new URL(request.url)
 
-    await supabase.from('api_usage').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from as any)('api_usage').insert({
       api_key_id: apiKeyId,
       endpoint: url.pathname,
       method: request.method,

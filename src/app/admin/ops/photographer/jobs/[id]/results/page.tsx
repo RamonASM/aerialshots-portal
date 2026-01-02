@@ -20,7 +20,12 @@ import { useRealtimeProcessing } from '@/hooks/useRealtimeProcessing'
 import { ProcessingProgress } from '@/components/processing/ProcessingProgress'
 import type { Database } from '@/lib/supabase/types'
 
-type MediaAsset = Database['public']['Tables']['media_assets']['Row']
+// Extend the base type with additional columns that may not be in generated types
+type BaseMediaAsset = Database['public']['Tables']['media_assets']['Row']
+type MediaAsset = BaseMediaAsset & {
+  processed_storage_path?: string | null
+  original_filename?: string | null
+}
 
 interface ProcessedPhoto {
   id: string
@@ -40,7 +45,7 @@ export default function ResultsPage({
   const { id } = use(params)
   const [photos, setPhotos] = useState<ProcessedPhoto[]>([])
   const [loading, setLoading] = useState(true)
-  const [listing, setListing] = useState<{ address?: string; ops_status?: string } | null>(null)
+  const [listing, setListing] = useState<{ address?: string; ops_status?: string | null } | null>(null)
   const [downloadingAll, setDownloadingAll] = useState(false)
 
   const supabase = createBrowserClient<Database>(

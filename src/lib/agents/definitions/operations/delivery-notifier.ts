@@ -466,7 +466,7 @@ registerAgent({
   name: 'Delivery Notifier',
   description: 'Sends personalized delivery notifications to agents when their media is ready',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: DELIVERY_NOTIFIER_PROMPT,
   config: {
     maxTokens: 1000,

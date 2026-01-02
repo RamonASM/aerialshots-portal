@@ -62,7 +62,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
         assignedStaff = assignments.map((a) => ({
           staff_id: a.staff_id,
-          is_primary: a.is_primary,
+          is_primary: a.is_primary ?? false,
           name: staffMap.get(a.staff_id)?.name || 'Unknown',
           role: staffMap.get(a.staff_id)?.role || 'unknown',
         }))

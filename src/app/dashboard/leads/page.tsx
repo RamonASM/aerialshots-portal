@@ -304,7 +304,7 @@ export default function LeadsPage() {
             <LeadCard
               key={lead.id}
               lead={lead}
-              isHot={isHotLead(lead.created_at)}
+              isHot={lead.created_at ? isHotLead(lead.created_at) : false}
               isSelected={selectedIds.has(lead.id)}
               onToggleSelect={() => toggleSelection(lead.id)}
               onUpdateStatus={(status) => updateLeadStatus(lead.id, status)}
@@ -422,7 +422,7 @@ function LeadCard({
                 )}
                 <p className="flex items-center gap-2 text-[13px] text-[#636366]">
                   <Clock className="h-4 w-4" />
-                  {formatDate(lead.created_at)}
+                  {lead.created_at ? formatDate(lead.created_at) : 'Unknown'}
                 </p>
               </div>
             </div>

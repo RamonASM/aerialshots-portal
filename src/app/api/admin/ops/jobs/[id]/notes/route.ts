@@ -45,7 +45,8 @@ export async function GET(
     const noteType = searchParams.get('note_type')
     const pinnedOnly = searchParams.get('pinned_only') === 'true'
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('job_notes')
       .select(`
         *,
@@ -73,13 +74,14 @@ export async function GET(
     }
 
     // Get note counts by type
-    const { data: allNotes } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: allNotes } = await (supabase as any)
       .from('job_notes')
       .select('note_type')
       .eq('listing_id', listingId)
 
     const typeCounts: Record<string, number> = {}
-    allNotes?.forEach(n => {
+    allNotes?.forEach((n: { note_type: string }) => {
       typeCounts[n.note_type] = (typeCounts[n.note_type] || 0) + 1
     })
 
@@ -138,7 +140,8 @@ export async function POST(
     }
 
     // Create note
-    const { data: note, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: note, error } = await (supabase as any)
       .from('job_notes')
       .insert({
         listing_id: listingId,
@@ -231,7 +234,8 @@ export async function PATCH(
     if (body.is_pinned !== undefined) updateData.is_pinned = body.is_pinned
     if (body.is_important !== undefined) updateData.is_important = body.is_important
 
-    const { data: note, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: note, error } = await (supabase as any)
       .from('job_notes')
       .update(updateData)
       .eq('id', body.note_id)
@@ -295,7 +299,8 @@ export async function DELETE(
       )
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('job_notes')
       .delete()
       .eq('id', noteId)

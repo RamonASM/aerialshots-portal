@@ -231,7 +231,7 @@ registerAgent({
   name: 'Listing Data Enricher',
   description: 'Geocodes addresses and enriches listing data with location intelligence (coordinates, timezone, county, neighborhood)',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: '', // No AI prompt needed for this agent
   config: {
     maxTokens: 0,

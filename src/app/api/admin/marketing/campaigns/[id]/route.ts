@@ -42,7 +42,8 @@ export async function GET(
     }
 
     // Get campaign
-    const { data: campaign, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: campaign, error } = await (supabase as any)
       .from('marketing_campaigns')
       .select('*, created_by_staff:staff!created_by(name, email)')
       .eq('id', id)
@@ -98,7 +99,8 @@ export async function PATCH(
     }
 
     // Get current campaign
-    const { data: existingCampaign } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingCampaign } = await (supabase as any)
       .from('marketing_campaigns')
       .select('status')
       .eq('id', id)
@@ -117,7 +119,8 @@ export async function PATCH(
 
     const updates = await request.json()
 
-    const { data: campaign, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: campaign, error } = await (supabase as any)
       .from('marketing_campaigns')
       .update({
         ...updates,
@@ -279,7 +282,8 @@ export async function DELETE(
     }
 
     // Only allow deleting draft or cancelled campaigns
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('marketing_campaigns')
       .delete()
       .eq('id', id)

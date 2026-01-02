@@ -136,9 +136,10 @@ export async function POST(request: NextRequest) {
         .getPublicUrl(uploadData.path)
 
       // Save metadata to database
-      const { data: fileRecord, error: dbError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fileRecord, error: dbError } = await (supabase as any)
         .from('booking_reference_files')
-        .insert<BookingReferenceFileInsert>({
+        .insert({
           listing_id: listingId || null,
           seller_schedule_id: bookingToken || null, // Using seller_schedule_id for backward compat with bookingToken
           file_type: fileType,
@@ -207,7 +208,8 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('booking_reference_files')
       .select('*')
       .order('uploaded_at', { ascending: false })
@@ -226,7 +228,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      files: files.map((file) => ({
+      files: files.map((file: {
+        id: string
+        original_filename: string | null
+        file_type: string
+        file_size_bytes: number | null
+        mime_type: string | null
+        storage_bucket: string | null
+        storage_path: string
+        notes: string | null
+        uploaded_at: string | null
+      }) => ({
         id: file.id,
         filename: file.original_filename || 'Unknown',
         type: file.file_type,
@@ -266,7 +278,8 @@ export async function DELETE(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Get file record
-    const { data: file, error: fetchError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: file, error: fetchError } = await (supabase as any)
       .from('booking_reference_files')
       .select('storage_path, storage_bucket')
       .eq('id', fileId)
@@ -290,7 +303,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete from database
-    const { error: dbError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: dbError } = await (supabase as any)
       .from('booking_reference_files')
       .delete()
       .eq('id', fileId)

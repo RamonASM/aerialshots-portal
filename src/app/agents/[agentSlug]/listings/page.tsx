@@ -41,7 +41,7 @@ interface ListingWithMedia extends Listing {
     id: string
     listing_id: string
     aryeo_url: string | null
-    media_url: string | null
+    media_url?: string | null
     type: string
   }[]
 }
@@ -69,8 +69,9 @@ const getAgentListings = unstable_cache(
     const listingIds = (listings || []).map((l) => l.id)
 
     // Get media
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: media } = listingIds.length > 0
-      ? await supabase
+      ? await (supabase as any)
           .from('media_assets')
           .select('id, listing_id, aryeo_url, media_url, type')
           .in('listing_id', listingIds)
@@ -79,7 +80,7 @@ const getAgentListings = unstable_cache(
     // Combine
     const listingsWithMedia: ListingWithMedia[] = (listings || []).map((listing) => ({
       ...listing,
-      media_assets: (media || []).filter((m) => m.listing_id === listing.id),
+      media_assets: (media || []).filter((m: { listing_id: string }) => m.listing_id === listing.id),
     }))
 
     return { agent, listings: listingsWithMedia }
@@ -118,7 +119,7 @@ export default async function AgentListingsPage({ params, searchParams }: PagePr
       id: l.id,
       address: l.address,
       city: l.city || '',
-      state: l.state,
+      state: l.state || '',
       lat: l.lat!,
       lng: l.lng!,
       soldPrice: l.sold_price || l.price || 0,

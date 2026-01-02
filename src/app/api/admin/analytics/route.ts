@@ -181,7 +181,8 @@ export async function GET() {
     }
 
     // Integration success rates
-    const { data: integrationData } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: integrationData } = await (supabase as any)
       .from('listings')
       .select('cubicasa_status, zillow_3d_status')
       .gte('created_at', thirtyDaysAgo.toISOString())
@@ -191,7 +192,7 @@ export async function GET() {
       zillow_3d: { total: 0, delivered: 0, failed: 0 },
     }
 
-    integrationData?.forEach(listing => {
+    integrationData?.forEach((listing: { cubicasa_status?: string | null; zillow_3d_status?: string | null }) => {
       if (listing.cubicasa_status && listing.cubicasa_status !== 'not_applicable') {
         integrationStats.cubicasa.total++
         if (listing.cubicasa_status === 'delivered') integrationStats.cubicasa.delivered++

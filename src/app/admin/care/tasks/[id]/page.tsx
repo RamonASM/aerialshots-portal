@@ -266,7 +266,7 @@ export default async function TaskDetailPage({ params }: PageProps) {
                           {comm.channel.toUpperCase()} - {comm.direction}
                         </span>
                         <span className="text-xs text-neutral-500">
-                          {new Date(comm.created_at).toLocaleString()}
+                          {comm.created_at ? new Date(comm.created_at).toLocaleString() : 'N/A'}
                         </span>
                       </div>
                       {comm.body && (
@@ -392,7 +392,7 @@ export default async function TaskDetailPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-neutral-500">Created</span>
                 <span className="text-neutral-900">
-                  {new Date(task.created_at).toLocaleString()}
+                  {task.created_at ? new Date(task.created_at).toLocaleString() : 'N/A'}
                 </span>
               </div>
               {task.due_at && (

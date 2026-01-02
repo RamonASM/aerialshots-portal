@@ -26,7 +26,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get job status
-    const { data: job, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: job, error } = await (supabase as any)
       .from('inpainting_jobs')
       .select('*')
       .eq('id', jobId)

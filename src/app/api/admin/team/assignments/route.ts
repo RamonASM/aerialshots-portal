@@ -38,7 +38,8 @@ export async function GET(request: Request) {
     const adminSupabase = createAdminClient()
 
     // Build query
-    let query = adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (adminSupabase as any)
       .from('photographer_assignments')
       .select(`
         id,

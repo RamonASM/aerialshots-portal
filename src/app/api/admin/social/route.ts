@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get Instagram connections with agent info
-    const { data: connections, error: connError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: connections, error: connError } = await (supabase as any)
       .from('instagram_connections')
       .select(`
         id,
@@ -55,7 +56,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build scheduled posts query
-    let postsQuery = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let postsQuery = (supabase as any)
       .from('instagram_scheduled_posts')
       .select(`
         id,
@@ -93,19 +95,20 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const totalConnections = connections?.length || 0
-    const activeConnections = connections?.filter(c => c.status === 'active').length || 0
+    const activeConnections = connections?.filter((c: { status: string }) => c.status === 'active').length || 0
 
     // Get status counts
-    const { data: statusCounts } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: statusCounts } = await (supabase as any)
       .from('instagram_scheduled_posts')
       .select('status')
 
     const stats = {
       totalConnections,
       activeConnections,
-      scheduled: statusCounts?.filter(p => p.status === 'scheduled').length || 0,
-      published: statusCounts?.filter(p => p.status === 'published').length || 0,
-      failed: statusCounts?.filter(p => p.status === 'failed').length || 0,
+      scheduled: statusCounts?.filter((p: { status: string }) => p.status === 'scheduled').length || 0,
+      published: statusCounts?.filter((p: { status: string }) => p.status === 'published').length || 0,
+      failed: statusCounts?.filter((p: { status: string }) => p.status === 'failed').length || 0,
     }
 
     return NextResponse.json({

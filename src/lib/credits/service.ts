@@ -681,7 +681,7 @@ export class UnifiedCreditService {
     const unifiedUser = await this.getOrCreateUnifiedUser(agent.email, agentId)
 
     // If unified user has no balance, migrate from agent
-    if (unifiedUser.credit_balance === 0 && agent.credit_balance > 0) {
+    if (unifiedUser.credit_balance === 0 && (agent.credit_balance ?? 0) > 0) {
       const { error } = await (supabase.from as Function)('unified_users')
         .update({
           credit_balance: agent.credit_balance,
@@ -704,8 +704,8 @@ export class UnifiedCreditService {
 
         return {
           ...unifiedUser,
-          credit_balance: agent.credit_balance,
-          lifetime_credits: agent.lifetime_credits,
+          credit_balance: agent.credit_balance ?? 0,
+          lifetime_credits: agent.lifetime_credits ?? 0,
         }
       }
     }

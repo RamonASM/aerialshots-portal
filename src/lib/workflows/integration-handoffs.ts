@@ -66,9 +66,9 @@ async function handleIntegrationComplete(
     id: string
     address: string
     agent_id: string | null
-    ops_status: string
-    cubicasa_status: IntegrationStatus | null
-    zillow_3d_status: Zillow3DStatus | null
+    ops_status: string | null
+    cubicasa_status: string | null
+    zillow_3d_status: string | null
   },
   integration: IntegrationType
 ): Promise<void> {
@@ -141,7 +141,7 @@ async function handleIntegrationComplete(
     }
 
     // If all integrations are done and we're in an earlier stage, advance to ready_for_qc
-    if (['staged', 'processing'].includes(listing.ops_status)) {
+    if (listing.ops_status && ['staged', 'processing'].includes(listing.ops_status)) {
       const { error: updateError } = await supabase
         .from('listings')
         .update({
@@ -206,7 +206,7 @@ async function handleIntegrationFailed(
     id: string
     address: string
     agent_id: string | null
-    ops_status: string
+    ops_status: string | null
   },
   integration: IntegrationType,
   context: HandoffContext
@@ -269,8 +269,8 @@ async function handleIntegrationFailed(
  * Check if all required integrations are complete
  */
 async function checkAllIntegrationsComplete(listing: {
-  cubicasa_status: IntegrationStatus | null
-  zillow_3d_status: Zillow3DStatus | null
+  cubicasa_status: string | null
+  zillow_3d_status: string | null
 }): Promise<boolean> {
   // Integrations are complete if they're either "delivered"/"live" OR "not_applicable"
   const cubicasaComplete =

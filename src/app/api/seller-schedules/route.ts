@@ -3,7 +3,28 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { apiLogger, formatError } from '@/lib/logger'
 import { sendSellerAvailabilityEmail, sendSellerConfirmationEmail } from '@/lib/email/resend'
-import type { SellerScheduleInsert, AvailableSlot, SellerScheduleStatus } from '@/lib/supabase/types'
+import type { Json } from '@/lib/supabase/types'
+
+// Local types for seller schedules
+interface AvailableSlot {
+  date: string
+  start_time: string
+  end_time: string
+}
+
+type SellerScheduleStatus = 'submitted' | 'viewed' | 'confirmed' | 'rescheduled' | 'cancelled'
+
+interface SellerScheduleInsert {
+  listing_id: string
+  share_link_id?: string | null
+  seller_name: string
+  seller_email: string
+  seller_phone?: string | null
+  available_slots: AvailableSlot[]
+  status: SellerScheduleStatus
+  notes?: string | null
+  submitted_at: string
+}
 
 // Zod schemas for seller schedule validation
 const AvailableSlotSchema = z.object({
@@ -94,14 +115,14 @@ export async function POST(request: NextRequest) {
 
     const { data: existing } = await existingQuery.single()
 
-    const scheduleData: SellerScheduleInsert = {
+    const scheduleData = {
       listing_id,
       share_link_id: share_link_id || null,
       seller_name,
       seller_email,
       seller_phone: seller_phone || null,
-      available_slots: available_slots as AvailableSlot[],
-      status: 'submitted',
+      available_slots: available_slots as unknown as Json,
+      status: 'submitted' as const,
       notes: notes || null,
       submitted_at: new Date().toISOString(),
     }

@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create inpainting job record
-    const { error: insertError } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (adminClient as any)
       .from('inpainting_jobs')
       .insert({
         id: jobId,
@@ -121,7 +122,8 @@ export async function POST(request: NextRequest) {
         console.error('FoundDR inpaint error:', errorData)
 
         // Update job status to failed
-        await adminClient
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (adminClient as any)
           .from('inpainting_jobs')
           .update({
             status: 'failed',
@@ -136,7 +138,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Update job status to processing
-      await adminClient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminClient as any)
         .from('inpainting_jobs')
         .update({ status: 'processing' })
         .eq('id', jobId)
@@ -162,7 +165,8 @@ export async function POST(request: NextRequest) {
       console.error('FoundDR fetch error:', fetchError)
 
       // Update job status to failed
-      await adminClient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminClient as any)
         .from('inpainting_jobs')
         .update({
           status: 'failed',

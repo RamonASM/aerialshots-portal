@@ -18,7 +18,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { apiLogger, formatError } from '@/lib/logger'
 
 // Import task functions
-import { getPendingRequests, sendReviewRequest, getReviewSettings, type ReviewRequest } from '@/lib/marketing/reviews/service'
+import { getPendingRequests, sendReviewRequest, getReviewSettings } from '@/lib/marketing/reviews/service'
 import { getDuePendingSteps, processEnrollmentStep } from '@/lib/marketing/drip/service'
 import { processScheduledNotifications } from '@/lib/notifications/auto-triggers'
 import { sendLowBalanceEmail } from '@/lib/email/resend'
@@ -67,7 +67,7 @@ async function runReviewRequests(): Promise<TaskResult> {
           listingAddress = listing?.address || ''
         }
 
-        const success = await sendReviewRequest(request as ReviewRequest & { agent: { name: string; email: string; phone?: string } }, listingAddress)
+        const success = await sendReviewRequest(request, listingAddress)
         if (success) sentCount++
       } catch (error) {
         errors.push(`Request ${request.id}: ${error}`)
@@ -156,7 +156,9 @@ async function runLowBalanceCheck(): Promise<TaskResult> {
       .gte('sent_at', cooldownDate.toISOString())
 
     const recentlyNotified = new Set(
-      recentNotifications?.map((n: { recipient_email: string }) => n.recipient_email) || []
+      recentNotifications
+        ?.map((n: { recipient_email: string | null }) => n.recipient_email)
+        .filter((email): email is string => email !== null) || []
     )
 
     const agentsToNotify = agents.filter(

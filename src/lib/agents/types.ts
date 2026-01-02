@@ -1,20 +1,37 @@
 // AI Agent System Types
 
-import type {
-  AIAgentCategory,
-  AIAgentExecutionMode,
-  AIAgentExecutionStatus,
-  AIAgentTriggerSource,
-  Tables,
-} from '@/lib/supabase/types'
+import type { Tables } from '@/lib/supabase/types'
 
-// Re-export supabase types
-export type {
-  AIAgentCategory,
-  AIAgentExecutionMode,
-  AIAgentExecutionStatus,
-  AIAgentTriggerSource,
-}
+// Define agent types locally (match database enum values)
+export type AIAgentCategory =
+  | 'operations'
+  | 'content'
+  | 'development'
+  | 'lifestyle'
+  | 'analytics'
+  | 'marketing'
+  | 'communication'
+
+export type AIAgentExecutionMode =
+  | 'immediate'
+  | 'scheduled'
+  | 'triggered'
+  | 'manual'
+
+export type AIAgentExecutionStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+
+export type AIAgentTriggerSource =
+  | 'manual'
+  | 'schedule'
+  | 'webhook'
+  | 'event'
+  | 'workflow'
+  | 'api'
 
 // Database row types
 export type AIAgent = Tables<'ai_agents'>

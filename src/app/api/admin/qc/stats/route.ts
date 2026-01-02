@@ -99,6 +99,8 @@ export async function GET() {
     const listingQCStart: Record<string, Date> = {}
 
     qcEvents?.forEach(event => {
+      if (!event.listing_id || !event.created_at) return
+
       const newValue = event.new_value as { ops_status?: string } | null
       if (newValue?.ops_status === 'in_qc' || newValue?.ops_status === 'ready_for_qc') {
         // QC started
@@ -153,7 +155,7 @@ export async function GET() {
     stageEvents?.forEach(event => {
       const newValue = event.new_value as { ops_status?: string } | null
       const newStage = newValue?.ops_status
-      if (!newStage) return
+      if (!newStage || !event.listing_id || !event.created_at) return
 
       const listingId = event.listing_id
       const eventTime = new Date(event.created_at)

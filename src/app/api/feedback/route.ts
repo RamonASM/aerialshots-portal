@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/types'
 
-type ClientFeedbackInsert = Database['public']['Tables']['client_feedback']['Insert']
+// Local type for client feedback (not in generated types)
+interface ClientFeedbackInsert {
+  listing_id: string
+  share_link_id?: string | null
+  agent_id?: string | null
+  rating: number
+  feedback_text?: string | null
+  category?: string | null
+  submitted_by_name?: string | null
+  submitted_by_email?: string | null
+  is_public?: boolean
+}
 
 /**
  * POST /api/feedback
@@ -45,9 +55,12 @@ export async function POST(request: NextRequest) {
       agentId = listing.agent_id
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
+
     // Validate share link if provided
     if (share_link_id) {
-      const { data: shareLink, error: linkError } = await supabase
+      const { data: shareLink, error: linkError } = await anySupabase
         .from('share_links')
         .select('id, is_active, expires_at, listing_id')
         .eq('id', share_link_id)
@@ -72,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Check for existing feedback from same email
     if (submitted_by_email) {
-      const { data: existingFeedback } = await supabase
+      const { data: existingFeedback } = await anySupabase
         .from('client_feedback')
         .select('id')
         .eq('listing_id', listing_id)
@@ -81,7 +94,7 @@ export async function POST(request: NextRequest) {
 
       if (existingFeedback) {
         // Update existing feedback
-        const { data: updated, error: updateError } = await supabase
+        const { data: updated, error: updateError } = await anySupabase
           .from('client_feedback')
           .update({
             rating,
@@ -120,7 +133,7 @@ export async function POST(request: NextRequest) {
       is_public: is_public ?? false,
     }
 
-    const { data: feedback, error: insertError } = await supabase
+    const { data: feedback, error: insertError } = await anySupabase
       .from('client_feedback')
       .insert(feedbackData)
       .select()
@@ -165,7 +178,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('client_feedback')
       .select(`
         *,
@@ -193,9 +207,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate aggregate stats
-    const ratings = feedback?.map(f => f.rating) || []
+    const ratings: number[] = feedback?.map((f: { rating: number }) => f.rating) || []
     const averageRating = ratings.length > 0
-      ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+      ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
       : null
 
     const ratingCounts = {

@@ -346,7 +346,7 @@ registerAgent({
   description:
     'Auto-creates care tasks when media is delivered. Generates personalized call scripts for VA team to follow up with agents.',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: CARE_TASK_GENERATOR_PROMPT,
   config: {
     maxTokens: 800,

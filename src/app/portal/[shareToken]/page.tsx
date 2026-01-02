@@ -136,8 +136,8 @@ export default async function PortalPage({ params }: PageProps) {
     .eq('listing_id', listing.id)
     .order('created_at', { ascending: true })
 
-  const brandColor = portalSettings?.primary_color || agent?.brand_color || '#0066FF'
-  const showPoweredBy = portalSettings?.show_powered_by ?? true
+  const brandColor = agent?.brand_color || '#0066FF'
+  const showPoweredBy = true
 
   return (
     <PortalContent
@@ -151,7 +151,7 @@ export default async function PortalPage({ params }: PageProps) {
       clientName={shareLink.client_name}
       clientEmail={shareLink.client_email}
       shareLinkId={shareLink.id}
-      welcomeMessage={portalSettings?.welcome_message ?? null}
+      welcomeMessage={null}
     />
   )
 }

@@ -159,8 +159,8 @@ export async function GET(request: NextRequest) {
         id: job.id,
         listing_id: job.listing_id || '',
         address: (job.listing as { address?: string })?.address || null,
-        status: job.status,
-        created_at: job.created_at,
+        status: job.status || 'unknown',
+        created_at: job.created_at || new Date().toISOString(),
         processing_time_ms: job.processing_time_ms,
       })),
     }

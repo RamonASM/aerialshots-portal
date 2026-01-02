@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { getInstagramEmbed, isValidInstagramPostUrl } from '@/lib/integrations/instagram/oembed'
 
 // POST - Fetch embed data for multiple Instagram URLs
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated
+    const supabaseClient = await createClient()
+    const { data: { user } } = await supabaseClient.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { urls, agentId } = body as { urls: string[]; agentId?: string }
 
@@ -18,25 +30,28 @@ export async function POST(request: NextRequest) {
     // Limit to 10 URLs
     const limitedUrls = urls.slice(0, 10)
     const supabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Cleanup expired cache entries (fire and forget)
-    supabase
+    anySupabase
       .from('instagram_embed_cache')
       .delete()
       .lt('expires_at', new Date().toISOString())
-      .then(({ error }) => {
+      .then(({ error }: { error: Error | null }) => {
         if (error) console.error('Cache cleanup error:', error)
       })
 
     // Check cache first
-    const { data: cachedEmbeds } = await supabase
+    const { data: cachedEmbeds } = await anySupabase
       .from('instagram_embed_cache')
       .select('instagram_url, embed_html, thumbnail_url, expires_at')
       .in('instagram_url', limitedUrls)
       .gt('expires_at', new Date().toISOString())
 
-    const cachedMap = new Map(
-      cachedEmbeds?.map(e => [e.instagram_url, e]) || []
+    type CachedEmbed = { instagram_url: string; embed_html: string; thumbnail_url: string | null; expires_at: string }
+    const cachedMap = new Map<string, CachedEmbed>(
+      cachedEmbeds?.map((e: CachedEmbed): [string, CachedEmbed] => [e.instagram_url, e]) || []
     )
 
     const embeds = []
@@ -103,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Cache new embeds (only if agentId is provided)
     if (toCache.length > 0 && agentId) {
-      await supabase
+      await anySupabase
         .from('instagram_embed_cache')
         .upsert(
           toCache.map(item => ({

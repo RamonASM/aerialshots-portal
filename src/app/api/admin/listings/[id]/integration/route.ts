@@ -51,7 +51,8 @@ export async function GET(
     // Require staff authentication
     await requireStaff(supabase)
 
-    const { data: listing, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: listing, error } = await (supabase as any)
       .from('listings')
       .select(`
         id,
@@ -156,7 +157,8 @@ export async function PATCH(
     }
 
     // Update the listing
-    const { data: updatedListing, error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: updatedListing, error: updateError } = await (supabase as any)
       .from('listings')
       .update(updateData)
       .eq('id', id)
@@ -261,7 +263,8 @@ export async function POST(
       // const cubicasaResponse = await orderCubicasaFloorPlan(listing)
 
       // For now, just mark as ordered
-      const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
         .from('listings')
         .update({
           cubicasa_status: 'ordered',

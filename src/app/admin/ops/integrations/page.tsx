@@ -23,9 +23,25 @@ interface IntegrationMetrics {
   failed: number
 }
 
+// Listing type for integration status display
+interface IntegrationListing {
+  id: string
+  address: string
+  city: string
+  state: string
+  cubicasa_status?: string | null
+  zillow_3d_status?: string | null
+  integration_error_message?: string | null
+  ops_status?: string | null
+  updated_at?: string | null
+  last_integration_check?: string | null
+}
+
 async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createClient>>) {
   // Get counts for each integration status
-  const { data: listings } = await supabase
+  // Using any cast since these columns may not be in generated types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: listings } = await (supabase as any)
     .from('listings')
     .select(`
       id,
@@ -33,26 +49,35 @@ async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createC
       zillow_3d_status
     `)
 
-  const cubicasa: IntegrationMetrics = { total: 0, pending: 0, processing: 0, delivered: 0, failed: 0 }
-  const zillow3d: IntegrationMetrics = { total: 0, pending: 0, processing: 0, delivered: 0, failed: 0 }
+  const cubicasa: IntegrationMetrics = {
+    total: 0, pending: 0, processing: 0, delivered: 0, failed: 0
+  }
+  const zillow3d: IntegrationMetrics = {
+    total: 0, pending: 0, processing: 0, delivered: 0, failed: 0
+  }
 
-  listings?.forEach((listing) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listingsArray = listings as any[]
+  listingsArray?.forEach((listing) => {
+    const cubicasaStatus = listing.cubicasa_status as string | null
+    const zillow3dStatus = listing.zillow_3d_status as string | null
+
     // Cubicasa metrics
-    if (listing.cubicasa_status && listing.cubicasa_status !== 'not_applicable') {
+    if (cubicasaStatus && cubicasaStatus !== 'not_applicable') {
       cubicasa.total++
-      if (['pending'].includes(listing.cubicasa_status)) cubicasa.pending++
-      if (['ordered', 'processing'].includes(listing.cubicasa_status)) cubicasa.processing++
-      if (listing.cubicasa_status === 'delivered') cubicasa.delivered++
-      if (listing.cubicasa_status === 'failed') cubicasa.failed++
+      if (['pending'].includes(cubicasaStatus)) cubicasa.pending++
+      if (['ordered', 'processing'].includes(cubicasaStatus)) cubicasa.processing++
+      if (cubicasaStatus === 'delivered') cubicasa.delivered++
+      if (cubicasaStatus === 'failed') cubicasa.failed++
     }
 
     // Zillow 3D metrics
-    if (listing.zillow_3d_status && listing.zillow_3d_status !== 'not_applicable') {
+    if (zillow3dStatus && zillow3dStatus !== 'not_applicable') {
       zillow3d.total++
-      if (['pending'].includes(listing.zillow_3d_status)) zillow3d.pending++
-      if (['scheduled', 'scanned', 'processing'].includes(listing.zillow_3d_status)) zillow3d.processing++
-      if (listing.zillow_3d_status === 'live') zillow3d.delivered++
-      if (listing.zillow_3d_status === 'failed') zillow3d.failed++
+      if (['pending'].includes(zillow3dStatus)) zillow3d.pending++
+      if (['scheduled', 'scanned', 'processing'].includes(zillow3dStatus)) zillow3d.processing++
+      if (zillow3dStatus === 'live') zillow3d.delivered++
+      if (zillow3dStatus === 'failed') zillow3d.failed++
     }
   })
 
@@ -66,7 +91,8 @@ export default async function IntegrationsDashboardPage() {
   const metrics = await getIntegrationMetrics(supabase)
 
   // Get jobs that need attention (failed or pending)
-  const { data: attentionNeeded } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: attentionNeeded } = await (supabase as any)
     .from('listings')
     .select(`
       id,
@@ -84,7 +110,8 @@ export default async function IntegrationsDashboardPage() {
     .limit(10)
 
   // Get recently delivered integrations
-  const { data: recentlyDelivered } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: recentlyDelivered } = await (supabase as any)
     .from('listings')
     .select(`
       id,
@@ -100,7 +127,8 @@ export default async function IntegrationsDashboardPage() {
     .limit(5)
 
   // Get actively processing
-  const { data: processing } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: processing } = await (supabase as any)
     .from('listings')
     .select(`
       id,
@@ -222,7 +250,7 @@ export default async function IntegrationsDashboardPage() {
             </h2>
           </div>
           <div className="divide-y divide-red-200 dark:divide-red-900/50">
-            {attentionNeeded.map((listing) => (
+            {attentionNeeded.map((listing: IntegrationListing) => (
               <Link
                 key={listing.id}
                 href={`/admin/ops/jobs/${listing.id}`}
@@ -266,7 +294,7 @@ export default async function IntegrationsDashboardPage() {
           </div>
           <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
             {processing && processing.length > 0 ? (
-              processing.map((listing) => (
+              processing.map((listing: IntegrationListing) => (
                 <Link
                   key={listing.id}
                   href={`/admin/ops/jobs/${listing.id}`}
@@ -313,7 +341,7 @@ export default async function IntegrationsDashboardPage() {
           </div>
           <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
             {recentlyDelivered && recentlyDelivered.length > 0 ? (
-              recentlyDelivered.map((listing) => (
+              recentlyDelivered.map((listing: IntegrationListing) => (
                 <Link
                   key={listing.id}
                   href={`/admin/ops/jobs/${listing.id}`}

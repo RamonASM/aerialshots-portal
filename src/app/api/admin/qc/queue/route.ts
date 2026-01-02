@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     const priorityQueue =
       listings?.map((listing) => {
         const now = new Date()
-        const updatedAt = new Date(listing.updated_at)
+        const updatedAt = new Date(listing.updated_at || now)
         const hoursWaiting = Math.floor(
           (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60)
         )

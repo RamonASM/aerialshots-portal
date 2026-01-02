@@ -31,7 +31,8 @@ export async function GET(
     }
 
     // Get task with related data
-    const { data: task, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: task, error } = await (supabase as any)
       .from('job_tasks')
       .select(`
         *,
@@ -57,7 +58,8 @@ export async function GET(
     }
 
     // Get comments
-    const { data: comments } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: comments } = await (supabase as any)
       .from('task_comments')
       .select(`
         *,
@@ -67,7 +69,8 @@ export async function GET(
       .order('created_at', { ascending: true })
 
     // Get history
-    const { data: history } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: history } = await (supabase as any)
       .from('task_history')
       .select(`
         *,
@@ -131,7 +134,8 @@ export async function POST(
     }
 
     // Create comment
-    const { data: comment, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: comment, error } = await (supabase as any)
       .from('task_comments')
       .insert({
         task_id: id,

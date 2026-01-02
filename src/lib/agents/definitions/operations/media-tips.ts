@@ -188,7 +188,7 @@ registerAgent({
   name: 'Media Tips Generator',
   description: 'Analyzes media assets and generates quality improvement tips for photos and videos',
   category: 'operations',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: `You are a media quality analyst for real estate photography and video.
 Analyze media assets and provide actionable tips for improving quality, composition, and presentation.
 Focus on: lighting, composition, staging, technical quality, and overall presentation.

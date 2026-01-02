@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: template, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: template, error } = await (supabase as any)
       .from('email_templates')
       .select('*')
       .eq('id', id)
@@ -82,7 +83,8 @@ export async function PATCH(
 
     updates.updated_at = new Date().toISOString()
 
-    const { data: template, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: template, error } = await (supabase as any)
       .from('email_templates')
       .update(updates)
       .eq('id', id)
@@ -134,7 +136,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('email_templates')
       .delete()
       .eq('id', id)

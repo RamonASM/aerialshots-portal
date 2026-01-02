@@ -603,7 +603,7 @@ registerAgent({
   name: 'Carousel Creator',
   description: 'Creates Instagram carousel posts with Life Here data, AI content generation, and template-based rendering',
   category: 'content',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: CAROUSEL_CREATOR_PROMPT,
   config: {
     timeout: 180000, // 3 minutes for full carousel

@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button'
 
 interface InstagramConnection {
   id: string
-  instagram_username: string | null
-  account_type: string | null
+  username: string | null
   status: string | null
   token_expires_at: string | null
-  created_at: string
+  created_at: string | null
 }
 
 interface InstagramSettingsProps {
@@ -94,16 +93,11 @@ export function InstagramSettings({ agentId, connection }: InstagramSettingsProp
               <div className="flex-1">
                 <p className="font-medium text-green-900">Connected</p>
                 <p className="text-sm text-green-700">
-                  @{connection.instagram_username}
-                  {connection.account_type && (
-                    <span className="ml-2 text-green-600">
-                      ({connection.account_type} account)
-                    </span>
-                  )}
+                  @{connection.username}
                 </p>
               </div>
               <a
-                href={`https://instagram.com/${connection.instagram_username}`}
+                href={`https://instagram.com/${connection.username}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-green-600 hover:text-green-700"

@@ -68,7 +68,7 @@ export async function GET(
     }
 
     // If job is still processing and we have a FoundDR job ID, poll FoundDR for latest status
-    if (job.founddr_job_id && ['queued', 'processing'].includes(job.status)) {
+    if (job.founddr_job_id && job.status && ['queued', 'processing'].includes(job.status)) {
       const founddr = getFoundDRClient()
 
       if (founddr.isConfigured()) {
@@ -175,9 +175,9 @@ export async function DELETE(
     }
 
     // Only allow cancelling pending/queued jobs
-    if (!['pending', 'queued'].includes(job.status)) {
+    if (!job.status || !['pending', 'queued'].includes(job.status)) {
       return NextResponse.json(
-        { error: `Cannot cancel job in ${job.status} status` },
+        { error: `Cannot cancel job in ${job.status || 'unknown'} status` },
         { status: 400 }
       )
     }

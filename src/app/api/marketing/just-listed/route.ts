@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Verify user authentication
     const { data: { user } } = await supabase.auth.getUser()
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
     // Get hero photo for the listing
     const { data: heroPhoto } = await supabase
       .from('media_assets')
-      .select('media_url')
+      .select('aryeo_url, storage_path')
       .eq('listing_id', listingId)
       .eq('type', 'photo')
       .order('sort_order', { ascending: true })
@@ -98,10 +100,10 @@ export async function POST(request: NextRequest) {
       address: listingData.address || '',
       city: listingData.city || 'Orlando',
       state: listingData.state || 'FL',
-      price: listingData.asking_price || listingData.price || 0,
-      beds: listingData.beds || listingData.bedrooms || 0,
-      baths: listingData.baths || listingData.bathrooms || 0,
-      sqft: listingData.sqft || listingData.square_feet || 0,
+      price: listingData.price || 0,
+      beds: listingData.beds || 0,
+      baths: listingData.baths || 0,
+      sqft: listingData.sqft || 0,
       photoUrl: heroPhotoUrl,
       agentName: agent.name,
       agentPhone: agent.phone,
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest) {
     // Store pending assets in database
     if (result.success) {
       for (const asset of result.assets) {
-        await supabase.from('marketing_assets').insert({
+        await anySupabase.from('marketing_assets').insert({
           listing_id: listingId,
           agent_id: agent.id,
           type: 'just_listed',

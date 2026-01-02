@@ -26,7 +26,7 @@ async function getAgentWithConnections(email: string) {
   // Get Instagram connection
   const { data: instagramConnection } = await supabase
     .from('instagram_connections')
-    .select('id, instagram_username, account_type, status, token_expires_at, created_at')
+    .select('id, username, status, token_expires_at, created_at')
     .eq('agent_id', agent.id)
     .single()
 

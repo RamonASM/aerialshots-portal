@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/types'
 
-type ClientMessageInsert = Database['public']['Tables']['client_messages']['Insert']
+// client_messages table not in generated types - define locally
+type ClientMessageInsert = {
+  listing_id: string
+  share_link_id?: string | null
+  sender_type?: 'seller' | 'agent' | 'admin'
+  sender_id?: string | null
+  sender_name: string
+  sender_email?: string | null
+  content: string
+  attachments?: unknown[]
+}
 
 /**
  * POST /api/messages
@@ -11,6 +20,8 @@ type ClientMessageInsert = Database['public']['Tables']['client_messages']['Inse
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const body = await request.json()
 
     const {
@@ -77,7 +88,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const { data: shareLink, error: linkError } = await supabase
+      const { data: shareLink, error: linkError } = await anySupabase
         .from('share_links')
         .select('id, is_active, expires_at, listing_id')
         .eq('id', share_link_id)
@@ -117,7 +128,7 @@ export async function POST(request: NextRequest) {
       attachments: attachments || [],
     }
 
-    const { data: message, error: insertError } = await supabase
+    const { data: message, error: insertError } = await anySupabase
       .from('client_messages')
       .insert(messageData)
       .select()
@@ -146,6 +157,8 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const { searchParams } = new URL(request.url)
 
     const listing_id = searchParams.get('listing_id')
@@ -166,7 +179,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Validate share link
-      const { data: shareLink, error: linkError } = await supabase
+      const { data: shareLink, error: linkError } = await anySupabase
         .from('share_links')
         .select('id, is_active, expires_at, listing_id')
         .eq('id', share_link_id)
@@ -190,7 +203,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query
-    let query = supabase
+    let query = anySupabase
       .from('client_messages')
       .select('*')
       .eq('listing_id', listing_id)
@@ -225,6 +238,8 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Verify authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -242,7 +257,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    let query = supabase
+    let query = anySupabase
       .from('client_messages')
       .update({ read_at: new Date().toISOString() })
       .is('read_at', null)

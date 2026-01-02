@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     const roundedLng = Math.round(body.longitude * 10000) / 10000
 
     // Try to get cached result
-    const { data: cached } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cached } = await (supabase as any)
       .from('airspace_checks')
       .select('*')
       .eq('lat', roundedLat)
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
         expires_at: result.expiresAt,
       }
       // Use insert with conflict handling as upsert may have type issues
-      await supabase.from('airspace_checks').insert(cacheData)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('airspace_checks').insert(cacheData)
     } catch (cacheError) {
       // Don't fail the request if caching fails (might be duplicate key)
       console.warn('Cache insert skipped:', cacheError)

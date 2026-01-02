@@ -81,7 +81,7 @@ export async function executeWorkflow(
       campaign_id: trigger.campaignId || null,
       current_step: 0,
       steps: [],
-      context: trigger.data || {},
+      context: (trigger.data || {}) as Record<string, never>,
     })
     .select()
     .single()
@@ -192,8 +192,8 @@ export async function executeWorkflow(
     .update({
       status,
       current_step: context.currentStep,
-      steps: executedSteps as unknown as Record<string, unknown>[],
-      context: context.sharedContext,
+      steps: executedSteps as unknown as Record<string, never>[],
+      context: context.sharedContext as Record<string, never>,
       error_message: errorMessage || null,
       completed_at: completedAt,
       updated_at: completedAt,
@@ -351,7 +351,7 @@ async function updateWorkflowStatus(
   }
 
   if (steps) {
-    updates.steps = steps as unknown as Record<string, unknown>[]
+    updates.steps = steps as unknown as Record<string, never>[]
   }
 
   const { error } = await supabase

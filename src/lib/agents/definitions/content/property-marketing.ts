@@ -600,7 +600,7 @@ registerAgent({
   name: 'Property Marketing',
   description: 'Creates complete marketing asset suites for property listings with descriptions, social content, and email copy',
   category: 'content',
-  executionMode: 'async',
+  executionMode: 'immediate',
   systemPrompt: PROPERTY_MARKETING_PROMPT,
   config: {
     timeout: 300000, // 5 minutes for full suite

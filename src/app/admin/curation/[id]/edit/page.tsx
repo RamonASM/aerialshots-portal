@@ -73,7 +73,7 @@ export default function EditCuratedItemPage({
           title: data.title,
           description: data.description || '',
           source_url: data.source_url || '',
-          category: data.category,
+          category: data.category || '',
           lat: String(data.lat),
           lng: String(data.lng),
           radius_miles: String(data.radius_miles),

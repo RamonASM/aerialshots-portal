@@ -223,8 +223,8 @@ export default async function PhotographerDashboard() {
                 address: j.address,
                 lat: j.lat || 0,
                 lng: j.lng || 0,
-                status: j.status,
-                scheduledTime: j.scheduledTime,
+                status: j.status || 'scheduled',
+                scheduledTime: j.scheduledTime || '',
               }))}
             />
           </CardContent>
@@ -354,7 +354,7 @@ export default async function PhotographerDashboard() {
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string | null }) {
   const config: Record<string, { label: string; className: string }> = {
     assigned: { label: 'Pending', className: 'bg-neutral-100 text-neutral-700' },
     en_route: { label: 'En Route', className: 'bg-blue-100 text-blue-700' },
@@ -363,7 +363,7 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: { label: 'Cancelled', className: 'bg-red-100 text-red-700' },
   }
 
-  const { label, className } = config[status] || config.assigned
+  const { label, className } = (status && config[status]) || config.assigned
 
   return (
     <Badge variant="secondary" className={className}>

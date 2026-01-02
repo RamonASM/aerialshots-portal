@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build query for communities table
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('communities')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     // Communities don't have a direct listing relationship in the current schema
     // listingCount unavailable - requires community_id foreign key on listings table
-    const enrichedCommunities = communities?.map(community => ({
+    const enrichedCommunities = communities?.map((community: Record<string, unknown>) => ({
       ...community,
       listingCount: null, // Unavailable - no community-listing relationship in schema
     }))
@@ -124,7 +125,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug exists
-    const { data: existing } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabase as any)
       .from('communities')
       .select('id')
       .eq('slug', slug)
@@ -137,7 +139,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: community, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: community, error } = await (supabase as any)
       .from('communities')
       .insert({
         name,

@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ScheduleForm } from './ScheduleForm'
+import type { Json } from '@/lib/supabase/types'
 
 interface PageProps {
   params: Promise<{ token: string }>
@@ -118,7 +119,7 @@ export default async function SchedulePage({ params }: PageProps) {
     brand_color: string
   } | null
 
-  const brandColor = portalSettings?.primary_color || agent?.brand_color || '#0066FF'
+  const brandColor = agent?.brand_color || '#0066FF'
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -256,12 +257,12 @@ function ScheduleConfirmed({
   brandColor,
 }: {
   schedule: {
-    selected_slot: { date: string; start_time: string; end_time: string } | null
+    selected_slot: Json
     confirmed_at: string | null
   }
   brandColor: string
 }) {
-  const slot = schedule.selected_slot
+  const slot = schedule.selected_slot as { date: string; start_time: string; end_time: string } | null
 
   return (
     <div className="bg-white rounded-xl border border-neutral-200 p-6 text-center">
@@ -313,12 +314,13 @@ function SchedulePending({
   brandColor,
 }: {
   schedule: {
-    available_slots: unknown[]
+    available_slots: Json
     submitted_at: string | null
   }
   brandColor: string
 }) {
-  const slotsCount = schedule.available_slots?.length || 0
+  const slotsArray = Array.isArray(schedule.available_slots) ? schedule.available_slots : []
+  const slotsCount = slotsArray.length
 
   return (
     <div className="bg-white rounded-xl border border-neutral-200 p-6 text-center">

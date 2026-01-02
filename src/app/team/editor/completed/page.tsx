@@ -61,16 +61,19 @@ export default async function EditorCompletedPage() {
   const yesterday = startOfDay(subDays(new Date(), 1))
 
   const todayJobs = completedJobs?.filter(j => {
+    if (!j.updated_at) return false
     const date = new Date(j.updated_at)
     return date >= today
   }) || []
 
   const yesterdayJobs = completedJobs?.filter(j => {
+    if (!j.updated_at) return false
     const date = new Date(j.updated_at)
     return date >= yesterday && date < today
   }) || []
 
   const olderJobs = completedJobs?.filter(j => {
+    if (!j.updated_at) return false
     const date = new Date(j.updated_at)
     return date < yesterday
   }) || []
@@ -191,7 +194,7 @@ interface CompletedSectionProps {
     state: string | null
     sqft: number | null
     ops_status: string | null
-    updated_at: string
+    updated_at: string | null
     delivered_at: string | null
     agent: { name: string } | null
   }>
@@ -225,9 +228,11 @@ function CompletedSection({ title, jobs }: CompletedSectionProps) {
                     <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                       {job.sqft && <span>{job.sqft.toLocaleString()} sqft</span>}
                       {job.agent && <span>Agent: {job.agent.name}</span>}
-                      <span>
-                        {format(new Date(job.updated_at), 'h:mm a')}
-                      </span>
+                      {job.updated_at && (
+                        <span>
+                          {format(new Date(job.updated_at), 'h:mm a')}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <StatusBadge status={job.ops_status} />

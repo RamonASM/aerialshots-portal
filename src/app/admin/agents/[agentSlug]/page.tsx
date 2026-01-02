@@ -14,10 +14,11 @@ import {
   RefreshCw,
   Play,
   Settings,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Metadata } from 'next'
-import type { AIAgentCategory } from '@/lib/supabase/types'
+import type { AIAgentCategory } from '@/lib/agents/types'
 
 interface PageProps {
   params: Promise<{ agentSlug: string }>
@@ -46,6 +47,21 @@ const categoryConfig: Record<
     label: 'Lifestyle',
     icon: Map,
     color: 'text-orange-500 bg-orange-500/10',
+  },
+  analytics: {
+    label: 'Analytics',
+    icon: Activity,
+    color: 'text-cyan-500 bg-cyan-500/10',
+  },
+  marketing: {
+    label: 'Marketing',
+    icon: Zap,
+    color: 'text-pink-500 bg-pink-500/10',
+  },
+  communication: {
+    label: 'Communication',
+    icon: Bot,
+    color: 'text-yellow-500 bg-yellow-500/10',
   },
 }
 
@@ -288,7 +304,7 @@ export default async function AgentDetailPage({ params }: PageProps) {
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-neutral-600">
-                      {new Date(exec.created_at).toLocaleString()}
+                      {exec.created_at ? new Date(exec.created_at).toLocaleString() : 'N/A'}
                     </p>
                     {exec.error_message && (
                       <p className="mt-1 text-sm text-red-600">
@@ -299,7 +315,7 @@ export default async function AgentDetailPage({ params }: PageProps) {
                 </div>
                 <div className="flex items-center gap-4 text-sm text-neutral-500">
                   {exec.duration_ms && <span>{exec.duration_ms}ms</span>}
-                  {exec.tokens_used > 0 && (
+                  {exec.tokens_used && exec.tokens_used > 0 && (
                     <span>{exec.tokens_used} tokens</span>
                   )}
                 </div>

@@ -56,9 +56,11 @@ export async function POST(request: Request) {
     }
 
     const adminSupabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyAdminSupabase = adminSupabase as any
 
     // Get active subscriptions for target users
-    const { data: subscriptions } = await adminSupabase
+    const { data: subscriptions } = await anyAdminSupabase
       .from('push_subscriptions')
       .select('*')
       .in('user_id', user_ids)
@@ -72,7 +74,12 @@ export async function POST(request: Request) {
       })
     }
 
-    type PushSubscriptionRow = typeof subscriptions[number]
+    type PushSubscriptionRow = {
+      id: string
+      user_id: string
+      endpoint: string
+      keys: { p256dh: string; auth: string }
+    }
 
     const results = await Promise.allSettled(
       subscriptions.map(async (subscription: PushSubscriptionRow) => {
@@ -88,7 +95,7 @@ export async function POST(request: Request) {
           )
 
           // Log successful send
-          await adminSupabase.from('push_notification_history').insert({
+          await anyAdminSupabase.from('push_notification_history').insert({
             subscription_id: subscription.id,
             user_id: subscription.user_id,
             title: payload.title,
@@ -99,7 +106,7 @@ export async function POST(request: Request) {
           })
 
           // Update last used
-          await adminSupabase
+          await anyAdminSupabase
             .from('push_subscriptions')
             .update({ last_used_at: new Date().toISOString() })
             .eq('id', subscription.id)
@@ -109,14 +116,14 @@ export async function POST(request: Request) {
           const err = error as { statusCode?: number; message?: string }
           // Handle expired/invalid subscriptions
           if (err.statusCode === 410 || err.statusCode === 404) {
-            await adminSupabase
+            await anyAdminSupabase
               .from('push_subscriptions')
               .update({ is_active: false })
               .eq('id', subscription.id)
           }
 
           // Log failed send
-          await adminSupabase.from('push_notification_history').insert({
+          await anyAdminSupabase.from('push_notification_history').insert({
             subscription_id: subscription.id,
             user_id: subscription.user_id,
             title: payload.title,

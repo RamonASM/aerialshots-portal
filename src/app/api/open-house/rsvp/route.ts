@@ -33,9 +33,10 @@ export async function POST(request: NextRequest) {
     const { openHouseId, name, email, phone, partySize, notes } = parsed.data
 
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Verify open house exists and is accepting RSVPs
-    // Note: Using explicit type for joined query since relationships not fully typed
     type OpenHouseWithListing = {
       id: string
       status: string
@@ -51,14 +52,14 @@ export async function POST(request: NextRequest) {
       } | null
     }
 
-    const { data: openHouse, error: openHouseError } = await supabase
+    const { data: openHouse, error: openHouseError } = await anySupabase
       .from('open_houses')
       .select(`
         id, status, event_date, max_attendees, require_registration,
         listing:listings(id, address, city, state, agent:agents(name, phone))
       `)
       .eq('id', openHouseId)
-      .single() as unknown as { data: OpenHouseWithListing | null; error: Error | null }
+      .single() as { data: OpenHouseWithListing | null; error: Error | null }
 
     if (openHouseError || !openHouse) {
       return NextResponse.json(
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Check if max attendees reached
     if (openHouse.max_attendees) {
-      const { count } = await supabase
+      const { count } = await anySupabase
         .from('open_house_rsvps')
         .select('*', { count: 'exact', head: true })
         .eq('open_house_id', openHouseId)
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing RSVP
-    const { data: existingRsvp } = await supabase
+    const { data: existingRsvp } = await anySupabase
       .from('open_house_rsvps')
       .select('id, status')
       .eq('open_house_id', openHouseId)
@@ -113,10 +114,10 @@ export async function POST(request: NextRequest) {
     if (existingRsvp) {
       if (existingRsvp.status === 'cancelled') {
         // Re-activate cancelled RSVP
-        const { error: updateError } = await supabase
+        const { error: updateError } = await anySupabase
           .from('open_house_rsvps')
           .update({
-            status: 'registered' as const,
+            status: 'registered',
             name,
             phone,
             party_size: partySize,
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new RSVP
-    const { data: rsvp, error: insertError } = await supabase
+    const { data: rsvp, error: insertError } = await anySupabase
       .from('open_house_rsvps')
       .insert({
         open_house_id: openHouseId,
@@ -214,8 +215,10 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const anySupabase = supabase as any
 
-  const { data: rsvp, error } = await supabase
+  const { data: rsvp, error } = await anySupabase
     .from('open_house_rsvps')
     .select('id, status, party_size, created_at')
     .eq('open_house_id', openHouseId)

@@ -160,9 +160,9 @@ export default async function StoryworkPage() {
                   <div>
                     <h3 className="font-medium text-neutral-900">{story.title}</h3>
                     <p className="text-sm text-neutral-500">
-                      {storyTypeLabels[story.story_type] || story.story_type}
+                      {story.story_type ? (storyTypeLabels[story.story_type] || story.story_type) : 'Story'}
                       {' • '}
-                      {new Date(story.created_at).toLocaleDateString()}
+                      {story.created_at ? new Date(story.created_at).toLocaleDateString() : 'Unknown'}
                     </p>
                   </div>
                 </div>

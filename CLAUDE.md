@@ -284,6 +284,9 @@ REVIEW_REQUEST_DELAY_MS=7200000
 
 # Cron Jobs
 CRON_SECRET=
+
+# Stripe Connect (Team Payouts)
+STRIPE_CONNECT_WEBHOOK_SECRET=  # whsec_xxxxx from Stripe Dashboard
 ```
 
 ## Unified Architecture
@@ -463,10 +466,63 @@ Endpoints at `/api/founddr/`:
 | Storywork Voice Input | ✅ Complete (OpenAI Whisper) |
 | Carousel Generation | ✅ Complete (Satori renderer) |
 | Content Retainer Booking | ✅ Complete (/book/retainer) |
+| Stripe Connect Payouts | ⏳ Ready (run migration, add env vars) |
+| Time Tracking (QC) | ⏳ Ready (run migration) |
+
+### Stripe Connect & Team Payouts
+
+The platform includes a complete payout system for photographers, videographers, and partners:
+
+**Business Structure:**
+- 2 Partners (owners) - each has their own photographers, Stripe Connect accounts
+- Photographers/Videographers - 1099 contractors, instant Stripe Connect payouts
+- Video Editor - funds set aside per job, paid manually from pool
+- QC Specialist - hourly ($5.50/hr), bi-weekly from company pool
+
+**Revenue Split (configurable via Admin):**
+```
+Job Revenue: $400
+├── Photographer: 40% ($160) → Stripe Connect transfer
+├── Videographer: 20% ($80) → Stripe Connect transfer (if applicable)
+├── Partner: 25% ($100) → Stripe Connect transfer
+└── Company Pools: 15% ($60)
+    ├── Video Editor Fund: 5%
+    ├── QC Fund: 5%
+    └── Operating: 5%
+```
+
+**Key Files:**
+- `src/lib/payments/stripe-connect.ts` - Connect account management, transfers
+- `src/lib/payments/payout-processor.ts` - Job payout orchestration (triggered on QC approval)
+- `src/lib/time-tracking/service.ts` - QC time clock functionality
+- `src/app/admin/team/payouts/` - Admin payout configuration UI
+
+**API Routes:**
+- `/api/connect/staff/account` - Create/get staff Connect accounts
+- `/api/connect/partner/account` - Create/get partner Connect accounts
+- `/api/connect/onboarding` - Generate Stripe onboarding links
+- `/api/webhooks/stripe-connect` - Handle Connect webhooks
+- `/api/admin/payouts/settings` - System-wide payout settings
+- `/api/admin/payouts/staff/[id]` - Individual staff payout config
+- `/api/admin/payouts/partners/[id]` - Individual partner payout config
+
+**Database Tables:**
+- `partners` - Partner organizations with Connect IDs
+- `staff_payouts` - Contractor payout records
+- `partner_payouts` - Partner payout records
+- `company_pool` - Pool allocations (video_editor, qc_fund, operating)
+- `time_entries` - QC time tracking
+- `payout_settings` - Configurable percentages
+
+**Payout Trigger:** On QC Approval → `processJobPayouts()` → Stripe transfers
+
+**Pending Setup:**
+1. Add `STRIPE_CONNECT_WEBHOOK_SECRET` to environment
+2. Run migration `supabase/migrations/20250101_001_stripe_connect.sql`
+3. Configure Stripe Connect in Dashboard (Platform profile, branding)
+4. Partners and staff onboard via `/team/*/settings` pages
 
 ### Logging
-
-The platform uses structured logging for production debugging. Import from `@/lib/logger`:
 
 ```typescript
 import { apiLogger, dbLogger, webhookLogger, formatError } from '@/lib/logger'

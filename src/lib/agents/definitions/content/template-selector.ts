@@ -294,7 +294,7 @@ registerAgent({
   name: 'Template Selector',
   description: 'Automatically selects the best marketing templates for a listing based on property characteristics (type, price point, style)',
   category: 'content',
-  executionMode: 'sync',
+  executionMode: 'immediate',
   systemPrompt: TEMPLATE_SELECTOR_PROMPT,
   config: {
     maxTokens: 600,

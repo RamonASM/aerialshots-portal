@@ -44,7 +44,7 @@ export async function executeAgent(
       campaign_id: request.campaignId,
       triggered_by: request.triggeredBy,
       status: 'running',
-      input: request.input,
+      input: request.input as Record<string, never>,
     })
     .select()
     .single()
@@ -114,7 +114,7 @@ export async function executeAgent(
     try {
       await updateExecution(supabase, execution.id, {
         status: result.success ? 'completed' : 'failed',
-        output: result.output || null,
+        output: (result.output as Record<string, never>) || null,
         error_message: result.error || null,
         tokens_used: result.tokensUsed || 0,
         duration_ms: durationMs,
@@ -185,7 +185,7 @@ export async function executeAgent(
  * Execute a prompt-based agent using the AI client
  */
 async function executePromptBasedAgent(
-  agent: { system_prompt: string | null; config: Record<string, unknown> },
+  agent: { system_prompt: string | null; config: unknown },
   input: Record<string, unknown>
 ): Promise<AgentExecutionResult> {
   if (!agent.system_prompt) {
@@ -315,7 +315,7 @@ export async function cancelExecution(executionId: string): Promise<void> {
   // First verify the execution exists and is in a cancellable state
   const execution = await getExecution(executionId)
 
-  if (!['pending', 'running'].includes(execution.status)) {
+  if (!execution.status || !['pending', 'running'].includes(execution.status)) {
     throw new AppError(
       `Cannot cancel execution in ${execution.status} status`,
       'INVALID_STATUS',
@@ -367,7 +367,7 @@ export async function retryExecution(
   // Re-execute with the same parameters
   return executeAgent({
     agentSlug: execution.agent_slug,
-    triggerSource: (execution.trigger_source as 'webhook' | 'cron' | 'manual' | 'api') || 'manual',
+    triggerSource: (execution.trigger_source as 'webhook' | 'schedule' | 'manual' | 'api' | 'event' | 'workflow') || 'manual',
     input: execution.input as Record<string, unknown>,
     listingId: execution.listing_id || undefined,
     campaignId: execution.campaign_id || undefined,

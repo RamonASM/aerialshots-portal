@@ -2,7 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateAllCarouselContent } from '@/lib/listinglaunch/content-generator'
 import { LISTINGLAUNCH_CREDITS } from '@/lib/listinglaunch/credits'
-import type { NeighborhoodResearchData, GeneratedQuestion } from '@/lib/supabase/types'
+import type { Json } from '@/lib/supabase/types'
+
+// Types not in generated Supabase types
+interface NeighborhoodResearchData {
+  overview?: string
+  demographics?: Record<string, unknown>
+  amenities?: Record<string, unknown>[]
+  schools?: Record<string, unknown>[]
+  walkScore?: number
+  [key: string]: unknown
+}
+
+interface GeneratedQuestion {
+  id: string
+  question: string
+  category?: string
+  answer?: string
+}
 
 interface RouteParams {
   params: Promise<{ campaignId: string }>
@@ -159,7 +176,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const carouselInserts = carousels.map((carousel) => ({
       campaign_id: campaignId,
       carousel_type: carousel.carouselType as CarouselType,
-      slides: carousel.slides,
+      slides: carousel.slides as unknown as Json,
       caption: carousel.caption,
       hashtags: carousel.hashtags,
       render_status: 'pending' as const,

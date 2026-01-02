@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Try to get campaigns from database
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('marketing_campaigns')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -91,9 +92,9 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const stats = {
       totalCampaigns: count || 0,
-      drafts: campaigns?.filter(c => c.status === 'draft').length || 0,
-      scheduled: campaigns?.filter(c => c.status === 'scheduled').length || 0,
-      sent: campaigns?.filter(c => c.status === 'sent').length || 0,
+      drafts: campaigns?.filter((c: { status: string }) => c.status === 'draft').length || 0,
+      scheduled: campaigns?.filter((c: { status: string }) => c.status === 'scheduled').length || 0,
+      sent: campaigns?.filter((c: { status: string }) => c.status === 'sent').length || 0,
     }
 
     return NextResponse.json({
@@ -166,7 +167,8 @@ export async function POST(request: NextRequest) {
     const status = body.schedule_at ? 'scheduled' : 'draft'
 
     // Create campaign
-    const { data: campaign, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: campaign, error } = await (supabase as any)
       .from('marketing_campaigns')
       .insert({
         name: body.name,

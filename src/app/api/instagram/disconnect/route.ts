@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated
+    const supabaseClient = await createClient()
+    const { data: { user } } = await supabaseClient.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { agentId } = await request.json()
 
     if (!agentId) {
@@ -12,10 +24,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify user has access to this agent (owns the agent or is staff)
+    const { data: agent } = await supabaseClient
+      .from('agents')
+      .select('id, email')
+      .eq('id', agentId)
+      .single()
+
+    const isOwner = agent?.email === user.email
+    const isStaff = user.email?.endsWith('@aerialshots.media')
+
+    if (!isOwner && !isStaff) {
+      return NextResponse.json(
+        { error: 'You do not have permission to disconnect for this agent' },
+        { status: 403 }
+      )
+    }
+
     const supabase = createAdminClient()
 
     // Update connection status to revoked
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('instagram_connections')
       .update({
         status: 'revoked' as const,

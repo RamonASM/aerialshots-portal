@@ -29,7 +29,7 @@ interface MediaListing {
   city: string
   status: string
   delivered_at: string | null
-  created_at: string
+  created_at: string | null
   media_counts: {
     photos: number
     videos: number

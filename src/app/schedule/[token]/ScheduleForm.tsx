@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { format, addDays, isBefore, startOfToday } from 'date-fns'
 import 'react-day-picker/dist/style.css'
+import type { Json } from '@/lib/supabase/types'
 
 interface ScheduleFormProps {
   shareLinkId: string
@@ -16,7 +17,7 @@ interface ScheduleFormProps {
     seller_name: string | null
     seller_email: string | null
     seller_phone: string | null
-    available_slots: AvailableSlot[]
+    available_slots: Json
   } | null
 }
 
@@ -46,7 +47,7 @@ export function ScheduleForm({
   const [step, setStep] = useState<'calendar' | 'times' | 'contact' | 'submitting' | 'success'>('calendar')
   const [selectedDates, setSelectedDates] = useState<Date[]>([])
   const [selectedSlots, setSelectedSlots] = useState<AvailableSlot[]>(
-    existingSchedule?.available_slots || []
+    (Array.isArray(existingSchedule?.available_slots) ? existingSchedule.available_slots : []) as unknown as AvailableSlot[]
   )
   const [name, setName] = useState(existingSchedule?.seller_name || defaultName)
   const [email, setEmail] = useState(existingSchedule?.seller_email || defaultEmail)

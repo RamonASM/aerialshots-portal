@@ -31,7 +31,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const adminClient = createAdminClient()
 
-    const { data, error } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (adminClient as any)
       .from('skill_executions')
       .select('*')
       .eq('id', executionId)
@@ -102,7 +103,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const adminClient = createAdminClient()
 
     // Only cancel if still running
-    const { data, error } = await adminClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (adminClient as any)
       .from('skill_executions')
       .update({
         status: 'cancelled',

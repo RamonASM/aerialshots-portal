@@ -38,6 +38,8 @@ export async function GET(
   try {
     const { id: orderId } = await params
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Check authentication
     const {
@@ -72,7 +74,7 @@ export async function GET(
     }
 
     // Get edit requests for this order
-    const { data: editRequests, error } = await supabase
+    const { data: editRequests, error } = await anySupabase
       .from('edit_requests')
       .select(`
         *,
@@ -95,7 +97,8 @@ export async function GET(
     }
 
     // Filter out internal comments for agent view
-    const filteredRequests = editRequests?.map(req => ({
+    type EditRequest = { comments?: { is_internal: boolean }[] }
+    const filteredRequests = editRequests?.map((req: EditRequest) => ({
       ...req,
       comments: req.comments?.filter((c: { is_internal: boolean }) => !c.is_internal) || [],
     }))
@@ -117,6 +120,8 @@ export async function POST(
   try {
     const { id: orderId } = await params
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Check authentication
     const {
@@ -182,7 +187,7 @@ export async function POST(
     }
 
     // Create edit request
-    const { data: editRequest, error } = await supabase
+    const { data: editRequest, error } = await anySupabase
       .from('edit_requests')
       .insert({
         order_id: orderId,
@@ -217,7 +222,7 @@ export async function POST(
 
     // Add initial comment
     if (body.description) {
-      await supabase.from('edit_request_comments').insert({
+      await anySupabase.from('edit_request_comments').insert({
         edit_request_id: editRequest.id,
         author_type: 'agent',
         author_id: agent.id,

@@ -8,7 +8,7 @@ interface Listing {
   id: string
   address: string
   city: string | null
-  state: string
+  state: string | null
   ops_status: string | null
   is_rush: boolean | null
   scheduled_at: string | null

@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
 
     // Build query
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('email_templates')
       .select('*')
       .order('category', { ascending: true })
@@ -50,8 +51,9 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     // Group by category for easier display
-    const byCategory: Record<string, typeof templates> = {}
-    templates?.forEach((template) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const byCategory: Record<string, any[]> = {}
+    templates?.forEach((template: { category: string }) => {
       if (!byCategory[template.category]) {
         byCategory[template.category] = []
       }
@@ -108,7 +110,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: template, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: template, error } = await (supabase as any)
       .from('email_templates')
       .insert({
         name,

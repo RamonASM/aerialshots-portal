@@ -251,7 +251,7 @@ registerAgent({
   name: 'CLAUDE.md Updater',
   description: 'Analyzes codebase changes and updates /CLAUDE.md documentation',
   category: 'development',
-  executionMode: 'async',
+  executionMode: 'manual',
   systemPrompt: CLAUDE_MD_UPDATER_PROMPT,
   config: {
     maxTokens: 2000,

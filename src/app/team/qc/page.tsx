@@ -373,7 +373,7 @@ export default async function QCDashboard() {
   )
 }
 
-function StatusBadge({ status, isRush }: { status: string; isRush: boolean }) {
+function StatusBadge({ status, isRush }: { status: string | null; isRush: boolean | null }) {
   if (isRush) {
     return (
       <Badge className="bg-red-100 text-red-700 border-red-200">
@@ -388,7 +388,7 @@ function StatusBadge({ status, isRush }: { status: string; isRush: boolean }) {
     in_qc: { label: 'Reviewing', className: 'bg-violet-100 text-violet-700' },
   }
 
-  const { label, className } = config[status] || config.ready_for_qc
+  const { label, className } = (status && config[status]) || config.ready_for_qc
 
   return (
     <Badge variant="secondary" className={className}>

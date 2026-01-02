@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     const {
       data: { user },
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { endpoint, keys, expirationTime } = body
+    const { endpoint, keys } = body
 
     if (!endpoint || !keys) {
       return NextResponse.json(
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     const deviceType = getDeviceType(userAgent)
 
     // Upsert subscription
-    const { data: subscription, error } = await supabase
+    const { data: subscription, error } = await anySupabase
       .from('push_subscriptions')
       .upsert(
         {
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     // Also ensure notification preferences exist
-    await supabase
+    await anySupabase
       .from('notification_preferences')
       .upsert(
         {

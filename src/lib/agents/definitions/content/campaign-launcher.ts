@@ -145,7 +145,7 @@ async function execute(context: AgentExecutionContext): Promise<AgentExecutionRe
           status: existingCampaign.status === 'questions' ? 'questions_ready' : 'research_pending',
           questionsUrl,
           neighborhoodResearchStatus: existingCampaign.status === 'questions' ? 'completed' : 'started',
-          nextSteps: getNextSteps(existingCampaign.status),
+          nextSteps: getNextSteps(existingCampaign.status || 'draft'),
           existingCampaign: true,
         },
       }
@@ -308,7 +308,7 @@ registerAgent({
   description:
     'Auto-starts ListingLaunch carousel campaigns when media is delivered. Creates campaign, triggers neighborhood research, and sets up initial questions.',
   category: 'content',
-  executionMode: 'async',
+  executionMode: 'triggered',
   systemPrompt: CAMPAIGN_LAUNCHER_PROMPT,
   config: {
     maxTokens: 0, // No AI generation needed

@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST() {
   try {
     const supabase = await createClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     const {
       data: { user },
@@ -15,7 +17,7 @@ export async function POST() {
     }
 
     // Get user's active subscriptions
-    const { data: subscriptions } = await supabase
+    const { data: subscriptions } = await anySupabase
       .from('push_subscriptions')
       .select('*')
       .eq('user_id', user.id)

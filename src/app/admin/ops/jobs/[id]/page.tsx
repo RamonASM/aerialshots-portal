@@ -26,6 +26,37 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
+// Job listing type with integration fields (may not be in generated types)
+interface JobListing {
+  id: string
+  address: string
+  city: string
+  state: string
+  zip: string
+  sqft: number | null
+  bedrooms: number | null
+  bathrooms: number | null
+  beds?: number | null
+  baths?: number | null
+  agent_id: string | null
+  ops_status: string | null
+  qc_status: string | null
+  shoot_date: string | null
+  scheduled_at?: string | null
+  delivered_at: string | null
+  created_at: string | null
+  updated_at: string | null
+  is_rush?: boolean | null
+  // Integration fields
+  cubicasa_order_id?: string | null
+  cubicasa_status?: string | null
+  zillow_3d_id?: string | null
+  zillow_3d_status?: string | null
+  integration_error_message?: string | null
+  last_integration_check?: string | null
+  [key: string]: unknown
+}
+
 const statusOptions = [
   { value: 'scheduled', label: 'Scheduled' },
   { value: 'in_progress', label: 'In Progress' },
@@ -68,7 +99,8 @@ export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: listingData, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: listingData, error } = await (supabase as any)
     .from('listings')
     .select(`
       *,
@@ -86,19 +118,22 @@ export default async function JobDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  const typedListing = listingData as JobListing
+
   // Get agent and media assets
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [{ data: agent }, { data: media_assets }] = await Promise.all([
-    listingData.agent_id
-      ? supabase.from('agents').select('name, email, phone').eq('id', listingData.agent_id).single()
+    typedListing.agent_id
+      ? supabase.from('agents').select('name, email, phone').eq('id', typedListing.agent_id).single()
       : { data: null },
-    supabase
+    (supabase as any)
       .from('media_assets')
       .select('id, aryeo_url, media_url, type, category, qc_status')
       .eq('listing_id', id),
   ])
 
   const listing = {
-    ...listingData,
+    ...typedListing,
     agent,
     media_assets,
   }
@@ -187,7 +222,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           <input type="hidden" name="id" value={listing.id} />
           <select
             name="status"
-            defaultValue={listing.ops_status}
+            defaultValue={listing.ops_status ?? 'scheduled'}
             className="flex-1 rounded-lg border border-neutral-200 px-3 py-2"
           >
             {statusOptions.map((status) => (
@@ -220,7 +255,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* AI Skills Panel */}
       <SkillsPanelClient
         listingId={listing.id}
-        mediaAssets={(media_assets || []).map((asset) => ({
+        mediaAssets={(media_assets || []).map((asset: { media_url?: string; aryeo_url?: string; type?: string }) => ({
           url: asset.media_url || asset.aryeo_url || '',
           type: asset.type,
         }))}
@@ -356,7 +391,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                     )}
                   </p>
                   <p className="text-xs text-neutral-500">
-                    {new Date(event.created_at).toLocaleString()}
+                    {event.created_at ? new Date(event.created_at).toLocaleString() : 'N/A'}
                   </p>
                 </div>
               </div>

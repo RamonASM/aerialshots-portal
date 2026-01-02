@@ -87,7 +87,8 @@ export async function POST(
     const { request_type, priority, title, description, media_asset_ids, reference_images } = parseResult.data
 
     // Create edit request
-    const { data: editRequest, error: createError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editRequest, error: createError } = await (supabase as any)
       .from('edit_requests')
       .insert({
         listing_id: listingId,
@@ -197,7 +198,8 @@ export async function GET(
     }
 
     // Get edit requests
-    const { data: editRequests, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: editRequests, error } = await (supabase as any)
       .from('edit_requests')
       .select(`
         id,

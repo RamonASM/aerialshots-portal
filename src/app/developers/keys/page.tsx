@@ -33,13 +33,13 @@ import { createClient } from '@/lib/supabase/client'
 interface ApiKey {
   id: string
   name: string | null
-  key_prefix: string
-  tier: string
-  monthly_limit: number
-  is_active: boolean
-  created_at: string
+  key_prefix: string | null
+  tier: string | null
+  monthly_limit: number | null
+  is_active: boolean | null
+  created_at: string | null
   last_used_at: string | null
-  usage_count: number
+  requests_this_month: number | null
 }
 
 export default function KeysPage() {
@@ -341,8 +341,8 @@ export default function KeysPage() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-3">
                         <h3 className="font-semibold">{key.name}</h3>
-                        <Badge className={getTierColor(key.tier)}>
-                          {key.tier.charAt(0).toUpperCase() + key.tier.slice(1)}
+                        <Badge className={getTierColor(key.tier || 'free')}>
+                          {(key.tier || 'free').charAt(0).toUpperCase() + (key.tier || 'free').slice(1)}
                         </Badge>
                         {!key.is_active && (
                           <Badge variant="destructive">Inactive</Badge>
@@ -406,7 +406,7 @@ export default function KeysPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
                     <div>
                       <p className="text-xs text-muted-foreground">Created</p>
-                      <p className="text-sm font-medium">{formatDate(key.created_at)}</p>
+                      <p className="text-sm font-medium">{key.created_at ? formatDate(key.created_at) : 'Unknown'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Last Used</p>
@@ -417,13 +417,13 @@ export default function KeysPage() {
                     <div>
                       <p className="text-xs text-muted-foreground">Monthly Usage</p>
                       <p className="text-sm font-medium">
-                        {key.usage_count?.toLocaleString() || 0} / {key.monthly_limit.toLocaleString()}
+                        {key.requests_this_month?.toLocaleString() || 0} / {(key.monthly_limit || 0).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Remaining</p>
                       <p className="text-sm font-medium">
-                        {(key.monthly_limit - (key.usage_count || 0)).toLocaleString()}
+                        {((key.monthly_limit || 0) - (key.requests_this_month || 0)).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -434,7 +434,7 @@ export default function KeysPage() {
                       <div
                         className="h-full bg-primary rounded-full transition-all"
                         style={{
-                          width: `${Math.min(100, ((key.usage_count || 0) / key.monthly_limit) * 100)}%`,
+                          width: `${Math.min(100, ((key.requests_this_month || 0) / (key.monthly_limit || 1)) * 100)}%`,
                         }}
                       />
                     </div>

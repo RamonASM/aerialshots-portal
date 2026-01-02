@@ -117,7 +117,7 @@ export async function GET() {
         id: o.id,
         type: 'order' as const,
         message: `New order: ${(o.listing as { address?: string })?.address || 'Unknown'}`,
-        timestamp: o.created_at,
+        timestamp: o.created_at || '',
       })) || []),
       ...(recentDeliveries?.map(d => ({
         id: d.id,
@@ -129,7 +129,7 @@ export async function GET() {
         id: l.id,
         type: 'lead' as const,
         message: `New lead: ${l.name} for ${(l.listing as { address?: string })?.address || 'Unknown'}`,
-        timestamp: l.created_at,
+        timestamp: l.created_at || '',
       })) || []),
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 15)

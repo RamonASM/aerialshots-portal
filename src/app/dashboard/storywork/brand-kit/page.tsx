@@ -77,12 +77,12 @@ export default function BrandKitPage() {
 
       if (existingKit) {
         setBrandKit({
-          name: existingKit.name,
-          primary_color: existingKit.primary_color,
+          name: existingKit.name || '',
+          primary_color: existingKit.primary_color || '#ff4533',
           secondary_color: existingKit.secondary_color || '#000000',
-          font_family: existingKit.font_family,
-          logo_url: existingKit.logo_url || '',
-          headshot_url: existingKit.headshot_url || '',
+          font_family: existingKit.font_family || 'Inter',
+          logo_url: existingKit.logo_url || agent.logo_url || '',
+          headshot_url: agent.headshot_url || '',
         })
       } else {
         // Use agent defaults

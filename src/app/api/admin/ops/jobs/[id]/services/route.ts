@@ -69,7 +69,8 @@ export async function GET(
       .single()
 
     // Get service catalog
-    const { data: services, error: servicesError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: services, error: servicesError } = await (supabase as any)
       .from('service_catalog')
       .select('*')
       .eq('is_active', true)
@@ -87,7 +88,8 @@ export async function GET(
     }
 
     // Get order modifications history
-    const { data: modifications } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: modifications } = await (supabase as any)
       .from('order_modifications')
       .select('*')
       .eq('listing_id', listingId)
@@ -162,7 +164,8 @@ export async function POST(
     }
 
     // Get service from catalog
-    const { data: service, error: serviceError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: service, error: serviceError } = await (supabase as any)
       .from('service_catalog')
       .select('*')
       .eq('service_key', body.service_key)
@@ -198,7 +201,8 @@ export async function POST(
     const newTotalCents = (order.total_cents || 0) + servicePriceCents
 
     // Create order modification record
-    const { data: modification, error: modError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: modification, error: modError } = await (supabase as any)
       .from('order_modifications')
       .insert({
         order_id: order.id,
@@ -247,7 +251,8 @@ export async function POST(
       quantity,
     } as Record<string, unknown>
 
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('orders')
       .update({
         services: [...currentServices, newServiceItem],
@@ -339,7 +344,8 @@ export async function DELETE(
     const newTotalCents = Math.max(0, (order.total_cents || 0) - servicePriceCents)
 
     // Create order modification record
-    const { data: modification, error: modError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: modification, error: modError } = await (supabase as any)
       .from('order_modifications')
       .insert({
         order_id: order.id,
@@ -370,7 +376,8 @@ export async function DELETE(
     // Update order services and total
     const updatedServices = orderServices.filter((_, idx) => idx !== serviceIndex) as Record<string, unknown>[]
 
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('orders')
       .update({
         services: updatedServices,

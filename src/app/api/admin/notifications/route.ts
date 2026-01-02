@@ -26,7 +26,8 @@ export async function GET() {
     }
 
     // Fetch notification rules
-    const { data: rules, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rules, error } = await (supabase as any)
       .from('notification_rules')
       .select('*')
       .order('created_at', { ascending: false })
@@ -38,16 +39,16 @@ export async function GET() {
 
     // Calculate stats
     const totalRules = rules?.length || 0
-    const activeRules = rules?.filter((r) => r.is_active).length || 0
+    const activeRules = rules?.filter((r: { is_active: boolean }) => r.is_active).length || 0
     const inactiveRules = totalRules - activeRules
 
     const byTrigger: Record<string, number> = {}
-    rules?.forEach((rule) => {
+    rules?.forEach((rule: { trigger_event: string }) => {
       byTrigger[rule.trigger_event] = (byTrigger[rule.trigger_event] || 0) + 1
     })
 
     // Transform to UI format (trigger_event -> trigger_type, conditions -> trigger_conditions)
-    const transformedRules = rules?.map((rule) => ({
+    const transformedRules = rules?.map((rule: { trigger_event: string; conditions: unknown; [key: string]: unknown }) => ({
       ...rule,
       trigger_type: rule.trigger_event,
       trigger_conditions: rule.conditions,
@@ -103,7 +104,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Map UI field names to DB field names
-    const { data: rule, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rule, error } = await (supabase as any)
       .from('notification_rules')
       .insert({
         name,

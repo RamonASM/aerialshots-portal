@@ -292,7 +292,7 @@ export default function ReferralsPage() {
                       ? `${referral.order_type} package`
                       : 'Signed up'}
                     {' - '}
-                    {new Date(referral.created_at).toLocaleDateString()}
+                    {referral.created_at ? new Date(referral.created_at).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -307,7 +307,7 @@ export default function ReferralsPage() {
                   >
                     {referral.status?.replace('_', ' ').toUpperCase()}
                   </span>
-                  {referral.credits_awarded > 0 && (
+                  {referral.credits_awarded && referral.credits_awarded > 0 && (
                     <p className="mt-1 text-[13px] font-medium text-green-400">
                       +{referral.credits_awarded} credits
                     </p>

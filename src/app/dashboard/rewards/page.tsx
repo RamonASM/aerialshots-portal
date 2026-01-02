@@ -308,7 +308,7 @@ export default function RewardsPage() {
   }
 
   const handleRedeem = async (reward: Reward) => {
-    if (!agent || agent.credit_balance < reward.credits) return
+    if (!agent || (agent.credit_balance || 0) < reward.credits) return
 
     setRedeeming(reward.id)
 
@@ -328,7 +328,7 @@ export default function RewardsPage() {
       // Update local balance
       setAgent({
         ...agent,
-        credit_balance: agent.credit_balance - reward.credits,
+        credit_balance: (agent.credit_balance || 0) - reward.credits,
       })
       setRedeemed(reward.id)
       setTimeout(() => setRedeemed(null), 3000)

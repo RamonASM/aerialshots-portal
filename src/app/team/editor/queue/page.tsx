@@ -157,8 +157,8 @@ interface QueueSectionProps {
     city: string | null
     state: string | null
     sqft: number | null
-    is_rush: boolean
-    updated_at: string
+    is_rush: boolean | null
+    updated_at: string | null
     agent: { name: string } | null
   }>
 }
@@ -209,10 +209,12 @@ function QueueSection({ title, badgeColor, jobs }: QueueSectionProps) {
                     <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                       {job.sqft && <span>{job.sqft.toLocaleString()} sqft</span>}
                       {job.agent && <span>Agent: {job.agent.name}</span>}
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {getTimeAgo(job.updated_at)}
-                      </span>
+                      {job.updated_at && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {getTimeAgo(job.updated_at)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />

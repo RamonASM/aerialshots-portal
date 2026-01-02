@@ -43,10 +43,12 @@ export async function POST(request: NextRequest) {
     const { listingId, mediaIds, batchSize = BATCH_SIZE } = body
 
     const supabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
     const storageService = new MediaStorageService()
 
     // Build query for assets to migrate
-    let query = supabase
+    let query = anySupabase
       .from('media_assets')
       .select('*')
       .eq('migration_status', 'pending')
@@ -80,12 +82,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark assets as migrating
-    await supabase
+    await anySupabase
       .from('media_assets')
       .update({ migration_status: 'migrating' })
       .in(
         'id',
-        assets.map((a) => a.id)
+        assets.map((a: { id: string }) => a.id)
       )
 
     // Migrate each asset
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
 
         if (!migrateResult.success) {
           // Mark as failed
-          await supabase
+          await anySupabase
             .from('media_assets')
             .update({ migration_status: 'failed' })
             .eq('id', asset.id)
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update the asset with new URL
-        await supabase.from('media_assets').update({
+        await anySupabase.from('media_assets').update({
           media_url: migrateResult.newUrl,
           storage_path: migrateResult.path,
           storage_bucket: storageService['supabase'] ? undefined : undefined, // Would need bucket from result
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
         results.push({ id: asset.id, success: true })
       } catch (err) {
         // Mark as failed
-        await supabase
+        await anySupabase
           .from('media_assets')
           .update({ migration_status: 'failed' })
           .eq('id', asset.id)
@@ -204,9 +206,11 @@ export async function GET(request: NextRequest) {
     const listingId = searchParams.get('listingId')
 
     const supabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Get migration stats
-    let query = supabase
+    let query = anySupabase
       .from('media_assets')
       .select('migration_status')
 
@@ -223,12 +227,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    type AssetWithStatus = { migration_status: string | null }
     const stats = {
       total: assets?.length || 0,
-      pending: assets?.filter((a) => a.migration_status === 'pending').length || 0,
-      migrating: assets?.filter((a) => a.migration_status === 'migrating').length || 0,
-      completed: assets?.filter((a) => a.migration_status === 'completed').length || 0,
-      failed: assets?.filter((a) => a.migration_status === 'failed').length || 0,
+      pending: assets?.filter((a: AssetWithStatus) => a.migration_status === 'pending').length || 0,
+      migrating: assets?.filter((a: AssetWithStatus) => a.migration_status === 'migrating').length || 0,
+      completed: assets?.filter((a: AssetWithStatus) => a.migration_status === 'completed').length || 0,
+      failed: assets?.filter((a: AssetWithStatus) => a.migration_status === 'failed').length || 0,
     }
 
     const percentComplete = stats.total > 0

@@ -2,11 +2,58 @@
 // Generates slide content, captions, and hashtags for each carousel type
 
 import { generateWithAI } from '@/lib/ai/client'
-import type {
-  NeighborhoodResearchData,
-  CarouselSlide,
-  GeneratedQuestion,
-} from '@/lib/supabase/types'
+
+interface PlaceData {
+  name: string
+  rating?: number
+  types?: string[]
+  [key: string]: unknown
+}
+
+interface EventData {
+  name: string
+  date?: string
+  venue?: string
+  [key: string]: unknown
+}
+
+interface CuratedItemData {
+  title: string
+  [key: string]: unknown
+}
+
+interface NeighborhoodResearchData {
+  overview?: string
+  dining?: PlaceData[]
+  shopping?: PlaceData[]
+  fitness?: PlaceData[]
+  entertainment?: PlaceData[]
+  services?: PlaceData[]
+  education?: PlaceData[]
+  events?: EventData[]
+  curatedItems?: CuratedItemData[]
+  demographics?: Record<string, unknown>
+  walkScore?: number
+  researchedAt?: string
+  [key: string]: unknown
+}
+
+interface CarouselSlide {
+  position: number
+  headline: string
+  body: string
+  background_image_id?: string | null
+  background_image_url?: string | null
+  text_position: 'top_left' | 'top_center' | 'top_right' | 'center_left' | 'center' | 'center_right' | 'bottom_left' | 'bottom_center' | 'bottom_right'
+  overlay_style: 'gradient_bottom' | 'gradient_top' | 'solid' | 'none'
+}
+
+interface GeneratedQuestion {
+  id: string
+  question: string
+  category?: string
+  answer?: string
+}
 
 interface ListingContext {
   address: string

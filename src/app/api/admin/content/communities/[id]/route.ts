@@ -31,7 +31,8 @@ export async function GET(
     }
 
     // Get community by slug or id
-    let query = supabase.from('communities').select('*')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any).from('communities').select('*')
 
     // Try UUID first, then slug
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
@@ -128,7 +129,8 @@ export async function PATCH(
     // Find by slug or id
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-    let query = supabase.from('communities').update(updateData)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any).from('communities').update(updateData)
     if (isUUID) {
       query = query.eq('id', id)
     } else {
@@ -181,7 +183,8 @@ export async function DELETE(
     // Find by slug or id
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
-    let query = supabase.from('communities').delete()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any).from('communities').delete()
     if (isUUID) {
       query = query.eq('id', id)
     } else {

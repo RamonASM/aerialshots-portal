@@ -116,7 +116,7 @@ export async function GET(request: Request) {
           l.delivered_at ? new Date(l.delivered_at).toLocaleDateString() : '',
         ])
 
-        csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+        csvContent = [headers.join(','), ...rows.map((r: (string | number)[]) => r.join(','))].join('\n')
         filename = `jobs_export_${period}_${new Date().toISOString().split('T')[0]}.csv`
         break
       }
@@ -152,20 +152,22 @@ export async function GET(request: Request) {
           a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
         ])
 
-        csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+        csvContent = [headers.join(','), ...rows.map((r: (string | number)[]) => r.join(','))].join('\n')
         filename = `agents_export_${new Date().toISOString().split('T')[0]}.csv`
         break
       }
 
       case 'team': {
         // Export team performance
-        const { data: staffMembers } = await adminSupabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: staffMembers } = await (adminSupabase as any)
           .from('staff')
           .select('id, name, email, role, team_role, is_active, max_daily_jobs, created_at')
           .order('name')
 
         // Get job counts per photographer
-        let listingsQuery = adminSupabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let listingsQuery = (adminSupabase as any)
           .from('listings')
           .select('photographer_id, ops_status')
 
@@ -189,7 +191,7 @@ export async function GET(request: Request) {
         }
 
         const headers = ['ID', 'Name', 'Email', 'Role', 'Team Role', 'Active', 'Max Daily Jobs', 'Total Jobs', 'Delivered', 'Completion Rate', 'Created']
-        const rows = (staffMembers || []).map((s) => {
+        const rows = (staffMembers || []).map((s: { id: string; name?: string; email?: string; role?: string; team_role?: string; is_active?: boolean; max_daily_jobs?: number; created_at?: string }) => {
           const stats = jobCounts[s.id] || { total: 0, delivered: 0 }
           const completionRate = stats.total > 0
             ? Math.round((stats.delivered / stats.total) * 100)
@@ -209,7 +211,7 @@ export async function GET(request: Request) {
           ]
         })
 
-        csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+        csvContent = [headers.join(','), ...rows.map((r: (string | number)[]) => r.join(','))].join('\n')
         filename = `team_export_${period}_${new Date().toISOString().split('T')[0]}.csv`
         break
       }
@@ -253,7 +255,7 @@ export async function GET(request: Request) {
             .map(([zip, data]) => [zip, 'ZIP', data.count]),
         ]
 
-        csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+        csvContent = [headers.join(','), ...rows.map((r: (string | number)[]) => r.join(','))].join('\n')
         filename = `geographic_export_${period}_${new Date().toISOString().split('T')[0]}.csv`
         break
       }

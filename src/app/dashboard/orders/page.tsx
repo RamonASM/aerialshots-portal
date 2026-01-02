@@ -73,11 +73,11 @@ export default async function OrdersPage() {
     .order('created_at', { ascending: false })
 
   const activeOrders = orders?.filter(o =>
-    !['delivered', 'cancelled', 'refunded'].includes(o.status)
+    !['delivered', 'cancelled', 'refunded'].includes(o.status || 'pending')
   ) || []
 
   const pastOrders = orders?.filter(o =>
-    ['delivered', 'cancelled', 'refunded'].includes(o.status)
+    ['delivered', 'cancelled', 'refunded'].includes(o.status || 'pending')
   ) || []
 
   return (

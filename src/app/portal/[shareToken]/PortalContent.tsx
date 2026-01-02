@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { StatusTimeline } from '@/components/portal/StatusTimeline'
 import { ClientMessenger } from '@/components/portal/ClientMessenger'
 import { FeedbackForm } from '@/components/portal/FeedbackForm'
+import type { Json } from '@/lib/supabase/types'
 
 interface MediaAsset {
   id: string
@@ -19,8 +20,8 @@ interface MediaAsset {
 interface StatusEvent {
   id: string
   event_type: string
-  created_at: string
-  new_value: Record<string, unknown> | null
+  created_at: string | null
+  new_value: Json
 }
 
 interface PortalContentProps {
@@ -51,13 +52,9 @@ interface PortalContentProps {
   mediaAssets: MediaAsset[]
   statusHistory: StatusEvent[]
   portalSettings: {
-    logo_url: string | null
-    primary_color: string
-    secondary_color: string
-    font_family: string
-    custom_css: string | null
-    welcome_message: string | null
-    footer_text: string | null
+    branding_enabled: boolean | null
+    custom_domain: string | null
+    password_protected: boolean | null
   } | null
   brandColor: string
   showPoweredBy: boolean
@@ -161,9 +158,9 @@ export function PortalContent({
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {portalSettings?.logo_url || agent?.logo_url ? (
+              {agent?.logo_url ? (
                 <img
-                  src={portalSettings?.logo_url || agent?.logo_url || ''}
+                  src={agent.logo_url}
                   alt={agent?.name || 'Logo'}
                   className="h-10 w-auto object-contain"
                 />
@@ -354,9 +351,6 @@ export function PortalContent({
                 </div>
               </div>
             </div>
-          )}
-          {portalSettings?.footer_text && (
-            <p className="text-sm text-neutral-500 mb-4">{portalSettings.footer_text}</p>
           )}
           {showPoweredBy && (
             <p className="text-xs text-neutral-400">

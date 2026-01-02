@@ -110,12 +110,12 @@ export function NotificationCenter() {
             id: log.id,
             type: log.notification_type || 'default',
             title: getNotificationTitle(log.notification_type || 'notification'),
-            message: log.template_id
+            message: log.channel
               ? `Notification sent via ${log.channel}`
               : 'New notification',
             link: metadata?.link as string | undefined,
             is_read: log.status === 'opened' || log.status === 'delivered',
-            created_at: log.created_at,
+            created_at: log.created_at || new Date().toISOString(),
             metadata: metadata ?? undefined,
           }
         })

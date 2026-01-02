@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { publishCarousel, checkPublishingPermissions } from '@/lib/integrations/instagram/publish'
 import { getUsableToken, encryptToken } from '@/lib/integrations/instagram/encryption'
 import { refreshToken } from '@/lib/integrations/instagram/oauth'
-import type { CarouselSlide } from '@/lib/supabase/types'
 
 // POST - Publish a carousel to Instagram
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated
+    const supabaseClient = await createClient()
+    const { data: { user } } = await supabaseClient.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { carouselId, agentId } = body as { carouselId: string; agentId: string }
 
@@ -18,10 +29,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify user has access to this agent (owns the agent or is staff)
+    const { data: agent } = await supabaseClient
+      .from('agents')
+      .select('id, email')
+      .eq('id', agentId)
+      .single()
+
+    const isOwner = agent?.email === user.email
+    const isStaff = user.email?.endsWith('@aerialshots.media')
+
+    if (!isOwner && !isStaff) {
+      return NextResponse.json(
+        { error: 'You do not have permission to publish for this agent' },
+        { status: 403 }
+      )
+    }
+
     const supabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = supabase as any
 
     // Get Instagram connection for agent
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connection, error: connectionError } = await anySupabase
       .from('instagram_connections')
       .select('*')
       .eq('agent_id', agentId)
@@ -70,7 +100,6 @@ export async function POST(request: NextRequest) {
 
     // Check if carousel has rendered images
     const renderedUrls = (carousel.rendered_image_urls as string[]) || []
-    const slides = carousel.slides as CarouselSlide[]
 
     if (renderedUrls.length < 2 || carousel.render_status !== 'completed') {
       return NextResponse.json(
@@ -106,7 +135,7 @@ export async function POST(request: NextRequest) {
           const encryptedToken = encryptToken(accessToken)
           const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString()
 
-          await supabase
+          await anySupabase
             .from('instagram_connections')
             .update({
               access_token_encrypted: encryptedToken,
@@ -163,7 +192,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Create scheduled post record
-    await supabase
+    await anySupabase
       .from('instagram_scheduled_posts')
       .insert({
         carousel_id: carouselId,

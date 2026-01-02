@@ -95,7 +95,8 @@ export async function POST(request: Request) {
     }
 
     // Get services from merged listing
-    const { data: mergedServicesData } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mergedServicesData } = await (adminSupabase as any)
       .from('order_services')
       .select('*')
       .eq('listing_id', merged_listing_id)
@@ -110,7 +111,8 @@ export async function POST(request: Request) {
 
     // Move services from merged listing to primary listing
     if (mergedServices && mergedServices.length > 0) {
-      await adminSupabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminSupabase as any)
         .from('order_services')
         .update({ listing_id: primary_listing_id })
         .eq('listing_id', merged_listing_id)
@@ -125,19 +127,22 @@ export async function POST(request: Request) {
     }
 
     // Move photographer assignments
-    await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any)
       .from('photographer_assignments')
       .update({ listing_id: primary_listing_id })
       .eq('listing_id', merged_listing_id)
 
     // Move any messages
-    await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any)
       .from('client_messages')
       .update({ listing_id: primary_listing_id })
       .eq('listing_id', merged_listing_id)
 
     // Create merge record
-    const { data: mergeRecordData, error: mergeError } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mergeRecordData, error: mergeError } = await (adminSupabase as any)
       .from('merged_orders')
       .insert({
         primary_listing_id,
@@ -212,7 +217,8 @@ export async function GET(request: Request) {
     const adminSupabase = createAdminClient()
 
     // Build query
-    let query = adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (adminSupabase as any)
       .from('merged_orders')
       .select(`
         id,
@@ -280,7 +286,8 @@ export async function DELETE(request: Request) {
     const adminSupabase = createAdminClient()
 
     // Get merge record
-    const { data: mergeData } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mergeData } = await (adminSupabase as any)
       .from('merged_orders')
       .select('*')
       .eq('id', mergeId)
@@ -304,14 +311,16 @@ export async function DELETE(request: Request) {
     // Move services back (based on stored merged_services)
     if (merge.merged_services && merge.merged_services.length > 0) {
       const serviceIds = merge.merged_services.map((s) => s.id)
-      await adminSupabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminSupabase as any)
         .from('order_services')
         .update({ listing_id: merge.merged_listing_id })
         .in('id', serviceIds)
     }
 
     // Delete merge record
-    await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any)
       .from('merged_orders')
       .delete()
       .eq('id', mergeId)

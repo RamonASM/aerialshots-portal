@@ -175,7 +175,7 @@ async function fetchAgentMetrics(slug?: string): Promise<AgentMetrics[]> {
     if (exec.status === 'failed') m.failed++
     if (exec.duration_ms) m.totalDuration += exec.duration_ms
     m.tokens += exec.tokens_used || 0
-    if (!m.lastExecution || exec.created_at > m.lastExecution) {
+    if (exec.created_at && (!m.lastExecution || exec.created_at > m.lastExecution)) {
       m.lastExecution = exec.created_at
     }
   }
@@ -186,7 +186,7 @@ async function fetchAgentMetrics(slug?: string): Promise<AgentMetrics[]> {
       slug: agent.slug,
       name: agent.name,
       category: agent.category as AIAgentCategory,
-      isActive: agent.is_active,
+      isActive: agent.is_active ?? false,
       totalExecutions: m.total,
       successfulExecutions: m.success,
       failedExecutions: m.failed,
@@ -299,6 +299,9 @@ async function fetchAgentsByCategory(): Promise<Record<AIAgentCategory, AIAgent[
     content: [],
     development: [],
     lifestyle: [],
+    marketing: [],
+    analytics: [],
+    communication: [],
   }
 
   for (const agent of agents) {

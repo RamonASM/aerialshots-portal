@@ -64,7 +64,7 @@ Respond with ONLY the summary text, no JSON or formatting.`
  */
 function calculateStats(listings: Array<{
   id: string
-  status: string
+  status: string | null
   price: number | null
   sold_price: number | null
   sold_date: string | null
@@ -376,7 +376,7 @@ registerAgent({
   description:
     'Calculate comprehensive portfolio statistics for agent pages including total volume, average DOM, listing counts, top neighborhoods, and AI-generated performance summary.',
   category: 'lifestyle',
-  executionMode: 'sync',
+  executionMode: 'immediate',
   systemPrompt: PORTFOLIO_SUMMARY_PROMPT,
   config: {
     maxTokens: 500,

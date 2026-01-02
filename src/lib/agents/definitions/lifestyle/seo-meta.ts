@@ -402,7 +402,7 @@ registerAgent({
   name: 'SEO Meta Generator',
   description: 'Generates SEO-optimized meta tags for property and portfolio pages',
   category: 'lifestyle',
-  executionMode: 'sync',
+  executionMode: 'immediate',
   systemPrompt: SEO_META_PROMPT,
   config: {
     maxTokens: 1500,

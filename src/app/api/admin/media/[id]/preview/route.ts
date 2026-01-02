@@ -25,7 +25,8 @@ export async function GET(request: Request, { params }: RouteParams) {
     const adminSupabase = createAdminClient()
 
     // Get media asset
-    const { data: asset } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: asset } = await (adminSupabase as any)
       .from('media_assets')
       .select('id, type, media_url')
       .eq('id', id)
@@ -94,7 +95,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     const adminSupabase = createAdminClient()
 
     // Check if media asset exists and is a video
-    const { data: asset } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: asset } = await (adminSupabase as any)
       .from('media_assets')
       .select('id, type, media_url')
       .eq('id', id)

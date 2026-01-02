@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
       is_converted: false,
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('booking_sessions')
       .upsert(upsertRow, { onConflict: 'session_id' })
 

@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
 
   // If searching by proximity, use the function
   if (lat && lng) {
-    const { data, error } = await supabase.rpc('find_nearby_amenities', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc('find_nearby_amenities', {
       p_lat: parseFloat(lat),
       p_lng: parseFloat(lng),
       p_radius_miles: parseFloat(radius),
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Standard query
-  let query = supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
     .from('community_amenities')
     .select(`
       *,
@@ -115,7 +117,8 @@ export async function POST(request: NextRequest) {
       tags,
     } = parsed.data
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('community_amenities')
       .insert({
         name,
@@ -185,7 +188,8 @@ export async function PUT(request: NextRequest) {
     if (parsed.data.accessType !== undefined) updates.access_type = parsed.data.accessType
     if (parsed.data.tags !== undefined) updates.tags = parsed.data.tags
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('community_amenities')
       .update(updates)
       .eq('id', id)
@@ -219,7 +223,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Amenity ID is required' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('community_amenities')
       .delete()
       .eq('id', id)

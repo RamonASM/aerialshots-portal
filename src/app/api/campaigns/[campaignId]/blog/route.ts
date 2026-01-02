@@ -2,7 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateBlogPost, exportBlogAsMarkdown, exportBlogAsHTML } from '@/lib/listinglaunch/blog-generator'
 import { LISTINGLAUNCH_CREDITS } from '@/lib/listinglaunch/credits'
-import type { NeighborhoodResearchData, GeneratedQuestion } from '@/lib/supabase/types'
+
+// Types for campaign data (not in generated types)
+interface NeighborhoodResearchData {
+  overview?: string
+  demographics?: Record<string, unknown>
+  amenities?: Record<string, unknown>[]
+  schools?: Record<string, unknown>[]
+  walkScore?: number
+  [key: string]: unknown
+}
+
+interface GeneratedQuestion {
+  id: string
+  question: string
+  category?: string
+  answer?: string
+}
 
 interface RouteParams {
   params: Promise<{ campaignId: string }>
@@ -132,13 +148,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Deduct credits for blog generation
     const newBalance = creditBalance - requiredCredits
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('agents')
       .update({ credit_balance: newBalance })
       .eq('id', agent.id)
 
     // Log the credit transaction
-    await supabase.from('credit_transactions').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('credit_transactions').insert({
       agent_id: agent.id,
       amount: -requiredCredits,
       type: 'asm_ai_tool',
@@ -146,7 +164,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     // Save blog to campaign
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('listing_campaigns')
       .update({
         blog_post_content: blog as unknown as Record<string, unknown>,
@@ -159,7 +178,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Also save to listing_blog_posts table
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('listing_blog_posts')
       .upsert({
         campaign_id: campaignId,

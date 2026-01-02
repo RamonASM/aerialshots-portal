@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = (page - 1) * limit
 
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('job_tasks')
       .select(`
         *,
@@ -118,7 +119,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get stats
-    const statsQuery = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const statsQuery = (supabase as any)
       .from('job_tasks')
       .select('status', { count: 'exact' })
 
@@ -126,16 +128,17 @@ export async function GET(request: NextRequest) {
       statsQuery.eq('listing_id', listingId)
     }
 
-    const { data: allTasks } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: allTasks } = await (supabase as any)
       .from('job_tasks')
       .select('status')
 
     const stats = {
       total: allTasks?.length || 0,
-      pending: allTasks?.filter(t => t.status === 'pending').length || 0,
-      in_progress: allTasks?.filter(t => t.status === 'in_progress').length || 0,
-      blocked: allTasks?.filter(t => t.status === 'blocked').length || 0,
-      completed: allTasks?.filter(t => t.status === 'completed').length || 0,
+      pending: allTasks?.filter((t: { status: string }) => t.status === 'pending').length || 0,
+      in_progress: allTasks?.filter((t: { status: string }) => t.status === 'in_progress').length || 0,
+      blocked: allTasks?.filter((t: { status: string }) => t.status === 'blocked').length || 0,
+      completed: allTasks?.filter((t: { status: string }) => t.status === 'completed').length || 0,
     }
 
     return NextResponse.json({
@@ -198,7 +201,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create task
-    const { data: task, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: task, error } = await (supabase as any)
       .from('job_tasks')
       .insert({
         listing_id: body.listing_id,
@@ -302,7 +306,8 @@ export async function PATCH(request: NextRequest) {
     if (body.sort_order !== undefined) updateData.sort_order = body.sort_order
     if (body.metadata !== undefined) updateData.metadata = body.metadata
 
-    const { data: task, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: task, error } = await (supabase as any)
       .from('job_tasks')
       .update(updateData)
       .eq('id', body.id)
@@ -363,7 +368,8 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('job_tasks')
       .delete()
       .eq('id', id)

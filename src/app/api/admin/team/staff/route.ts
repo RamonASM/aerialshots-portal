@@ -28,7 +28,8 @@ export async function GET() {
 
     // Get all staff members
     // Note: staff_territories table is new, types not yet regenerated
-    const { data: staff, error } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: staff, error } = await (adminSupabase as any)
       .from('staff')
       .select(`
         id,
@@ -80,7 +81,9 @@ export async function GET() {
         )
 
         staffTerritories = assignments.map(a => ({
-          ...a,
+          staff_id: a.staff_id,
+          territory_id: a.territory_id,
+          is_primary: a.is_primary ?? false,
           territory_name: territoryMap.get(a.territory_id),
         }))
       }
@@ -89,7 +92,18 @@ export async function GET() {
     }
 
     // Transform the response
-    const transformedStaff = staff?.map(s => ({
+    const transformedStaff = staff?.map((s: {
+      id: string
+      name: string
+      email: string
+      role: string
+      phone: string | null
+      skills: string[] | null
+      certifications: string[] | null
+      max_daily_jobs: number | null
+      is_active: boolean
+      created_at: string
+    }) => ({
       id: s.id,
       name: s.name,
       email: s.email,

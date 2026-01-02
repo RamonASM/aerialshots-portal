@@ -87,12 +87,13 @@ export async function GET(request: Request) {
 
     // This month's jobs
     const thisMonthListings = (listings || []).filter(
-      (l) => new Date(l.created_at) >= thisMonthStart
+      (l) => l.created_at && new Date(l.created_at) >= thisMonthStart
     )
     const revenueThisMonth = null // No data - requires orders table
 
     // Last month's jobs
     const lastMonthListings = (listings || []).filter((l) => {
+      if (!l.created_at) return false
       const date = new Date(l.created_at)
       return date >= lastMonthStart && date <= lastMonthEnd
     })
@@ -129,6 +130,7 @@ export async function GET(request: Request) {
     }
 
     for (const listing of listings || []) {
+      if (!listing.created_at) continue
       const date = new Date(listing.created_at)
       const monthName = months[date.getMonth()]
       const current = monthlyJobs.get(monthName) || 0

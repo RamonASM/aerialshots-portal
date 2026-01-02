@@ -156,7 +156,7 @@ export async function GET() {
 
       if (newValue?.ops_status === 'delivered') {
         qcMetrics[actorId].approved++
-        if (new Date(event.created_at) >= sevenDaysAgo) {
+        if (event.created_at && new Date(event.created_at) >= sevenDaysAgo) {
           qcMetrics[actorId].thisWeek++
         }
       }

@@ -31,7 +31,8 @@ export async function PATCH(
 
     const body = await request.json()
 
-    const { data: rule, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rule, error } = await (supabase as any)
       .from('notification_rules')
       .update({
         ...body,
@@ -81,7 +82,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Staff not found' }, { status: 403 })
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('notification_rules')
       .delete()
       .eq('id', id)

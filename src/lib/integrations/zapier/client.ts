@@ -24,11 +24,11 @@ export async function triggerWebhooks(
   const results: ZapierTriggerResult[] = []
 
   try {
-    // Get all active webhooks that include this event type
+    // Get all active webhooks for this event type
     const { data: webhooks, error } = await adminSupabase
       .from('zapier_webhooks')
       .select('*')
-      .contains('events', [eventType])
+      .eq('event_type', eventType)
       .eq('is_active', true)
 
     if (error || !webhooks || webhooks.length === 0) {
@@ -95,11 +95,10 @@ async function triggerSingleWebhook(
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT)
 
-    const response = await fetch(webhook.url, {
+    const response = await fetch(webhook.webhook_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Webhook-Secret': webhook.secret || '',
         'X-Webhook-Event': eventType,
         'X-Webhook-Timestamp': payload.timestamp,
       },
@@ -122,11 +121,11 @@ async function triggerSingleWebhook(
       error_message: response.ok ? null : `HTTP ${response.status}`,
     })
 
-    // Update webhook last_triggered_at
+    // Update webhook updated_at timestamp
     await adminSupabase
       .from('zapier_webhooks')
       .update({
-        last_triggered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('id', webhook.id)
 
@@ -213,16 +212,13 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
  * Create a new webhook
  */
 export async function createWebhook(
-  webhook: Omit<ZapierWebhook, 'id' | 'secret_key' | 'created_at' | 'updated_at' | 'trigger_count' | 'last_triggered_at'>
+  webhook: Omit<ZapierWebhook, 'id' | 'created_at' | 'updated_at' | 'filter_conditions'>
 ): Promise<ZapierWebhook> {
   const adminSupabase = createAdminClient()
 
   const { data, error } = await adminSupabase
     .from('zapier_webhooks')
-    .insert({
-      ...webhook,
-      trigger_count: 0,
-    })
+    .insert(webhook)
     .select()
     .single()
 
@@ -238,7 +234,7 @@ export async function createWebhook(
  */
 export async function updateWebhook(
   id: string,
-  updates: Partial<Pick<ZapierWebhook, 'name' | 'description' | 'url' | 'events' | 'filter_conditions' | 'is_active'>>
+  updates: Partial<Pick<ZapierWebhook, 'event_type' | 'webhook_url' | 'is_active'>>
 ): Promise<ZapierWebhook> {
   const adminSupabase = createAdminClient()
 

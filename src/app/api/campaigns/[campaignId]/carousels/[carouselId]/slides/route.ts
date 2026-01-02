@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { CarouselSlide } from '@/lib/supabase/types'
+
+// CarouselSlide type (not in generated types)
+interface CarouselSlide {
+  id?: string
+  headline: string
+  body?: string
+  imageUrl?: string
+  mediaAssetId?: string
+  [key: string]: unknown
+}
 
 interface RouteParams {
   params: Promise<{ campaignId: string; carouselId: string }>

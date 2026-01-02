@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { error: insertError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (supabase as any)
       .from('instagram_connections')
       .upsert({
         agent_id: agentId,

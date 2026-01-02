@@ -38,7 +38,8 @@ export async function POST(
     }
 
     // Get listing details
-    const { data: listing, error: listingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: listing, error: listingError } = await (supabase as any)
       .from('listings')
       .select('id, address, city, state, zip, sqft, beds, cubicasa_order_id, cubicasa_status')
       .eq('id', listingId)
@@ -80,7 +81,8 @@ export async function POST(
       })
 
       // Update listing with Cubicasa order info
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('listings')
         .update({
           cubicasa_order_id: result.orderId,
@@ -122,7 +124,8 @@ export async function POST(
       }, 'Failed to create Cubicasa order')
 
       // Update listing with error
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('listings')
         .update({
           cubicasa_status: 'failed',
@@ -161,7 +164,8 @@ export async function GET(
     }
 
     // Get listing with Cubicasa info
-    const { data: listing, error: listingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: listing, error: listingError } = await (supabase as any)
       .from('listings')
       .select('id, cubicasa_order_id, cubicasa_status, integration_error_message, last_integration_check')
       .eq('id', listingId)
@@ -190,7 +194,8 @@ export async function GET(
         // Update local status if different
         // Note: Cubicasa API may return statuses not in IntegrationStatus enum
         if (cubicasaOrder.status !== listing.cubicasa_status) {
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('listings')
             .update({
               cubicasa_status: cubicasaOrder.status as 'pending' | 'ordered' | 'processing' | 'delivered' | 'needs_manual' | 'failed' | 'not_applicable',
@@ -256,7 +261,8 @@ export async function DELETE(
     }
 
     // Get listing
-    const { data: listing, error: listingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: listing, error: listingError } = await (supabase as any)
       .from('listings')
       .select('id, cubicasa_order_id, cubicasa_status')
       .eq('id', listingId)
@@ -277,7 +283,8 @@ export async function DELETE(
     }
 
     // Update listing
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('listings')
       .update({
         cubicasa_status: 'not_applicable',

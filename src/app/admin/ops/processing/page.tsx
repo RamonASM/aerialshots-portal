@@ -146,7 +146,7 @@ export default async function ProcessingDashboardPage() {
     getRecentJobs(),
   ])
 
-  const activeJobs = jobs.filter(j => ['pending', 'queued', 'uploading', 'processing'].includes(j.status))
+  const activeJobs = jobs.filter(j => j.status && ['pending', 'queued', 'uploading', 'processing'].includes(j.status))
   const failedJobs = jobs.filter(j => j.status === 'failed')
 
   return (

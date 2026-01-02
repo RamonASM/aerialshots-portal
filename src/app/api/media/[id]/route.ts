@@ -45,7 +45,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       sortOrder: asset.sort_order,
       qcStatus: asset.qc_status,
       qcNotes: asset.qc_notes,
-      migrationStatus: asset.migration_status,
       createdAt: asset.created_at,
     })
   } catch (error) {
@@ -167,9 +166,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete from storage if it's in native storage
-    if (asset.media_url && asset.storage_bucket && asset.storage_path) {
+    if (asset.storage_path) {
       const storageService = new MediaStorageService()
-      await storageService.delete(asset.storage_bucket, asset.storage_path)
+      // Storage bucket is determined by file type (media-assets is default)
+      await storageService.delete('media-assets', asset.storage_path)
     }
 
     // Delete from database

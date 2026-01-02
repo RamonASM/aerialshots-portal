@@ -98,7 +98,7 @@ export function ClientMessenger({
 
   // Group messages by date
   const messagesByDate = messages.reduce((acc, msg) => {
-    const dateKey = new Date(msg.created_at).toDateString()
+    const dateKey = new Date(msg.created_at || Date.now()).toDateString()
     if (!acc[dateKey]) {
       acc[dateKey] = []
     }
@@ -183,7 +183,7 @@ export function ClientMessenger({
                   <div key={dateKey}>
                     <div className="flex items-center justify-center my-4">
                       <span className="text-xs text-neutral-400 bg-neutral-100 px-3 py-1 rounded-full">
-                        {formatDate(dateMessages[0].created_at)}
+                        {formatDate(dateMessages[0].created_at || new Date().toISOString())}
                       </span>
                     </div>
                     {dateMessages.map((msg) => (
@@ -218,7 +218,7 @@ export function ClientMessenger({
                                 : 'text-neutral-400'
                             }`}
                           >
-                            {formatTime(msg.created_at)}
+                            {msg.created_at ? formatTime(msg.created_at) : ''}
                           </p>
                         </div>
                       </div>

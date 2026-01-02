@@ -186,7 +186,7 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
             <input type="hidden" name="id" value={listing.id} />
             <select
               name="status"
-              defaultValue={listing.ops_status}
+              defaultValue={listing.ops_status || 'scheduled'}
               className="flex-1 rounded-lg border border-neutral-200 px-3 py-2"
             >
               <option value="scheduled">Scheduled</option>

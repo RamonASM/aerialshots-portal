@@ -70,6 +70,7 @@ const getAgentPortfolioData = unstable_cache(
     }
 
     // Batch fetch listings and Instagram posts in parallel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [listingsResult, instagramResult] = await Promise.all([
       // Get listings - select all columns to match ListingWithMedia type
       supabase
@@ -78,7 +79,7 @@ const getAgentPortfolioData = unstable_cache(
         .eq('agent_id', agent.id)
         .order('created_at', { ascending: false }),
       // Get published Instagram posts
-      supabase
+      (supabase as any)
         .from('instagram_scheduled_posts')
         .select('instagram_permalink')
         .eq('agent_id', agent.id)
@@ -92,8 +93,9 @@ const getAgentPortfolioData = unstable_cache(
     const listingIds = listingsData.map((l) => l.id)
 
     // Get media assets for all listings in a single query
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: mediaData } = listingIds.length > 0
-      ? await supabase
+      ? await (supabase as any)
           .from('media_assets')
           .select('id, listing_id, aryeo_url, media_url, type')
           .in('listing_id', listingIds)
@@ -102,12 +104,12 @@ const getAgentPortfolioData = unstable_cache(
     // Combine listings with their media
     const listings: ListingWithMedia[] = listingsData.map((listing) => ({
       ...listing,
-      media_assets: mediaData?.filter((m) => m.listing_id === listing.id) || [],
+      media_assets: mediaData?.filter((m: { listing_id: string }) => m.listing_id === listing.id) || [],
     }))
 
     const publishedPostUrls = instagramResult.data
-      ?.map((p) => p.instagram_permalink)
-      .filter((url): url is string => !!url) || []
+      ?.map((p: { instagram_permalink: string | null }) => p.instagram_permalink)
+      .filter((url: string | null): url is string => !!url) || []
 
     // Calculate representative coordinates from listings (agent's territory)
     const listingsWithCoords = listings.filter(

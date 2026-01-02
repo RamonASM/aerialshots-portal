@@ -20,10 +20,10 @@ interface MediaAsset {
   id: string
   listing_id: string
   aryeo_url?: string | null // DEPRECATED - no longer used
-  media_url: string | null // Native ASM storage URL
+  media_url?: string | null // Native ASM storage URL (may not be in generated types)
   storage_path?: string | null
   processed_storage_path?: string | null
-  qc_status: string
+  qc_status: string | null
   qc_notes?: string | null
   category?: string | null
   type: string
@@ -31,7 +31,7 @@ interface MediaAsset {
 
 // Helper to get the best URL for an asset
 function getAssetUrl(asset: MediaAsset): string {
-  return asset.media_url || ''
+  return asset.media_url || asset.aryeo_url || ''
 }
 
 interface QCReviewClientProps {

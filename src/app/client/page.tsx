@@ -224,7 +224,7 @@ export default async function ClientDashboardPage() {
                       </span>
                     </div>
                     <p className="text-[#8e8e93] text-xs mt-2">
-                      {formatDistanceToNow(new Date(link.created_at), { addSuffix: true })}
+                      {link.created_at ? formatDistanceToNow(new Date(link.created_at), { addSuffix: true }) : 'Recently'}
                     </p>
                   </a>
                 ))}

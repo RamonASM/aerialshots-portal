@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
-    if (agent.credit_balance < credits_cost) {
+    const currentBalance = agent.credit_balance ?? 0
+    if (currentBalance < credits_cost) {
       return NextResponse.json(
         { error: 'Insufficient credits' },
         { status: 400 }
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('agents')
       .update({
-        credit_balance: agent.credit_balance - credits_cost,
+        credit_balance: currentBalance - credits_cost,
       })
       .eq('id', agent_id)
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       redemption_id: redemption?.id,
-      new_balance: agent.credit_balance - credits_cost,
+      new_balance: currentBalance - credits_cost,
     })
   } catch (error) {
     console.error('Redemption error:', error)

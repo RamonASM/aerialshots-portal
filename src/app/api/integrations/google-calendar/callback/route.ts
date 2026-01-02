@@ -62,9 +62,11 @@ export async function GET(request: Request) {
 
     // Store connection in database
     const adminSupabase = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anySupabase = adminSupabase as any
 
     // Upsert connection (replace existing if any)
-    const { error: upsertError } = await adminSupabase
+    const { error: upsertError } = await anySupabase
       .from('calendar_connections')
       .upsert(
         {
