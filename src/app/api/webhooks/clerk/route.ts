@@ -22,6 +22,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // Clerk webhook secret
 const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
 
+// Allowed partner emails (only these can be linked as partners)
+const ALLOWED_PARTNER_EMAILS = [
+  'ramon@aerialshots.media',
+  'alex@aerialshots.media',
+]
+
 interface ClerkWebhookEvent {
   data: {
     id: string
@@ -138,23 +144,28 @@ async function syncUserToDatabase(
   // Check if user exists in any table (by email)
   // Priority: partners > staff > agents > sellers
 
-  // Check partners
-  const { data: partner } = await supabase
-    .from('partners')
-    .select('id, clerk_user_id')
-    .eq('email', email.toLowerCase())
-    .single()
+  // Check partners (only allowed emails can be partners)
+  const emailLower = email.toLowerCase()
+  const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(emailLower)
 
-  if (partner) {
-    if (!partner.clerk_user_id) {
-      await supabase
-        .from('partners')
-        .update({ clerk_user_id: clerkUserId })
-        .eq('id', partner.id)
+  if (isAllowedPartner) {
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('id, clerk_user_id')
+      .eq('email', emailLower)
+      .single()
+
+    if (partner) {
+      if (!partner.clerk_user_id) {
+        await supabase
+          .from('partners')
+          .update({ clerk_user_id: clerkUserId })
+          .eq('id', partner.id)
+      }
+      role = 'partner'
+      userId = partner.id
+      userTable = 'partners'
     }
-    role = 'partner'
-    userId = partner.id
-    userTable = 'partners'
   }
 
   // Check staff
@@ -162,7 +173,7 @@ async function syncUserToDatabase(
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role, clerk_user_id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailLower)
       .single()
 
     if (staffMember) {
@@ -183,7 +194,7 @@ async function syncUserToDatabase(
     const { data: agent } = await supabase
       .from('agents')
       .select('id, clerk_user_id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailLower)
       .single()
 
     if (agent) {
@@ -204,7 +215,7 @@ async function syncUserToDatabase(
     const { data: seller } = await supabase
       .from('sellers')
       .select('id, clerk_user_id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailLower)
       .single()
 
     if (seller) {
@@ -233,7 +244,7 @@ async function syncUserToDatabase(
     const { data: newAgent, error } = await supabase
       .from('agents')
       .insert({
-        email: email.toLowerCase(),
+        email: emailLower,
         name: name,
         slug: slug,
         clerk_user_id: clerkUserId,
