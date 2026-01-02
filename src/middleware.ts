@@ -17,10 +17,18 @@ const isPublicRoute = createRouteMatcher([
   '/community/(.*)', // Community pages (public)
   '/delivery/(.*)', // Delivery pages (may require auth token)
   '/book(.*)', // Booking flow (public until payment)
+  // Marketing pages (public)
   '/about',
   '/portfolio',
   '/checklist',
   '/blog',
+  '/pricing',
+  '/services(.*)',
+  '/contact',
+  '/faqs',
+  '/careers',
+  '/legal/(.*)',
+  '/help(.*)',
 ])
 
 // Staff-only routes
