@@ -538,3 +538,57 @@ apiLogger.error({ ...formatError(error) }, 'Failed to process')
 ```
 
 Available child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `webhookLogger`, `cronLogger`, `integrationLogger`
+
+---
+
+## Current Work Status (2026-01-02)
+
+### Completed This Session
+
+#### Security Fixes
+- ✅ `/api/rewards/redeem` - Added auth + ownership verification
+- ✅ `/api/admin/content/amenity-categories` - Added `requireStaff()`
+- ✅ `/api/instagram/publish` - Added auth + ownership check
+- ✅ `/api/instagram/disconnect` - Added auth + ownership check
+- ✅ `/api/instagram/embed` - Added auth check
+
+#### Rate Limiting
+- ✅ Created `src/lib/rate-limit/index.ts` - Upstash Redis with in-memory fallback
+- ✅ Applied to `/api/booking/session` (30 req/min)
+- ✅ Applied to `/api/booking/reference-files` (10 req/min)
+- ✅ Applied to `/api/airspace/check` (20 req/min)
+
+#### TypeScript Fixes
+- ✅ Fixed `payout_settings` and `company_pool` table types
+- ✅ Fixed `skill-match.ts` nullable fields
+- ✅ Fixed `integration-handoffs.ts` type mismatches
+- ✅ Fixed `ZapierWebhook` interface and client
+
+#### Configuration
+- ✅ Created `.mcp.json` for project-level Supabase MCP (project ref: `awoabqaszgeqdlvcevmd`)
+
+### Commits Ready to Push
+```
+8d9617f Add rate limiting and fix rewards/redeem security vulnerability
+06b95dd Fix TypeScript errors and security vulnerabilities
+```
+
+### Pending Items
+
+#### Database Migration Sync (Non-Critical)
+The migration history is out of sync - tables exist in the remote database but aren't tracked in the `supabase_migrations.schema_migrations` table. This is a **metadata issue only** - the application works correctly.
+
+**To fix later (optional):**
+```bash
+# Mark untracked migrations as already applied
+npx supabase migration repair <version> --status applied
+```
+
+The failing migration was `20241210_002_storywork_and_unified_credits` with error "relation storywork_users already exists".
+
+### Environment Notes
+- **Supabase CLI**: Correctly linked to `awoabqaszgeqdlvcevmd` (ASM Portal)
+- **Supabase MCP**: Now configured per-project via `.mcp.json`
+  - Global (`~/.claude.json`): `slomugiwblohzcwtueav` (video production)
+  - Project (`.mcp.json`): `awoabqaszgeqdlvcevmd` (ASM Portal)
+- **Build Status**: ✅ Passing

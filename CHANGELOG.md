@@ -2,6 +2,60 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2026-01-02
+
+### Fixed - Security & Rate Limiting
+
+#### Security Fixes
+- **`/api/rewards/redeem`** - Added authentication + ownership verification
+  - Now requires authenticated user (401 if not logged in)
+  - Verifies user owns the agent account OR is staff (`@aerialshots.media`)
+  - Returns 403 for unauthorized access attempts
+- **`/api/admin/content/amenity-categories`** - Added `requireStaff()` auth
+- **`/api/instagram/publish`** - Added auth + ownership check
+- **`/api/instagram/disconnect`** - Added auth + ownership check
+- **`/api/instagram/embed`** - Added auth check
+
+#### Rate Limiting Infrastructure
+- Created distributed rate limiting with Upstash Redis (`src/lib/rate-limit/index.ts`)
+  - Falls back to in-memory limiting if Redis not configured
+  - Sliding window algorithm for accurate limiting
+  - Analytics support for monitoring
+- Rate limit configurations added:
+  - `booking`: 30 req/min (public booking session)
+  - `upload`: 10 req/min (reference file uploads)
+  - `airspace`: 20 req/min (FAA airspace checks)
+  - `render`: 50 req/min (carousel rendering)
+  - `carousel`: 20 req/min (carousel generation)
+  - `template`: 100 req/min (template CRUD)
+
+#### Rate Limiting Applied To
+- `/api/booking/session` (POST) - Cart recovery sessions
+- `/api/booking/reference-files` (POST) - File uploads
+- `/api/airspace/check` (POST, GET) - FAA airspace checks
+
+#### TypeScript Fixes
+- Added `payout_settings` table type with key/value/description schema
+- Added `company_pool` table type matching migration schema
+- Fixed `PartialMediaAsset` to include `media_url` field
+- Updated `resolveMediaUrl` to check `media_url` first
+- Fixed `skill-match.ts` nullable fields (`max_daily_jobs`, `is_active`)
+- Fixed `integration-handoffs.ts` type mismatches for `ops_status`
+- Updated `ZapierWebhook` interface to match database schema
+- Fixed zapier client to use correct column names
+
+### Configuration
+- Added project-level `.mcp.json` for ASM Portal Supabase MCP connection
+  - Project ref: `awoabqaszgeqdlvcevmd`
+  - Overrides global MCP config when working in this directory
+
+### Pending
+- Database migration history sync (tables exist but not tracked in migration table)
+  - Not a functional issue - schema is correct, just metadata mismatch
+  - Can be resolved with `supabase migration repair` commands
+
+---
+
 ## [Unreleased] - 2025-01-01
 
 ### Added - Stripe Connect & Team Payout System
