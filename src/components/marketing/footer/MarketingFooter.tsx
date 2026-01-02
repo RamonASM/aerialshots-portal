@@ -21,7 +21,7 @@ const footerLinks = {
     { name: 'Pre-Shoot Checklist', href: '/checklist' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'FAQs', href: '/faqs' },
-    { name: 'Agent Portal', href: '/login' },
+    { name: 'Agent Portal', href: '/sign-in' },
     { name: 'Book Now', href: '/book' },
   ],
   legal: [

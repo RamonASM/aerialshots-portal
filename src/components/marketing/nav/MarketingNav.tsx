@@ -162,7 +162,7 @@ export function MarketingNav() {
 
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button
                 variant="ghost"
                 className="text-[14px] text-[#a1a1a6] hover:text-white"
@@ -253,7 +253,7 @@ export function MarketingNav() {
 
             {/* CTA Buttons */}
             <div className="pt-4 mt-4 border-t border-white/[0.08] space-y-3">
-              <Link href="/login" className="block">
+              <Link href="/sign-in" className="block">
                 <Button
                   variant="outline"
                   className="w-full h-12 text-[15px] border-white/[0.16] hover:bg-white/[0.05]"
