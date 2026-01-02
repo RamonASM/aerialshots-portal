@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
+import { checkRateLimit, getIdentifier, createRateLimitResponse, getRateLimitHeaders } from '@/lib/rate-limit'
 
 // Session data schema
 const sessionDataSchema = z.object({
@@ -46,6 +47,14 @@ type SessionData = z.infer<typeof sessionDataSchema>
  * Save or update a booking session for cart recovery
  */
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const identifier = getIdentifier(request)
+  const rateLimitResult = await checkRateLimit(identifier, 'booking')
+
+  if (!rateLimitResult.success) {
+    return createRateLimitResponse(rateLimitResult)
+  }
+
   try {
     const body = await request.json()
     const parseResult = sessionDataSchema.safeParse(body)

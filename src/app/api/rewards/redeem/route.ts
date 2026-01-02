@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 interface RedeemRequest {
   agent_id: string
@@ -10,6 +11,17 @@ interface RedeemRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify user is authenticated
+    const supabaseClient = await createClient()
+    const { data: { user } } = await supabaseClient.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body: RedeemRequest = await request.json()
 
     const { agent_id, reward_id, credits_cost, reward_type } = body
@@ -21,20 +33,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify user owns this agent account or is staff
+    const { data: agent } = await supabaseClient
+      .from('agents')
+      .select('id, email')
+      .eq('id', agent_id)
+      .single()
+
+    const isOwner = agent?.email === user.email
+    const isStaff = user.email?.endsWith('@aerialshots.media')
+
+    if (!isOwner && !isStaff) {
+      return NextResponse.json(
+        { error: 'You do not have permission to redeem rewards for this account' },
+        { status: 403 }
+      )
+    }
+
     const supabase = createAdminClient()
 
-    // Get agent and verify balance
-    const { data: agent, error: agentError } = await supabase
+    // Get agent balance (re-fetch with admin to ensure we have latest balance)
+    const { data: agentData, error: agentError } = await supabase
       .from('agents')
       .select('credit_balance')
       .eq('id', agent_id)
       .single()
 
-    if (agentError || !agent) {
+    if (agentError || !agentData) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
-    const currentBalance = agent.credit_balance ?? 0
+    const currentBalance = agentData.credit_balance ?? 0
     if (currentBalance < credits_cost) {
       return NextResponse.json(
         { error: 'Insufficient credits' },

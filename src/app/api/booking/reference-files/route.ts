@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getIdentifier, createRateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +48,14 @@ const FILE_TYPE_LABELS: Record<string, string> = {
  * Upload reference files for a booking
  */
 export async function POST(request: NextRequest) {
+  // Apply rate limiting (stricter for uploads)
+  const identifier = getIdentifier(request)
+  const rateLimitResult = await checkRateLimit(identifier, 'upload')
+
+  if (!rateLimitResult.success) {
+    return createRateLimitResponse(rateLimitResult)
+  }
+
   try {
     const formData = await request.formData()
     const listingId = formData.get('listingId') as string

@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkAirspace, type AirspaceCheckRequest } from '@/lib/integrations/faa/client'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, getIdentifier, createRateLimitResponse } from '@/lib/rate-limit'
 
 // Cache check results for 24 hours
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const identifier = getIdentifier(request)
+  const rateLimitResult = await checkRateLimit(identifier, 'airspace')
+
+  if (!rateLimitResult.success) {
+    return createRateLimitResponse(rateLimitResult)
+  }
+
   try {
     const body = await request.json() as AirspaceCheckRequest
 
@@ -106,6 +115,14 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint for simple checks via query params
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const identifier = getIdentifier(request)
+  const rateLimitResult = await checkRateLimit(identifier, 'airspace')
+
+  if (!rateLimitResult.success) {
+    return createRateLimitResponse(rateLimitResult)
+  }
+
   const searchParams = request.nextUrl.searchParams
   const lat = searchParams.get('lat')
   const lng = searchParams.get('lng')

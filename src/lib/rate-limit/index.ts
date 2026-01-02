@@ -25,6 +25,21 @@ export const RATE_LIMITS = {
     requests: 100,
     window: '1 m', // 100 requests per minute
   },
+  // Booking session - public endpoint, moderate limit
+  booking: {
+    requests: 30,
+    window: '1 m', // 30 requests per minute per IP
+  },
+  // Reference file uploads - stricter due to storage costs
+  upload: {
+    requests: 10,
+    window: '1 m', // 10 uploads per minute per IP
+  },
+  // Airspace checks - external API calls
+  airspace: {
+    requests: 20,
+    window: '1 m', // 20 checks per minute per IP
+  },
   // Default for other endpoints
   default: {
     requests: 100,
