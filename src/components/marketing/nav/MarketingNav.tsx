@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Camera, ChevronDown, ArrowRight } from 'lucide-react'
+import { Menu, X, ChevronDown, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -70,12 +71,12 @@ export function MarketingNav() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 group"
+            className="flex items-center gap-3 group"
           >
-            <div className="relative h-8 w-8 rounded-lg bg-[#0077ff] flex items-center justify-center transition-transform group-hover:scale-105">
-              <Camera className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-[15px] font-semibold text-white">
+            <span className="text-xl font-bold tracking-tight text-white transition-opacity group-hover:opacity-80">
+              ASM
+            </span>
+            <span className="hidden sm:block text-[15px] font-medium text-[#a1a1a6]">
               Aerial Shots Media
             </span>
           </Link>
@@ -134,7 +135,7 @@ export function MarketingNav() {
                       <div className="mt-1 pt-1 border-t border-white/[0.08]">
                         <Link
                           href="/services"
-                          className="flex items-center justify-between rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#0077ff] transition-colors hover:bg-white/[0.05]"
+                          className="flex items-center justify-between rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#09f] transition-colors hover:bg-white/[0.05] hover:text-[#00bbff]"
                         >
                           View all services
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -172,7 +173,7 @@ export function MarketingNav() {
             </Link>
             <Link href="/book">
               <Button
-                className="bg-[#0077ff] hover:bg-[#0062cc] text-white text-[14px] font-medium px-5"
+                className="bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[14px] font-medium px-5"
               >
                 Book Now
               </Button>
@@ -263,7 +264,7 @@ export function MarketingNav() {
               </Link>
               <Link href="/book" className="block">
                 <Button
-                  className="w-full h-12 bg-[#0077ff] hover:bg-[#0062cc] text-white text-[15px] font-medium"
+                  className="w-full h-12 bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[15px] font-medium"
                 >
                   Book Now
                 </Button>

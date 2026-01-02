@@ -77,16 +77,16 @@ export default function FloorPlansPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-rose-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-rose-500/10 border border-rose-500/20 px-4 py-2 text-sm text-rose-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <LayoutGrid className="h-4 w-4" />
               Professional Floor Plans
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Floor Plans That
-              <span className="block text-rose-400">Show the Full Picture</span>
+              <span className="block text-gradient">Show the Full Picture</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Help buyers understand property layouts with accurate 2D and 3D floor plans
@@ -95,7 +95,7 @@ export default function FloorPlansPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-rose-500 px-8 py-3 font-medium text-white hover:bg-rose-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Order Floor Plan
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -120,8 +120,8 @@ export default function FloorPlansPage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-rose-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -132,7 +132,7 @@ export default function FloorPlansPage() {
       </section>
 
       {/* Floor Plan Types */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-rose-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">Floor Plan Options</h2>
@@ -199,7 +199,7 @@ export default function FloorPlansPage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <LayoutGrid className="h-12 w-12 text-rose-400 mx-auto mb-6" />
+            <LayoutGrid className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Ready to Add Floor Plans?
             </h2>
@@ -209,7 +209,7 @@ export default function FloorPlansPage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-rose-500 px-8 py-3 font-medium text-white hover:bg-rose-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Order Now
                 <ArrowRight className="ml-2 h-4 w-4" />

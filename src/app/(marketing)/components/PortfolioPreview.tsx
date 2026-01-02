@@ -106,7 +106,7 @@ export function PortfolioPreview() {
               className={cn(
                 'px-4 py-2 rounded-lg text-[14px] font-medium transition-all',
                 activeCategory === category
-                  ? 'bg-[#0077ff] text-white'
+                  ? 'bg-[#ff4533] text-white'
                   : 'bg-white/[0.05] text-[#a1a1a6] hover:bg-white/[0.1] hover:text-white'
               )}
             >
@@ -166,7 +166,7 @@ export function PortfolioPreview() {
 
               {/* Content */}
               <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <h3 className="text-[16px] font-semibold text-white mb-1 group-hover:text-[#3395ff] transition-colors">
+                <h3 className="text-[16px] font-semibold text-white mb-1 group-hover:text-[#09f] transition-colors">
                   {item.title}
                 </h3>
                 <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ export function PortfolioPreview() {
               </div>
 
               {/* Hover border */}
-              <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-[#0077ff]/50 transition-colors" />
+              <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-white/20 transition-colors" />
             </Link>
           ))}
         </div>

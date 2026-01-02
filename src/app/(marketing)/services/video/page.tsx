@@ -77,16 +77,16 @@ export default function VideoPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-4 py-2 text-sm text-purple-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Video className="h-4 w-4" />
               Cinematic Property Tours
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Video That Tells
-              <span className="block text-purple-400">Your Property&apos;s Story</span>
+              <span className="block text-gradient">Your Property&apos;s Story</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Cinematic video tours that capture attention, drive engagement,
@@ -95,7 +95,7 @@ export default function VideoPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-purple-500 px-8 py-3 font-medium text-white hover:bg-purple-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Video Tour
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -120,8 +120,8 @@ export default function VideoPage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-purple-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -132,7 +132,7 @@ export default function VideoPage() {
       </section>
 
       {/* Video Types */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">Video Options</h2>
@@ -148,7 +148,7 @@ export default function VideoPage() {
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
                 <h3 className="font-semibold text-foreground mb-1">{type.name}</h3>
-                <div className="text-sm text-purple-400 mb-3">{type.duration}</div>
+                <div className="text-sm text-[#a1a1a6] mb-3">{type.duration}</div>
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
             ))}
@@ -192,7 +192,7 @@ export default function VideoPage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Video className="h-12 w-12 text-purple-400 mx-auto mb-6" />
+            <Video className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Ready for Video That Converts?
             </h2>
@@ -202,7 +202,7 @@ export default function VideoPage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-purple-500 px-8 py-3 font-medium text-white hover:bg-purple-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Now
                 <ArrowRight className="ml-2 h-4 w-4" />

@@ -81,7 +81,7 @@ export function PackagesPreview() {
               className={cn(
                 'relative rounded-2xl border p-8 transition-all duration-700',
                 pkg.popular
-                  ? 'border-[#0077ff] bg-[#0077ff]/5 scale-[1.02]'
+                  ? 'border-[#ff4533] bg-[#ff4533]/5 scale-[1.02]'
                   : 'border-white/[0.08] bg-[#0a0a0a] hover:border-white/[0.16]',
                 isVisible
                   ? 'opacity-100 translate-y-0'
@@ -94,7 +94,7 @@ export function PackagesPreview() {
               {/* Popular badge */}
               {pkg.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0077ff] px-4 py-1 text-[12px] font-semibold text-white">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ff4533] px-4 py-1 text-[12px] font-semibold text-white">
                     <Sparkles className="h-3.5 w-3.5" />
                     Most Popular
                   </span>
@@ -138,7 +138,7 @@ export function PackagesPreview() {
                   className={cn(
                     'w-full h-12 text-[15px] font-medium rounded-xl',
                     pkg.popular
-                      ? 'bg-[#0077ff] hover:bg-[#0062cc] text-white'
+                      ? 'bg-[#ff4533] hover:bg-[#e63d2e] text-white'
                       : 'bg-white/[0.05] hover:bg-white/[0.1] text-white border border-white/[0.08]'
                   )}
                 >
@@ -154,7 +154,7 @@ export function PackagesPreview() {
         <div className="mt-12 text-center">
           <p className="text-[14px] text-[#8e8e93]">
             Need something custom?{' '}
-            <Link href="/pricing" className="text-[#0077ff] hover:underline">
+            <Link href="/pricing" className="text-[#09f] hover:underline">
               View all services and à la carte pricing
             </Link>
           </p>

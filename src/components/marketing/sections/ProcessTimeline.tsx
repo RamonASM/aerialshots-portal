@@ -83,14 +83,14 @@ export function ProcessTimeline() {
               >
                 {/* Step number (desktop) */}
                 <div className="hidden lg:flex items-center justify-center mb-8">
-                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#0077ff] bg-black text-[14px] font-bold text-[#0077ff]">
+                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/20 bg-black text-[14px] font-bold text-white">
                     {step.number}
                   </div>
                 </div>
 
                 {/* Icon */}
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1c1c1e] border border-white/[0.08]">
-                  <step.icon className="h-7 w-7 text-[#0077ff]" />
+                  <step.icon className="h-7 w-7 text-white/70" />
                 </div>
 
                 {/* Content */}

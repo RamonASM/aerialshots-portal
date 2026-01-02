@@ -134,10 +134,10 @@ export default function FAQsPage() {
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm text-blue-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <HelpCircle className="h-4 w-4" />
               Help Center
             </div>
@@ -164,7 +164,7 @@ export default function FAQsPage() {
                   className={cn(
                     'px-4 py-2 rounded-full text-sm font-medium transition-colors',
                     activeCategory === category.name
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-[#ff4533] text-white'
                       : 'bg-white/[0.05] text-muted-foreground hover:text-foreground hover:bg-white/[0.1]'
                   )}
                 >
@@ -186,7 +186,7 @@ export default function FAQsPage() {
       </section>
 
       {/* Still Have Questions */}
-      <section className="py-24 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-24 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-foreground">
@@ -198,7 +198,7 @@ export default function FAQsPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/contact"
-                className="inline-flex items-center justify-center rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Contact Us
                 <ArrowRight className="ml-2 h-4 w-4" />

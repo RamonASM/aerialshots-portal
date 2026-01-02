@@ -77,16 +77,16 @@ export default function VirtualStagingPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-4 py-2 text-sm text-amber-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Sparkles className="h-4 w-4" />
               AI-Powered Staging
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Virtual Staging That
-              <span className="block text-amber-400">Transforms Spaces</span>
+              <span className="block text-gradient">Transforms Spaces</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Turn empty or dated rooms into beautifully furnished spaces.
@@ -95,7 +95,7 @@ export default function VirtualStagingPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-amber-500 px-8 py-3 font-medium text-black hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Order Staging
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -120,8 +120,8 @@ export default function VirtualStagingPage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-amber-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -132,7 +132,7 @@ export default function VirtualStagingPage() {
       </section>
 
       {/* Styles & Rooms */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-amber-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="grid md:grid-cols-2 gap-12">
             {/* Styles */}
@@ -144,7 +144,7 @@ export default function VirtualStagingPage() {
               <div className="grid grid-cols-2 gap-3">
                 {styles.map((style) => (
                   <div key={style} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                     <span className="text-sm">{style}</span>
                   </div>
                 ))}
@@ -184,7 +184,7 @@ export default function VirtualStagingPage() {
               { step: 3, title: 'Receive Staged Photos', description: '24-48 hour delivery' },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500 text-black font-bold mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white font-bold mb-4">
                   {item.step}
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{item.title}</h3>
@@ -199,7 +199,7 @@ export default function VirtualStagingPage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Sparkles className="h-12 w-12 text-amber-400 mx-auto mb-6" />
+            <Sparkles className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Ready to Stage Your Listing?
             </h2>
@@ -209,7 +209,7 @@ export default function VirtualStagingPage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-amber-500 px-8 py-3 font-medium text-black hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Order Now
                 <ArrowRight className="ml-2 h-4 w-4" />

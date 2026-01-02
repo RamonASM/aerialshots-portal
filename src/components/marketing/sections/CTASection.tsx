@@ -34,11 +34,11 @@ export function CTASection({
       )}
     >
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0077ff]/10 via-transparent to-[#3395ff]/5" />
-      <div className="absolute inset-0 gradient-mesh opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-transparent to-white/[0.01]" />
+      <div className="absolute inset-0 gradient-mesh opacity-30" />
 
       {/* Glow effect */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#0077ff]/10 rounded-full blur-[100px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-white/[0.03] rounded-full blur-[100px]" />
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
         {/* Headline */}
@@ -73,7 +73,7 @@ export function CTASection({
               key={feature.text}
               className="flex items-center gap-2 text-[14px] text-[#a1a1a6]"
             >
-              <feature.icon className="h-4 w-4 text-[#0077ff]" />
+              <feature.icon className="h-4 w-4 text-white/70" />
               {feature.text}
             </div>
           ))}
@@ -89,7 +89,7 @@ export function CTASection({
           <Link href="/book">
             <Button
               size="lg"
-              className="h-14 px-8 bg-[#0077ff] hover:bg-[#0062cc] text-white text-[16px] font-semibold rounded-xl shadow-lg shadow-[#0077ff]/25 transition-all hover:shadow-xl hover:shadow-[#0077ff]/30 hover:scale-[1.02]"
+              className="h-14 px-8 bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[16px] font-semibold rounded-xl shadow-lg shadow-[#ff4533]/25 transition-all hover:shadow-xl hover:shadow-[#ff4533]/30 hover:scale-[1.02]"
             >
               Book Your Shoot Now
               <ArrowRight className="ml-2 h-5 w-5" />

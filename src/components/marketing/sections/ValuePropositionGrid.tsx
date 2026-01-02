@@ -92,7 +92,7 @@ export function ValuePropositionGrid() {
               }}
             >
               {/* Icon */}
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0077ff]/10 text-[#0077ff] transition-transform group-hover:scale-110">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] border border-white/[0.08] text-white/70 transition-transform group-hover:scale-110">
                 <prop.icon className="h-6 w-6" />
               </div>
 
@@ -105,12 +105,12 @@ export function ValuePropositionGrid() {
               </p>
 
               {/* Highlight badge */}
-              <span className="inline-flex items-center rounded-full bg-[#0077ff]/10 px-3 py-1 text-[12px] font-medium text-[#0077ff]">
+              <span className="inline-flex items-center rounded-full bg-white/[0.05] border border-white/[0.08] px-3 py-1 text-[12px] font-medium text-[#a1a1a6]">
                 {prop.highlight}
               </span>
 
               {/* Hover glow effect */}
-              <div className="absolute inset-0 rounded-2xl bg-[#0077ff]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 rounded-2xl bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </div>
           ))}
         </div>

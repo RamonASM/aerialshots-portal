@@ -72,16 +72,16 @@ export default function ThreeDToursPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 border border-green-500/20 px-4 py-2 text-sm text-green-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Home className="h-4 w-4" />
               Virtual Property Tours
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               3D Tours That
-              <span className="block text-green-400">Sell Properties</span>
+              <span className="block text-gradient">Sell Properties</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Let buyers explore every room from anywhere in the world.
@@ -90,7 +90,7 @@ export default function ThreeDToursPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-green-500 px-8 py-3 font-medium text-white hover:bg-green-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book 3D Tour
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -115,8 +115,8 @@ export default function ThreeDToursPage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-green-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -127,7 +127,7 @@ export default function ThreeDToursPage() {
       </section>
 
       {/* Platforms */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-green-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">3D Tour Options</h2>
@@ -180,7 +180,7 @@ export default function ThreeDToursPage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Home className="h-12 w-12 text-green-400 mx-auto mb-6" />
+            <Home className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Give Buyers the Full Experience
             </h2>
@@ -190,7 +190,7 @@ export default function ThreeDToursPage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-green-500 px-8 py-3 font-medium text-white hover:bg-green-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Now
                 <ArrowRight className="ml-2 h-4 w-4" />

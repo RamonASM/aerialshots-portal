@@ -37,7 +37,7 @@ export function FAQAccordion() {
               >
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between px-6 py-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077ff] focus-visible:ring-inset"
+                  className="flex w-full items-center justify-between px-6 py-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff4533] focus-visible:ring-inset"
                   aria-expanded={isOpen}
                   aria-controls={contentId}
                 >
@@ -77,7 +77,7 @@ export function FAQAccordion() {
           Have another question?{' '}
           <a
             href="mailto:hello@aerialshots.media"
-            className="text-[#0077ff] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077ff] focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
+            className="text-[#09f] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff4533] focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
           >
             Contact us
           </a>

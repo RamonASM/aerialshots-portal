@@ -13,8 +13,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Typography */
-  --font-sans: var(--font-geist-sans);
+  /* Typography - Satoshi for luxury feel */
+  --font-sans: var(--font-satoshi);
   --font-mono: var(--font-geist-mono);
 
   /* Semantic Colors */
@@ -124,6 +124,20 @@
   --text-secondary: #a1a1a6;
   --text-tertiary: #8e8e93;  /* Updated for 4.5:1 contrast ratio */
   --text-quaternary: #636366;
+
+  /* ========== Luxury Marketing Accent Colors ========== */
+  /* Primary CTA - Orange-red for high-end feel */
+  --cta-primary: #ff4533;
+  --cta-primary-hover: #e63d2e;
+  --cta-primary-active: #cc3528;
+
+  /* Links - Cyan for refined contrast */
+  --accent-link: #09f;
+  --accent-link-hover: #00bbff;
+
+  /* Warm accents - Gold hints */
+  --accent-warm: #f5a623;
+  --accent-warm-muted: rgba(245, 166, 35, 0.15);
 
   /* Status colors - for processing states, badges, etc */
   --status-success: #34c759;

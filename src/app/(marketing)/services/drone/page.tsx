@@ -68,16 +68,16 @@ export default function DronePage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 px-4 py-2 text-sm text-cyan-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Plane className="h-4 w-4" />
               FAA Part 107 Licensed
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Aerial Views That
-              <span className="block text-cyan-400">Captivate Buyers</span>
+              <span className="block text-gradient">Captivate Buyers</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Professional drone photography and video that showcases properties
@@ -86,7 +86,7 @@ export default function DronePage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-8 py-3 font-medium text-white hover:bg-cyan-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Drone Shoot
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -111,8 +111,8 @@ export default function DronePage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-cyan-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -123,7 +123,7 @@ export default function DronePage() {
       </section>
 
       {/* Equipment & Compliance */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="grid md:grid-cols-2 gap-12">
             {/* Equipment */}
@@ -156,7 +156,7 @@ export default function DronePage() {
                   'Compliance with all local regulations',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-muted-foreground">
-                    <Shield className="h-5 w-5 text-cyan-400 shrink-0" />
+                    <Shield className="h-5 w-5 text-white/60 shrink-0" />
                     <span className="text-sm">{item}</span>
                   </li>
                 ))}
@@ -204,7 +204,7 @@ export default function DronePage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Plane className="h-12 w-12 text-cyan-400 mx-auto mb-6" />
+            <Plane className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Ready for Stunning Aerials?
             </h2>
@@ -214,7 +214,7 @@ export default function DronePage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-8 py-3 font-medium text-white hover:bg-cyan-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Now
                 <ArrowRight className="ml-2 h-4 w-4" />

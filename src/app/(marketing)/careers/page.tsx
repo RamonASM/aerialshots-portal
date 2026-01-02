@@ -116,10 +116,10 @@ export default function CareersPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm text-blue-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Briefcase className="h-4 w-4" />
               We&apos;re Hiring
             </div>
@@ -156,7 +156,7 @@ export default function CareersPage() {
       </section>
 
       {/* Open Positions */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">Open Positions</h2>
@@ -172,8 +172,8 @@ export default function CareersPage() {
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
                 <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-                    <position.icon className="h-6 w-6 text-blue-400" />
+                  <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0">
+                    <position.icon className="h-6 w-6 text-white/70" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-foreground">{position.title}</h3>
@@ -231,7 +231,7 @@ export default function CareersPage() {
       </section>
 
       {/* Apply CTA */}
-      <section className="py-24 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-24 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-foreground">
@@ -243,7 +243,7 @@ export default function CareersPage() {
             <div className="mt-8">
               <a
                 href="mailto:careers@aerialshots.media?subject=Job Application"
-                className="inline-flex items-center justify-center rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Apply Now
                 <ArrowRight className="ml-2 h-4 w-4" />

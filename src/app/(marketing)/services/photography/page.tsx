@@ -67,16 +67,16 @@ export default function PhotographyPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm text-blue-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Camera className="h-4 w-4" />
               Professional Photography
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Photography That
-              <span className="block text-blue-400">Sells Homes</span>
+              <span className="block text-gradient">Sells Homes</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               Professional HDR photography that captures every property in its best light.
@@ -85,7 +85,7 @@ export default function PhotographyPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Photography
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -117,8 +117,8 @@ export default function PhotographyPage() {
                 key={feature.title}
                 className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
               >
-                <div className="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-blue-400" />
+                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-white/70" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -129,7 +129,7 @@ export default function PhotographyPage() {
       </section>
 
       {/* What's Included */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -173,7 +173,7 @@ export default function PhotographyPage() {
           <div className="grid md:grid-cols-4 gap-6">
             {shootingProcess.map((step) => (
               <div key={step.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500 text-white font-bold mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white font-bold mb-4">
                   {step.step}
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
@@ -188,7 +188,7 @@ export default function PhotographyPage() {
       <section className="py-24 border-t border-white/5">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Clock className="h-12 w-12 text-blue-400 mx-auto mb-6" />
+            <Clock className="h-12 w-12 text-white/60 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-foreground">
               Book Your Photo Shoot Today
             </h2>
@@ -198,7 +198,7 @@ export default function PhotographyPage() {
             <div className="mt-8">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book Now
                 <ArrowRight className="ml-2 h-4 w-4" />

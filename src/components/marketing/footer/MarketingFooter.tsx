@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Camera, Mail, Phone, MapPin, Instagram, Facebook, Linkedin } from 'lucide-react'
+import { Mail, Phone, MapPin, Instagram, Facebook, Linkedin } from 'lucide-react'
 
 const footerLinks = {
   services: [
@@ -47,11 +47,11 @@ export function MarketingFooter() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="h-8 w-8 rounded-lg bg-[#0077ff] flex items-center justify-center transition-transform group-hover:scale-105">
-                <Camera className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-[15px] font-semibold text-white">
+            <Link href="/" className="flex items-center gap-3 group">
+              <span className="text-xl font-bold tracking-tight text-white transition-opacity group-hover:opacity-80">
+                ASM
+              </span>
+              <span className="text-[15px] font-medium text-[#a1a1a6]">
                 Aerial Shots Media
               </span>
             </Link>
@@ -67,18 +67,18 @@ export function MarketingFooter() {
                 href="mailto:hello@aerialshots.media"
                 className="flex items-center gap-2.5 text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
               >
-                <Mail className="h-4 w-4 text-[#0077ff]" />
+                <Mail className="h-4 w-4 text-white/50" />
                 hello@aerialshots.media
               </a>
               <a
                 href="tel:+14075551234"
                 className="flex items-center gap-2.5 text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
               >
-                <Phone className="h-4 w-4 text-[#0077ff]" />
+                <Phone className="h-4 w-4 text-white/50" />
                 (407) 555-1234
               </a>
               <div className="flex items-center gap-2.5 text-[14px] text-[#8e8e93]">
-                <MapPin className="h-4 w-4 text-[#0077ff]" />
+                <MapPin className="h-4 w-4 text-white/50" />
                 Orlando, FL
               </div>
             </div>
@@ -91,7 +91,7 @@ export function MarketingFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-[#a1a1a6] transition-all hover:bg-white/[0.1] hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-[#a1a1a6] transition-all hover:bg-[#ff4533]/10 hover:text-[#ff4533]"
                   aria-label={social.name}
                 >
                   <social.icon className="h-4 w-4" />
@@ -187,11 +187,11 @@ export function MarketingFooter() {
             </p>
             <div className="flex items-center gap-6">
               <span className="flex items-center gap-2 text-[13px] text-[#8e8e93]">
-                <span className="h-2 w-2 rounded-full bg-[#34c759] animate-pulse" />
+                <span className="h-2 w-2 rounded-full bg-[#34c759]" />
                 FAA Part 107 Licensed
               </span>
               <span className="flex items-center gap-2 text-[13px] text-[#8e8e93]">
-                <span className="h-2 w-2 rounded-full bg-[#0077ff]" />
+                <span className="h-2 w-2 rounded-full bg-white/40" />
                 Zillow Certified
               </span>
             </div>

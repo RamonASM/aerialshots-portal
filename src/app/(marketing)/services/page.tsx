@@ -80,12 +80,12 @@ const services = [
 ]
 
 const colorClasses: Record<string, string> = {
-  blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:bg-blue-500/20',
-  cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 group-hover:bg-cyan-500/20',
-  purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20 group-hover:bg-purple-500/20',
-  green: 'bg-green-500/10 text-green-400 border-green-500/20 group-hover:bg-green-500/20',
-  amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20 group-hover:bg-amber-500/20',
-  rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20 group-hover:bg-rose-500/20',
+  blue: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
+  cyan: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
+  purple: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
+  green: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
+  amber: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
+  rose: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
 }
 
 export default function ServicesPage() {
@@ -102,15 +102,14 @@ export default function ServicesPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/[0.03] rounded-full blur-[120px]" />
 
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
               Real Estate Media
-              <span className="block text-blue-400">Done Right</span>
+              <span className="block text-gradient">Done Right</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               From stunning photography to immersive 3D tours, we provide everything
@@ -150,7 +149,7 @@ export default function ServicesPage() {
                   ))}
                 </ul>
 
-                <div className="flex items-center gap-2 text-blue-400 text-sm font-medium group-hover:gap-3 transition-all">
+                <div className="flex items-center gap-2 text-[#09f] text-sm font-medium group-hover:gap-3 transition-all">
                   {service.cta}
                   <ArrowRight className="h-4 w-4" />
                 </div>
@@ -161,7 +160,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent">
+      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">
@@ -202,7 +201,7 @@ export default function ServicesPage() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
               >
                 Book a Shoot
                 <ArrowRight className="ml-2 h-4 w-4" />

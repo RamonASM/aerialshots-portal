@@ -56,20 +56,19 @@ export function HeroSection({ variant = 'default', videoUrl }: HeroSectionProps)
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 gradient-radial-blue z-10" />
+        {/* Subtle gradient overlay - warm neutral */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent z-10" />
 
-        {/* Animated gradient orbs */}
-        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-[#0077ff]/10 rounded-full blur-[120px] animate-float" />
-        <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-[#3395ff]/8 rounded-full blur-[120px] animate-float animation-delay-1000" />
+        {/* Subtle ambient glow - neutral warm tones */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/[0.03] rounded-full blur-[120px]" />
 
-        {/* Grid pattern */}
+        {/* Grid pattern - refined */}
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.015]"
           style={{
             backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
-            backgroundSize: '64px 64px',
+            backgroundSize: '80px 80px',
           }}
         />
 
@@ -90,18 +89,17 @@ export function HeroSection({ variant = 'default', videoUrl }: HeroSectionProps)
       <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <div className="text-center">
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 mb-8 animate-fade-in-up">
-            <span className="flex h-2 w-2 rounded-full bg-[#34c759]" />
-            <span className="text-[13px] text-[#a1a1a6]">
-              Trusted by 500+ Central Florida agents
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] border border-white/[0.08] px-5 py-2 mb-8 animate-fade-in-up">
+            <span className="text-[13px] text-[#a1a1a6] tracking-wide">
+              Trusted by 500+ Central Florida Agents
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-display-2xl text-white mb-6 animate-fade-in-up animation-delay-100">
-            Real Estate Media
+            Premium Real Estate Media
             <br />
-            <span className="text-gradient-blue">That Sells Homes Faster</span>
+            <span className="text-gradient">That Sells Homes Faster</span>
           </h1>
 
           {/* Subheadline */}
@@ -111,13 +109,13 @@ export function HeroSection({ variant = 'default', videoUrl }: HeroSectionProps)
           </p>
 
           {/* Trust points */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-10 animate-fade-in-up animation-delay-300">
+          <div className="flex flex-wrap items-center justify-center gap-6 mb-10 animate-fade-in-up animation-delay-300">
             {trustPoints.map((point) => (
               <div
                 key={point}
                 className="flex items-center gap-2 text-[14px] text-[#a1a1a6]"
               >
-                <CheckCircle2 className="h-4 w-4 text-[#0077ff]" />
+                <CheckCircle2 className="h-4 w-4 text-white/60" />
                 {point}
               </div>
             ))}
@@ -128,7 +126,7 @@ export function HeroSection({ variant = 'default', videoUrl }: HeroSectionProps)
             <Link href="/book">
               <Button
                 size="lg"
-                className="h-14 px-8 bg-[#0077ff] hover:bg-[#0062cc] text-white text-[16px] font-semibold rounded-xl shadow-lg shadow-[#0077ff]/25 transition-all hover:shadow-xl hover:shadow-[#0077ff]/30 hover:scale-[1.02]"
+                className="h-14 px-8 bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[16px] font-semibold rounded-xl shadow-lg shadow-[#ff4533]/20 transition-all hover:shadow-xl hover:shadow-[#ff4533]/30 hover:scale-[1.02]"
               >
                 Book Your Shoot
                 <ArrowRight className="ml-2 h-5 w-5" />

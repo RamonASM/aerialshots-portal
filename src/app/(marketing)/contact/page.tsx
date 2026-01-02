@@ -292,10 +292,10 @@ export default function EstimatePage() {
     <main className="min-h-screen bg-black">
       {/* Hero */}
       <section className="relative py-16 md:py-24">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm text-blue-400 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
               <Calculator className="h-4 w-4" />
               Instant Project Estimate
             </div>
@@ -323,16 +323,16 @@ export default function EstimatePage() {
                     className={cn(
                       'flex items-center gap-2 transition-colors',
                       index <= currentStepIndex ? 'text-foreground' : 'text-muted-foreground',
-                      index < currentStepIndex && 'cursor-pointer hover:text-blue-400'
+                      index < currentStepIndex && 'cursor-pointer hover:text-[#09f]'
                     )}
                   >
                     <div
                       className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
                         index < currentStepIndex
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-[#ff4533] text-white'
                           : index === currentStepIndex
-                          ? 'bg-blue-500/20 border border-blue-500 text-blue-400'
+                          ? 'bg-[#ff4533]/20 border border-[#ff4533] text-[#ff4533]'
                           : 'bg-white/[0.05] text-muted-foreground'
                       )}
                     >
@@ -348,7 +348,7 @@ export default function EstimatePage() {
                     <div
                       className={cn(
                         'w-12 sm:w-24 h-px mx-2',
-                        index < currentStepIndex ? 'bg-blue-500' : 'bg-white/[0.08]'
+                        index < currentStepIndex ? 'bg-[#ff4533]' : 'bg-white/[0.08]'
                       )}
                     />
                   )}
@@ -386,14 +386,14 @@ export default function EstimatePage() {
                         className={cn(
                           'p-4 rounded-xl border text-center transition-all',
                           propertyType === type.id
-                            ? 'border-blue-500 bg-blue-500/10'
+                            ? 'border-[#ff4533] bg-[#ff4533]/10'
                             : 'border-white/[0.08] bg-[#1c1c1e] hover:border-white/20'
                         )}
                       >
                         <type.icon
                           className={cn(
                             'h-8 w-8 mx-auto mb-2',
-                            propertyType === type.id ? 'text-blue-400' : 'text-muted-foreground'
+                            propertyType === type.id ? 'text-[#ff4533]' : 'text-muted-foreground'
                           )}
                         />
                         <span
@@ -422,7 +422,7 @@ export default function EstimatePage() {
                         className={cn(
                           'p-3 rounded-lg border text-sm transition-all',
                           sqftTier === tier.id
-                            ? 'border-blue-500 bg-blue-500/10 text-foreground'
+                            ? 'border-[#ff4533] bg-[#ff4533]/10 text-foreground'
                             : 'border-white/[0.08] bg-[#1c1c1e] text-muted-foreground hover:border-white/20'
                         )}
                       >
@@ -444,7 +444,7 @@ export default function EstimatePage() {
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       placeholder="e.g., Orlando, Winter Park, Tampa..."
-                      className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-[#ff4533] focus:outline-none focus:ring-1 focus:ring-[#ff4533]"
                     />
                   </div>
                 </div>
@@ -469,12 +469,12 @@ export default function EstimatePage() {
                       className={cn(
                         'p-4 rounded-xl border text-left transition-all relative',
                         selectedServices.includes(service.id)
-                          ? 'border-blue-500 bg-blue-500/10'
+                          ? 'border-[#ff4533] bg-[#ff4533]/10'
                           : 'border-white/[0.08] bg-[#1c1c1e] hover:border-white/20'
                       )}
                     >
                       {service.popular && (
-                        <span className="absolute top-2 right-2 px-2 py-0.5 text-xs rounded-full bg-blue-500/20 text-blue-400">
+                        <span className="absolute top-2 right-2 px-2 py-0.5 text-xs rounded-full bg-[#ff4533]/20 text-[#ff4533]">
                           Popular
                         </span>
                       )}
@@ -483,7 +483,7 @@ export default function EstimatePage() {
                           className={cn(
                             'w-5 h-5 rounded border flex items-center justify-center shrink-0 mt-0.5',
                             selectedServices.includes(service.id)
-                              ? 'bg-blue-500 border-blue-500'
+                              ? 'bg-[#ff4533] border-[#ff4533]'
                               : 'border-white/20'
                           )}
                         >
@@ -497,14 +497,14 @@ export default function EstimatePage() {
                               className={cn(
                                 'h-4 w-4',
                                 selectedServices.includes(service.id)
-                                  ? 'text-blue-400'
+                                  ? 'text-[#ff4533]'
                                   : 'text-muted-foreground'
                               )}
                             />
                             <span className="font-medium text-foreground">{service.name}</span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
-                          <p className="text-sm text-blue-400 mt-2">From ${service.basePrice}</p>
+                          <p className="text-sm text-[#a1a1a6] mt-2">From ${service.basePrice}</p>
                         </div>
                       </div>
                     </button>
@@ -512,7 +512,7 @@ export default function EstimatePage() {
                 </div>
 
                 {selectedServices.length > 0 && (
-                  <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                  <div className="p-4 rounded-xl border border-[#ff4533]/20 bg-[#ff4533]/5">
                     <p className="text-sm text-muted-foreground">
                       <span className="text-foreground font-medium">{selectedServices.length}</span>{' '}
                       service{selectedServices.length !== 1 ? 's' : ''} selected
@@ -604,7 +604,7 @@ export default function EstimatePage() {
                 </div>
 
                 {/* Final Total */}
-                <div className="p-6 rounded-xl border border-blue-500/20 bg-blue-500/5">
+                <div className="p-6 rounded-xl border border-[#ff4533]/20 bg-[#ff4533]/5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Best Price</p>
@@ -654,7 +654,7 @@ export default function EstimatePage() {
                           setContactInfo((prev) => ({ ...prev, name: e.target.value }))
                         }
                         placeholder="John Smith"
-                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-[#ff4533] focus:outline-none focus:ring-1 focus:ring-[#ff4533]"
                       />
                     </div>
                   </div>
@@ -672,7 +672,7 @@ export default function EstimatePage() {
                           setContactInfo((prev) => ({ ...prev, email: e.target.value }))
                         }
                         placeholder="john@realty.com"
-                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-[#ff4533] focus:outline-none focus:ring-1 focus:ring-[#ff4533]"
                       />
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export default function EstimatePage() {
                           setContactInfo((prev) => ({ ...prev, phone: e.target.value }))
                         }
                         placeholder="(555) 123-4567"
-                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] pl-12 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-[#ff4533] focus:outline-none focus:ring-1 focus:ring-[#ff4533]"
                       />
                     </div>
                   </div>
@@ -706,7 +706,7 @@ export default function EstimatePage() {
                       }
                       rows={3}
                       placeholder="Any special requests or property details..."
-                      className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                      className="w-full rounded-lg border border-white/[0.08] bg-[#1c1c1e] px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-[#ff4533] focus:outline-none focus:ring-1 focus:ring-[#ff4533] resize-none"
                     />
                   </div>
                 </div>
@@ -729,7 +729,7 @@ export default function EstimatePage() {
                       </div>
                       <div className="pt-2 border-t border-white/[0.08] flex justify-between">
                         <span className="font-medium text-foreground">Estimated Total</span>
-                        <span className="font-bold text-blue-400">
+                        <span className="font-bold text-[#ff4533]">
                           $
                           {estimate.recommendedPackage
                             ? estimate.totalWithPackage
@@ -765,7 +765,7 @@ export default function EstimatePage() {
                   className={cn(
                     'inline-flex items-center gap-2 px-8 py-3 rounded-full font-medium transition-colors',
                     canProceed[step] && !isSubmitting
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
+                      ? 'bg-[#ff4533] text-white hover:bg-[#e63d2e]'
                       : 'bg-white/[0.05] text-muted-foreground cursor-not-allowed'
                   )}
                 >
@@ -779,7 +779,7 @@ export default function EstimatePage() {
                   className={cn(
                     'inline-flex items-center gap-2 px-8 py-3 rounded-full font-medium transition-colors',
                     canProceed[step]
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
+                      ? 'bg-[#ff4533] text-white hover:bg-[#e63d2e]'
                       : 'bg-white/[0.05] text-muted-foreground cursor-not-allowed'
                   )}
                 >
@@ -802,7 +802,7 @@ export default function EstimatePage() {
             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 href="tel:+14075551234"
-                className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300"
+                className="inline-flex items-center gap-2 text-[#09f] hover:text-[#00bbff]"
               >
                 <Phone className="h-4 w-4" />
                 (407) 555-1234
@@ -810,7 +810,7 @@ export default function EstimatePage() {
               <span className="hidden sm:inline text-muted-foreground">•</span>
               <a
                 href="mailto:hello@aerialshots.media"
-                className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300"
+                className="inline-flex items-center gap-2 text-[#09f] hover:text-[#00bbff]"
               >
                 <Mail className="h-4 w-4" />
                 hello@aerialshots.media
