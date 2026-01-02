@@ -213,11 +213,19 @@ async function executeWithRetry<TInput, TOutput>(
   let retryCount = 0
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Create an AbortController for this attempt
+    const controller = new AbortController()
+    const attemptContext = {
+      ...context,
+      abortSignal: controller.signal
+    }
+
     try {
-      // Execute with timeout
+      // Execute with timeout and cancellation support
       const result = await executeWithTimeout(
-        skill.execute(input, context),
-        timeout
+        skill.execute(input, attemptContext),
+        timeout,
+        controller
       )
 
       // Add retry count to metadata
@@ -246,6 +254,9 @@ async function executeWithRetry<TInput, TOutput>(
         const delay = getRetryDelay(attempt, false)
         await sleep(delay)
       }
+    } finally {
+      // Always cleanup the controller to prevent listener leaks
+      controller.abort('attempt_finished')
     }
   }
 
@@ -262,18 +273,28 @@ async function executeWithRetry<TInput, TOutput>(
 }
 
 /**
- * Execute with timeout
+ * Execute with timeout and cancellation
  */
 async function executeWithTimeout<T>(
   promise: Promise<T>,
-  timeoutMs: number
+  timeoutMs: number,
+  controller: AbortController
 ): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Execution timeout')), timeoutMs)
-    ),
-  ])
+  let timeoutId: NodeJS.Timeout
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort('timeout')
+      reject(new Error('Execution timeout'))
+    }, timeoutMs)
+  })
+
+  try {
+    return await Promise.race([promise, timeoutPromise])
+  } finally {
+    // @ts-ignore - timeoutId is assigned
+    clearTimeout(timeoutId)
+  }
 }
 
 /**

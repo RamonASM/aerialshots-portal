@@ -4,6 +4,48 @@ All notable changes to the ASM Portal are documented here.
 
 ## [Unreleased] - 2026-01-02
 
+### Added - Clerk Authentication System
+
+Complete role-based authentication using [Clerk](https://clerk.com).
+
+#### Sign-In Pages (Role-Specific Themes)
+- `/sign-in` - Agent portal (blue theme) - Real estate agents
+- `/sign-in/staff` - Team portal (purple theme) - Photographers, videographers, QC, admins
+- `/sign-in/seller` - Homeowner portal (green theme) - Property sellers viewing media
+- `/sign-in/partner` - Partner portal (amber theme) - Business partners
+
+#### Sign-Up Pages
+- `/sign-up/agent` - New agent registration
+- `/sign-up/seller` - Homeowner registration (for delivery access)
+
+#### Authentication Infrastructure
+- `src/app/layout.tsx` - ClerkProvider with dark theme customization
+- `src/middleware.ts` - Clerk middleware with role-based routing
+  - Public routes: marketing, booking, delivery, property pages
+  - Staff routes: `/admin/*`, `/team/*` - require staff roles
+  - Agent routes: `/dashboard/*` - require authenticated agent
+- `src/lib/auth/clerk.ts` - Auth helper functions
+  - `getCurrentUser()` - Get user with database info
+  - `requireAuth()` - Enforce authentication
+  - `requireRole()` - Enforce specific roles
+  - `isAdmin()`, `isStaff()` - Role checks
+
+#### Clerk Webhook Handler
+- `/api/webhooks/clerk` - User sync webhook
+  - `user.created` - Links new users to existing records or creates agent
+  - `user.updated` - Syncs email/name changes
+  - `user.deleted` - Marks records as inactive
+  - Auto-sets Clerk public metadata with role, userId, userTable
+
+#### Database Types Updated
+- Added `sellers` table type (homeowners viewing delivery)
+- Added `clerk_user_id` column to agents, staff, partners, sellers
+- Added `processed_events` table for idempotent webhook handling
+
+#### Claude Code MCP Configuration
+- Added Clerk MCP: `npx -y @clerk/agent-toolkit -p=local-mcp`
+- Enables user management and webhook configuration via Claude Code
+
 ### Fixed - Security & Rate Limiting
 
 #### Security Fixes
@@ -48,8 +90,23 @@ All notable changes to the ASM Portal are documented here.
 - Added project-level `.mcp.json` for ASM Portal Supabase MCP connection
   - Project ref: `awoabqaszgeqdlvcevmd`
   - Overrides global MCP config when working in this directory
+- Added Clerk MCP to Claude Code for user/auth management
+  - Command: `claude mcp add clerk -- npx -y @clerk/agent-toolkit -p=local-mcp`
+  - Requires `CLERK_SECRET_KEY` environment variable
 
-### Pending
+### Pending - Clerk Setup
+After creating Clerk project, add to `.env.local`:
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...        # ✅ Already added
+CLERK_WEBHOOK_SECRET=whsec_...
+```
+
+Configure in Clerk Dashboard:
+1. Create webhook endpoint: `https://app.aerialshots.media/api/webhooks/clerk`
+2. Select events: `user.created`, `user.updated`, `user.deleted`
+
+### Other Pending
 - Database migration history sync (tables exist but not tracked in migration table)
   - Not a functional issue - schema is correct, just metadata mismatch
   - Can be resolved with `supabase migration repair` commands

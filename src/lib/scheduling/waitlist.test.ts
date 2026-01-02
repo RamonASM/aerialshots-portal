@@ -13,10 +13,12 @@ import {
 
 // Mock Supabase admin client
 const mockSupabaseFrom = vi.fn()
+const mockSupabaseRpc = vi.fn()
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: mockSupabaseFrom,
+    rpc: mockSupabaseRpc,
   }),
 }))
 
@@ -25,27 +27,38 @@ vi.mock('@/lib/notifications', () => ({
   sendNotification: vi.fn(() => Promise.resolve({ success: true })),
 }))
 
-// Helper to create a chainable Supabase mock
-const createChain = (finalResult: unknown, finalMethod: string = 'single') => {
-  const chain: Record<string, unknown> = {}
-  const methods = ['select', 'insert', 'update', 'delete', 'eq', 'is', 'gte', 'lt', 'lte', 'order', 'limit', 'contains', 'rpc']
+// Helper to create a chainable Supabase mock that supports any chain length
+// Creates a thenable object (can be awaited) with all chain methods
+const createChain = (finalResult: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chain: any = {
+    // Make the chain thenable - this allows `await chain.eq().order()` to work
+    then(onFulfilled?: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) {
+      return Promise.resolve(finalResult).then(onFulfilled, onRejected)
+    },
+    // single() explicitly returns a promise
+    single() {
+      return Promise.resolve(finalResult)
+    },
+  }
+
+  // All chain methods return the chain itself
+  const methods = ['select', 'insert', 'update', 'delete', 'eq', 'is', 'gte', 'lt', 'lte', 'order', 'limit', 'contains', 'from']
   methods.forEach((method) => {
-    if (method === finalMethod) {
-      chain[method] = () => Promise.resolve(finalResult)
-    } else {
-      chain[method] = () => chain
-    }
+    chain[method] = () => chain
   })
+
   return chain
 }
 
 describe('Appointment Waitlist', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks() // Reset mocks including mockReturnValueOnce queue
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2025-01-06T10:00:00'))
-    // Set a default mock to prevent "not a function" errors
+    // Set default mocks to prevent "not a function" errors
     mockSupabaseFrom.mockReturnValue(createChain({ data: null, error: null }))
+    mockSupabaseRpc.mockResolvedValue({ data: null, error: null })
   })
 
   afterEach(() => {
@@ -54,40 +67,25 @@ describe('Appointment Waitlist', () => {
 
   describe('joinWaitlist', () => {
     it('should add client to waitlist for a date', async () => {
-      // Mock for getting existing entries count, then insert
-      mockSupabaseFrom
-        .mockReturnValueOnce({
-          select: () => ({
-            eq: () => ({
-              eq: () => ({
-                eq: () =>
-                  Promise.resolve({
-                    data: [], // No existing entries
-                    error: null,
-                  }),
-              }),
-            }),
-          }),
+      // First call: get existing entries count
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: [], error: null })
+      )
+      // Second call: insert new entry
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: {
+            id: 'waitlist-1',
+            client_email: 'agent@realty.com',
+            territory_id: 'territory-1',
+            requested_date: '2025-01-10',
+            status: 'waiting',
+            position: 1,
+            created_at: '2025-01-06T10:00:00',
+          },
+          error: null,
         })
-        .mockReturnValueOnce({
-          insert: () => ({
-            select: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    id: 'waitlist-1',
-                    client_email: 'agent@realty.com',
-                    territory_id: 'territory-1',
-                    requested_date: '2025-01-10',
-                    status: 'waiting',
-                    position: 1,
-                    created_at: '2025-01-06T10:00:00',
-                  },
-                  error: null,
-                }),
-            }),
-          }),
-        })
+      )
 
       const result = await joinWaitlist({
         client_email: 'agent@realty.com',
@@ -103,36 +101,21 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should assign correct position in queue', async () => {
-      // First, mock to check existing entries
-      mockSupabaseFrom
-        .mockReturnValueOnce({
-          select: () => ({
-            eq: () => ({
-              eq: () => ({
-                eq: () =>
-                  Promise.resolve({
-                    data: [{ id: 'existing-1' }, { id: 'existing-2' }],
-                    error: null,
-                  }),
-              }),
-            }),
-          }),
+      // First call: get existing entries (2 already exist)
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: [{ id: 'existing-1' }, { id: 'existing-2' }], error: null })
+      )
+      // Second call: insert at position 3
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: {
+            id: 'waitlist-3',
+            position: 3,
+            status: 'waiting',
+          },
+          error: null,
         })
-        .mockReturnValueOnce({
-          insert: () => ({
-            select: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    id: 'waitlist-3',
-                    position: 3,
-                    status: 'waiting',
-                  },
-                  error: null,
-                }),
-            }),
-          }),
-        })
+      )
 
       const result = await joinWaitlist({
         client_email: 'agent@realty.com',
@@ -147,25 +130,13 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should prevent duplicate entries for same date', async () => {
-      // Mock for duplicate check
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () =>
-                Promise.resolve({
-                  data: [
-                    {
-                      id: 'existing',
-                      client_email: 'agent@realty.com',
-                    },
-                  ],
-                  error: null,
-                }),
-            }),
-          }),
-        }),
-      })
+      // Mock for duplicate check - returns existing entry
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: [{ id: 'existing', client_email: 'agent@realty.com' }],
+          error: null,
+        })
+      )
 
       const result = await joinWaitlist({
         client_email: 'agent@realty.com',
@@ -195,82 +166,54 @@ describe('Appointment Waitlist', () => {
   })
 
   describe('leaveWaitlist', () => {
-    // TODO: Fix mock chain setup - implementation works correctly
-    it.skip('should remove client from waitlist', async () => {
+    it('should remove client from waitlist', async () => {
       // First call: get entry details
-      mockSupabaseFrom.mockReturnValueOnce({
-        select: () => ({
-          eq: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: 'waitlist-1',
-                  position: 1,
-                  territory_id: 'territory-1',
-                  requested_date: '2025-01-10',
-                },
-                error: null,
-              }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: {
+            id: 'waitlist-1',
+            position: 1,
+            territory_id: 'territory-1',
+            requested_date: '2025-01-10',
+          },
+          error: null,
+        })
+      )
       // Second call: delete
-      mockSupabaseFrom.mockReturnValueOnce({
-        delete: () => ({
-          eq: () => ({
-            eq: () =>
-              Promise.resolve({
-                error: null,
-              }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ error: null })
+      )
       // Third call: rpc to reorder
-      mockSupabaseFrom.mockReturnValueOnce({
-        rpc: () => Promise.resolve({ data: null, error: null }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: null, error: null })
+      )
 
       const result = await leaveWaitlist('waitlist-1', 'agent@realty.com')
 
       expect(result.success).toBe(true)
     })
 
-    // TODO: Fix mock chain setup - implementation works correctly
-    it.skip('should update positions of remaining entries', async () => {
-      mockSupabaseFrom
-        .mockReturnValueOnce({
-          select: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    id: 'waitlist-1',
-                    position: 2,
-                    territory_id: 'territory-1',
-                    requested_date: '2025-01-10',
-                  },
-                  error: null,
-                }),
-            }),
-          }),
+    it('should update positions of remaining entries', async () => {
+      // First call: get entry details
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: {
+            id: 'waitlist-1',
+            position: 2,
+            territory_id: 'territory-1',
+            requested_date: '2025-01-10',
+          },
+          error: null,
         })
-        .mockReturnValueOnce({
-          delete: () => ({
-            eq: () => ({
-              eq: () =>
-                Promise.resolve({
-                  error: null,
-                }),
-            }),
-          }),
-        })
-        .mockReturnValueOnce({
-          rpc: () =>
-            Promise.resolve({
-              data: null,
-              error: null,
-            }),
-        })
+      )
+      // Second call: delete
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ error: null })
+      )
+      // Third call: rpc to reorder
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: null, error: null })
+      )
 
       const result = await leaveWaitlist('waitlist-1', 'agent@realty.com')
 
@@ -279,23 +222,17 @@ describe('Appointment Waitlist', () => {
   })
 
   describe('getWaitlistPosition', () => {
-    // TODO: Fix mock chain setup - implementation works correctly
-    it.skip('should return current position', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: 'waitlist-1',
-                  position: 3,
-                  status: 'waiting',
-                },
-                error: null,
-              }),
-          }),
-        }),
-      })
+    it('should return current position', async () => {
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: {
+            id: 'waitlist-1',
+            position: 3,
+            status: 'waiting',
+          },
+          error: null,
+        })
+      )
 
       const position = await getWaitlistPosition('waitlist-1')
 
@@ -303,17 +240,12 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should return null for invalid entry', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            single: () =>
-              Promise.resolve({
-                data: null,
-                error: { code: 'PGRST116' },
-              }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: null,
+          error: { code: 'PGRST116' },
+        })
+      )
 
       const position = await getWaitlistPosition('invalid-id')
 
@@ -322,20 +254,16 @@ describe('Appointment Waitlist', () => {
   })
 
   describe('getWaitlistForDate', () => {
-    // TODO: Fix mock chain setup - implementation works correctly
-    it.skip('should return all entries for a date', async () => {
-      mockSupabaseFrom.mockReturnValue(
-        createChain(
-          {
-            data: [
-              { id: 'waitlist-1', position: 1, client_name: 'Agent 1' },
-              { id: 'waitlist-2', position: 2, client_name: 'Agent 2' },
-              { id: 'waitlist-3', position: 3, client_name: 'Agent 3' },
-            ],
-            error: null,
-          },
-          'order'
-        )
+    it('should return all entries for a date', async () => {
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: [
+            { id: 'waitlist-1', position: 1, client_name: 'Agent 1' },
+            { id: 'waitlist-2', position: 2, client_name: 'Agent 2' },
+            { id: 'waitlist-3', position: 3, client_name: 'Agent 3' },
+          ],
+          error: null,
+        })
       )
 
       const entries = await getWaitlistForDate('territory-1', new Date('2025-01-10'))
@@ -345,8 +273,8 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should return empty array when no waitlist', async () => {
-      mockSupabaseFrom.mockReturnValue(
-        createChain({ data: [], error: null }, 'order')
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: [], error: null })
       )
 
       const entries = await getWaitlistForDate('territory-1', new Date('2025-01-10'))
@@ -359,24 +287,23 @@ describe('Appointment Waitlist', () => {
     it('should notify first person on waitlist', async () => {
       // First call: get first waiting entry
       mockSupabaseFrom.mockReturnValueOnce(
-        createChain(
-          {
-            data: [
-              {
-                id: 'waitlist-1',
-                client_email: 'first@realty.com',
-                client_name: 'First Agent',
-                position: 1,
-                notification_count: 0,
-              },
-            ],
-            error: null,
-          },
-          'limit'
-        )
+        createChain({
+          data: [
+            {
+              id: 'waitlist-1',
+              client_email: 'first@realty.com',
+              client_name: 'First Agent',
+              position: 1,
+              notification_count: 0,
+            },
+          ],
+          error: null,
+        })
       )
       // Second call: update notification count
-      mockSupabaseFrom.mockReturnValueOnce(createChain({ error: null }, 'eq'))
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ error: null })
+      )
 
       const result = await notifyWaitlistSlotAvailable('territory-1', new Date('2025-01-10'))
 
@@ -385,23 +312,9 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should return no notification when waitlist empty', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () => ({
-                order: () => ({
-                  limit: () =>
-                    Promise.resolve({
-                      data: [],
-                      error: null,
-                    }),
-                }),
-              }),
-            }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({ data: [], error: null })
+      )
 
       const result = await notifyWaitlistSlotAvailable('territory-1', new Date('2025-01-10'))
 
@@ -411,22 +324,15 @@ describe('Appointment Waitlist', () => {
 
   describe('getClientWaitlistEntries', () => {
     it('should return all waitlist entries for a client', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              order: () =>
-                Promise.resolve({
-                  data: [
-                    { id: 'waitlist-1', requested_date: '2025-01-10', position: 2 },
-                    { id: 'waitlist-2', requested_date: '2025-01-12', position: 1 },
-                  ],
-                  error: null,
-                }),
-            }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: [
+            { id: 'waitlist-1', requested_date: '2025-01-10', position: 2 },
+            { id: 'waitlist-2', requested_date: '2025-01-12', position: 1 },
+          ],
+          error: null,
+        })
+      )
 
       const entries = await getClientWaitlistEntries('agent@realty.com')
 
@@ -434,19 +340,12 @@ describe('Appointment Waitlist', () => {
     })
 
     it('should only return active entries', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              order: () =>
-                Promise.resolve({
-                  data: [{ id: 'waitlist-1', status: 'waiting' }],
-                  error: null,
-                }),
-            }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValueOnce(
+        createChain({
+          data: [{ id: 'waitlist-1', status: 'waiting' }],
+          error: null,
+        })
+      )
 
       const entries = await getClientWaitlistEntries('agent@realty.com')
 
@@ -457,9 +356,12 @@ describe('Appointment Waitlist', () => {
 
 describe('Waitlist Edge Cases', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks() // Reset mocks including mockReturnValueOnce queue
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2025-01-06T10:00:00'))
+    // Set default mocks to prevent "not a function" errors
+    mockSupabaseFrom.mockReturnValue(createChain({ data: null, error: null }))
+    mockSupabaseRpc.mockResolvedValue({ data: null, error: null })
   })
 
   afterEach(() => {
@@ -467,37 +369,22 @@ describe('Waitlist Edge Cases', () => {
   })
 
   it('should handle multiple territories', async () => {
-    // Mock for getting existing entries count, then insert
-    mockSupabaseFrom
-      .mockReturnValueOnce({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () =>
-                Promise.resolve({
-                  data: [],
-                  error: null,
-                }),
-            }),
-          }),
-        }),
+    // First call: get existing entries count
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({ data: [], error: null })
+    )
+    // Second call: insert new entry
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({
+        data: {
+          id: 'waitlist-1',
+          territory_id: 'territory-2',
+          position: 1,
+          status: 'waiting',
+        },
+        error: null,
       })
-      .mockReturnValueOnce({
-        insert: () => ({
-          select: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: 'waitlist-1',
-                  territory_id: 'territory-2',
-                  position: 1,
-                  status: 'waiting',
-                },
-                error: null,
-              }),
-          }),
-        }),
-      })
+    )
 
     const result = await joinWaitlist({
       client_email: 'agent@realty.com',
@@ -511,38 +398,23 @@ describe('Waitlist Edge Cases', () => {
   })
 
   it('should allow flexible date matching', async () => {
-    // Mock for getting existing entries count, then insert
-    mockSupabaseFrom
-      .mockReturnValueOnce({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () =>
-                Promise.resolve({
-                  data: [],
-                  error: null,
-                }),
-            }),
-          }),
-        }),
+    // First call: get existing entries count
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({ data: [], error: null })
+    )
+    // Second call: insert new entry with flexible dates
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({
+        data: {
+          id: 'waitlist-1',
+          flexible_dates: true,
+          date_range_start: '2025-01-10',
+          date_range_end: '2025-01-15',
+          status: 'waiting',
+        },
+        error: null,
       })
-      .mockReturnValueOnce({
-        insert: () => ({
-          select: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: 'waitlist-1',
-                  flexible_dates: true,
-                  date_range_start: '2025-01-10',
-                  date_range_end: '2025-01-15',
-                  status: 'waiting',
-                },
-                error: null,
-              }),
-          }),
-        }),
-      })
+    )
 
     const result = await joinWaitlist({
       client_email: 'agent@realty.com',
@@ -558,38 +430,24 @@ describe('Waitlist Edge Cases', () => {
   })
 
   it('should track notification attempts', async () => {
-    mockSupabaseFrom
-      .mockReturnValueOnce({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () => ({
-                order: () => ({
-                  limit: () =>
-                    Promise.resolve({
-                      data: [
-                        {
-                          id: 'waitlist-1',
-                          client_email: 'agent@realty.com',
-                          notification_count: 0,
-                        },
-                      ],
-                      error: null,
-                    }),
-                }),
-              }),
-            }),
-          }),
-        }),
+    // First call: get waiting entries
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({
+        data: [
+          {
+            id: 'waitlist-1',
+            client_email: 'agent@realty.com',
+            client_name: 'Test Agent',
+            notification_count: 0,
+          },
+        ],
+        error: null,
       })
-      .mockReturnValueOnce({
-        update: () => ({
-          eq: () =>
-            Promise.resolve({
-              error: null,
-            }),
-        }),
-      })
+    )
+    // Second call: update notification count
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({ error: null })
+    )
 
     const result = await notifyWaitlistSlotAvailable('territory-1', new Date('2025-01-10'))
 
@@ -597,29 +455,19 @@ describe('Waitlist Edge Cases', () => {
   })
 
   it('should expire entries after max notification attempts', async () => {
-    mockSupabaseFrom.mockReturnValue({
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            eq: () => ({
-              order: () => ({
-                limit: () =>
-                  Promise.resolve({
-                    data: [
-                      {
-                        id: 'waitlist-1',
-                        notification_count: 3, // Max attempts reached
-                        status: 'expired',
-                      },
-                    ],
-                    error: null,
-                  }),
-              }),
-            }),
-          }),
-        }),
-      }),
-    })
+    // Return entry with max notification count reached
+    mockSupabaseFrom.mockReturnValueOnce(
+      createChain({
+        data: [
+          {
+            id: 'waitlist-1',
+            notification_count: 3, // Max attempts reached
+            status: 'expired',
+          },
+        ],
+        error: null,
+      })
+    )
 
     const result = await notifyWaitlistSlotAvailable('territory-1', new Date('2025-01-10'))
 

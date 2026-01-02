@@ -4,7 +4,7 @@ import {
   User,
   Mail,
   Phone,
-  Video,
+  Camera,
   Settings,
   Award,
   Wrench,
@@ -15,13 +15,13 @@ import { Badge } from '@/components/ui/badge'
 import { StripeConnectCard } from '@/components/team/StripeConnectCard'
 
 /**
- * Check if staff has videographer access
- * Supports: role = 'videographer', team_role = 'videographer', or role = 'admin'
+ * Check if staff has photographer access
+ * Supports: role = 'photographer', team_role = 'photographer', or role = 'admin'
  */
-function hasVideographerAccess(staff: { role: string | null; team_role: string | null }): boolean {
+function hasPhotographerAccess(staff: { role: string | null; team_role: string | null }): boolean {
   if (staff.role === 'admin') return true
-  if (staff.role === 'videographer') return true
-  if (staff.team_role === 'videographer') return true
+  if (staff.role === 'photographer') return true
+  if (staff.team_role === 'photographer') return true
   return false
 }
 
@@ -30,11 +30,11 @@ interface PageProps {
 }
 
 /**
- * Videographer Settings Page
+ * Photographer Settings Page
  *
  * Display profile information, skills, and Stripe Connect payout setup.
  */
-export default async function VideographerSettingsPage({ searchParams }: PageProps) {
+export default async function PhotographerSettingsPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const params = await searchParams
 
@@ -53,11 +53,11 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
     .eq('email', user.email!)
     .single()
 
-  if (!staff || !hasVideographerAccess(staff)) {
+  if (!staff || !hasPhotographerAccess(staff)) {
     redirect('/staff-login')
   }
 
-  const displayRole = staff.team_role || staff.role || 'videographer'
+  const displayRole = staff.team_role || staff.role || 'photographer'
   const skills = staff.skills || []
   const certifications = staff.certifications || []
   const connectSuccess = params.connect === 'success'
@@ -67,7 +67,7 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="mt-1 text-zinc-400">Your videographer profile and payouts</p>
+        <p className="mt-1 text-zinc-400">Your photographer profile and payouts</p>
       </div>
 
       {/* Success Message */}
@@ -91,12 +91,12 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/10">
-              <Video className="h-6 w-6 text-purple-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10">
+              <Camera className="h-6 w-6 text-blue-500" />
             </div>
             <div>
               <p className="font-semibold text-white">{staff.name}</p>
-              <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/20 capitalize">
+              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 capitalize">
                 {displayRole}
               </Badge>
             </div>
@@ -128,12 +128,12 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
               <Wrench className="h-5 w-5" />
               Skills
             </CardTitle>
-            <CardDescription className="text-zinc-400">Your video production capabilities</CardDescription>
+            <CardDescription className="text-zinc-400">Your photography specialties</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill: string) => (
-                <Badge key={skill} className="bg-purple-500/10 text-purple-400 border-purple-500/20">
+                <Badge key={skill} className="bg-blue-500/10 text-blue-400 border-blue-500/20">
                   {skill}
                 </Badge>
               ))}
@@ -174,18 +174,11 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
         </CardHeader>
         <CardContent className="grid gap-2">
           <a
-            href="/team/videographer/queue"
+            href="/team/photographer"
             className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-black/20 p-3 transition-colors hover:bg-white/5"
           >
-            <span className="font-medium text-white">Edit Queue</span>
-            <span className="text-sm text-zinc-500">Videos awaiting edit</span>
-          </a>
-          <a
-            href="/team/videographer/schedule"
-            className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-black/20 p-3 transition-colors hover:bg-white/5"
-          >
-            <span className="font-medium text-white">Schedule</span>
-            <span className="text-sm text-zinc-500">Upcoming shoots</span>
+            <span className="font-medium text-white">Dashboard</span>
+            <span className="text-sm text-zinc-500">Today&apos;s schedule</span>
           </a>
         </CardContent>
       </Card>

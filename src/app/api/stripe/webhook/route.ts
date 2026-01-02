@@ -27,6 +27,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
+  const supabase = createAdminClient()
+
+  // Check for idempotency
+  const { data: existingEvent } = await supabase
+    .from('processed_events')
+    .select('event_id')
+    .eq('event_id', event.id)
+    .single()
+
+  if (existingEvent) {
+    console.log(`Event ${event.id} already processed, skipping`)
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
+  // Record event before processing
+  await supabase
+    .from('processed_events')
+    .insert({
+      event_id: event.id,
+      provider: 'stripe',
+      metadata: { type: event.type }
+    })
+
   // Handle the event
   switch (event.type) {
     case 'payment_intent.succeeded': {

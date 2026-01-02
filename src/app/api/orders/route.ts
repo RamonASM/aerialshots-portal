@@ -70,107 +70,65 @@ export async function POST(request: NextRequest) {
     // Calculate subtotal from package and addons
     const subtotalCents = totalCents || 0
 
-    // Create order
-    const { data: order, error } = await supabase
-      .from('orders')
-      .insert({
-        agent_id: agentId || null,
-        service_type: serviceType,
-        package_key: packageKey,
-        package_name: packageName,
-        sqft_tier: sqftTier,
-        services: addons,
-        subtotal_cents: subtotalCents,
-        discount_cents: 0,
-        tax_cents: 0,
-        total_cents: subtotalCents,
-        property_address: propertyAddress,
-        property_city: propertyCity,
-        property_state: propertyState,
-        property_zip: propertyZip,
-        property_sqft: propertySqft,
-        property_beds: propertyBeds,
-        property_baths: propertyBaths,
-        contact_name: contactName,
-        contact_email: contactEmail,
-        contact_phone: contactPhone,
-        scheduled_at: scheduledAt,
-        status: 'pending',
-        payment_intent_id: paymentIntentId,
-        payment_status: 'pending',
-        special_instructions: specialInstructions,
-      })
-      .select()
-      .single()
+    // Create order and listing atomically via RPC
+    const { data, error } = await supabase.rpc('create_order_and_listing', {
+      p_agent_id: agentId || null,
+      p_service_type: serviceType,
+      p_package_key: packageKey,
+      p_package_name: packageName,
+      p_sqft_tier: sqftTier,
+      p_services: addons,
+      p_subtotal_cents: subtotalCents,
+      p_discount_cents: 0,
+      p_tax_cents: 0,
+      p_total_cents: subtotalCents,
+      p_property_address: propertyAddress,
+      p_property_city: propertyCity,
+      p_property_state: propertyState,
+      p_property_zip: propertyZip,
+      p_property_sqft: propertySqft,
+      p_property_beds: propertyBeds,
+      p_property_baths: propertyBaths,
+      p_contact_name: contactName,
+      p_contact_email: contactEmail,
+      p_contact_phone: contactPhone,
+      p_scheduled_at: scheduledAt,
+      p_payment_intent_id: paymentIntentId,
+      p_payment_status: 'pending',
+      p_special_instructions: specialInstructions
+    })
 
-    if (error) {
-      apiLogger.error({ ...formatError(error) }, 'Order creation error')
+    if (error || !data) {
+      apiLogger.error({ ...formatError(error) }, 'Atomic order creation error')
       return NextResponse.json(
         { error: 'Failed to create order' },
         { status: 500 }
       )
     }
 
-    // Create a listing for this order (so shoot can be scheduled)
-    let listingId: string | null = null
-    try {
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .insert({
-          agent_id: agentId || null,
-          address: propertyAddress,
-          city: propertyCity,
-          state: propertyState,
-          zip: propertyZip,
-          sqft: propertySqft,
-          beds: propertyBeds,
-          baths: propertyBaths,
-          ops_status: 'pending',
-          contact_name: contactName,
-          contact_email: contactEmail,
-          contact_phone: contactPhone,
-          scheduled_at: scheduledAt,
-          special_instructions: specialInstructions,
-        })
-        .select('id')
-        .single()
+    const { order, listing } = data
 
-      if (!listingError && listing) {
-        listingId = listing.id
+    // Trigger new-listing workflow in background (don't block response)
+    executeWorkflow('new-listing', {
+      event: 'listing.created',
+      listingId: listing.id,
+      data: {
+        agentId: agentId,
+        address: propertyAddress,
+        city: propertyCity,
+        state: propertyState,
+        zip: propertyZip,
+        sqft: propertySqft,
+        beds: propertyBeds,
+        baths: propertyBaths,
+        services: addons,
+        isFirstOrder: false, // Could check order history
+      },
+    }).catch((workflowError) => {
+      apiLogger.error({ listingId: listing.id, ...formatError(workflowError) }, 'Failed to trigger new-listing workflow')
+    })
 
-        // Link order to listing
-        await supabase
-          .from('orders')
-          .update({ listing_id: listing.id })
-          .eq('id', order.id)
-
-        // Trigger new-listing workflow in background (don't block response)
-        executeWorkflow('new-listing', {
-          event: 'listing.created',
-          listingId: listing.id,
-          data: {
-            agentId: agentId,
-            address: propertyAddress,
-            city: propertyCity,
-            state: propertyState,
-            zip: propertyZip,
-            sqft: propertySqft,
-            beds: propertyBeds,
-            baths: propertyBaths,
-            services: addons,
-            isFirstOrder: false, // Could check order history
-          },
-        }).catch((workflowError) => {
-          apiLogger.error({ listingId: listing.id, ...formatError(workflowError) }, 'Failed to trigger new-listing workflow')
-        })
-
-        apiLogger.info({ orderId: order.id, listingId: listing.id }, 'Created listing for order')
-      } else {
-        apiLogger.error({ orderId: order.id, ...formatError(listingError) }, 'Failed to create listing for order')
-      }
-    } catch (listingErr) {
-      apiLogger.error({ orderId: order.id, ...formatError(listingErr) }, 'Error creating listing')
-    }
+    apiLogger.info({ orderId: order.id, listingId: listing.id }, 'Created order and listing atomically')
 
     // Send confirmation emails (don't block on these)
     const fullAddress = [propertyAddress, propertyCity, propertyState, propertyZip]
@@ -208,7 +166,7 @@ export async function POST(request: NextRequest) {
         id: order.id,
         status: order.status,
         total: order.total_cents,
-        listing_id: listingId,
+        listing_id: listing.id,
       },
     })
   } catch (error) {

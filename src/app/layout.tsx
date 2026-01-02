@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { PWAInstallBanner, OfflineIndicator } from "@/components/pwa";
 import "./globals.css";
 
@@ -43,15 +45,48 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-        <Toaster richColors position="top-right" />
-        <PWAInstallBanner />
-        <OfflineIndicator />
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#0077ff",
+          colorBackground: "#0a0a0a",
+          colorInputBackground: "#1c1c1e",
+          colorInputText: "#ffffff",
+          colorText: "#ffffff",
+          colorTextSecondary: "#a1a1a6",
+          borderRadius: "0.75rem",
+        },
+        elements: {
+          formButtonPrimary:
+            "bg-[#0077ff] hover:bg-[#0066dd] text-white font-medium",
+          card: "bg-[#1c1c1e] border border-white/[0.08]",
+          headerTitle: "text-white",
+          headerSubtitle: "text-[#a1a1a6]",
+          socialButtonsBlockButton:
+            "border-white/[0.08] text-white hover:bg-white/[0.05]",
+          formFieldLabel: "text-[#a1a1a6]",
+          formFieldInput:
+            "bg-[#1c1c1e] border-white/[0.08] text-white placeholder:text-[#636366]",
+          footerActionLink: "text-[#0077ff] hover:text-[#3395ff]",
+          identityPreviewEditButton: "text-[#0077ff]",
+          userButtonPopoverCard: "bg-[#1c1c1e] border-white/[0.08]",
+          userButtonPopoverActionButton: "text-white hover:bg-white/[0.05]",
+          userButtonPopoverActionButtonText: "text-white",
+          userButtonPopoverFooter: "hidden",
+        },
+      }}
+    >
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          {children}
+          <Toaster richColors position="top-right" />
+          <PWAInstallBanner />
+          <OfflineIndicator />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

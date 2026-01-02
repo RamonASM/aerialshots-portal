@@ -198,6 +198,7 @@ export type Database = {
         Row: {
           aryeo_customer_id: string | null
           auth_user_id: string | null
+          clerk_user_id: string | null
           bio: string | null
           brand_color: string | null
           created_at: string | null
@@ -220,6 +221,7 @@ export type Database = {
         Insert: {
           aryeo_customer_id?: string | null
           auth_user_id?: string | null
+          clerk_user_id?: string | null
           bio?: string | null
           brand_color?: string | null
           created_at?: string | null
@@ -242,6 +244,7 @@ export type Database = {
         Update: {
           aryeo_customer_id?: string | null
           auth_user_id?: string | null
+          clerk_user_id?: string | null
           bio?: string | null
           brand_color?: string | null
           created_at?: string | null
@@ -3133,6 +3136,7 @@ export type Database = {
       staff: {
         Row: {
           auth_user_id: string | null
+          clerk_user_id: string | null
           created_at: string | null
           email: string
           id: string
@@ -3154,6 +3158,7 @@ export type Database = {
           team_role: string | null
           // From smart assignment migration
           skills: string[] | null
+          enabled_skills: string[] | null
           home_lat: number | null
           home_lng: number | null
           max_daily_jobs: number | null
@@ -3161,6 +3166,7 @@ export type Database = {
         }
         Insert: {
           auth_user_id?: string | null
+          clerk_user_id?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -3181,6 +3187,7 @@ export type Database = {
           roles?: string[] | null
           team_role?: string | null
           skills?: string[] | null
+          enabled_skills?: string[] | null
           home_lat?: number | null
           home_lng?: number | null
           max_daily_jobs?: number | null
@@ -3188,6 +3195,7 @@ export type Database = {
         }
         Update: {
           auth_user_id?: string | null
+          clerk_user_id?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -3208,6 +3216,7 @@ export type Database = {
           roles?: string[] | null
           team_role?: string | null
           skills?: string[] | null
+          enabled_skills?: string[] | null
           home_lat?: number | null
           home_lng?: number | null
           max_daily_jobs?: number | null
@@ -4056,6 +4065,7 @@ export type Database = {
           name: string
           email: string
           user_id: string | null
+          clerk_user_id: string | null
           stripe_connect_id: string | null
           stripe_connect_status: string | null
           stripe_payouts_enabled: boolean | null
@@ -4071,6 +4081,7 @@ export type Database = {
           name: string
           email: string
           user_id?: string | null
+          clerk_user_id?: string | null
           stripe_connect_id?: string | null
           stripe_connect_status?: string | null
           stripe_payouts_enabled?: boolean | null
@@ -4086,6 +4097,7 @@ export type Database = {
           name?: string
           email?: string
           user_id?: string | null
+          clerk_user_id?: string | null
           stripe_connect_id?: string | null
           stripe_connect_status?: string | null
           stripe_payouts_enabled?: boolean | null
@@ -5010,6 +5022,87 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_events: {
+        Row: {
+          event_id: string
+          provider: string
+          processed_at: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          event_id: string
+          provider: string
+          processed_at?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          event_id?: string
+          provider?: string
+          processed_at?: string | null
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      sellers: {
+        Row: {
+          id: string
+          agent_id: string
+          listing_id: string | null
+          email: string
+          name: string
+          phone: string | null
+          clerk_user_id: string | null
+          access_level: string | null
+          last_accessed_at: string | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          agent_id: string
+          listing_id?: string | null
+          email: string
+          name: string
+          phone?: string | null
+          clerk_user_id?: string | null
+          access_level?: string | null
+          last_accessed_at?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          agent_id?: string
+          listing_id?: string | null
+          email?: string
+          name?: string
+          phone?: string | null
+          clerk_user_id?: string | null
+          access_level?: string | null
+          last_accessed_at?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sellers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sellers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       agent_activity_summary: {
@@ -5030,6 +5123,45 @@ export type Database = {
     Functions: {
       cleanup_expired_reservations: { Args: never; Returns: number }
       cleanup_stale_photographer_locations: { Args: never; Returns: undefined }
+      create_order_and_listing: {
+        Args: {
+          p_agent_id: string | null
+          p_service_type: string
+          p_package_key: string | null
+          p_package_name: string | null
+          p_sqft_tier: string | null
+          p_services: string[]
+          p_subtotal_cents: number
+          p_discount_cents: number
+          p_tax_cents: number
+          p_total_cents: number
+          p_property_address: string
+          p_property_city: string | null
+          p_property_state: string | null
+          p_property_zip: string | null
+          p_property_sqft: number | null
+          p_property_beds: number | null
+          p_property_baths: number | null
+          p_contact_name: string | null
+          p_contact_email: string | null
+          p_contact_phone: string | null
+          p_scheduled_at: string | null
+          p_payment_intent_id: string | null
+          p_payment_status: string | null
+          p_special_instructions: string | null
+        }
+        Returns: {
+          order: {
+            id: string
+            reference_code: string
+            status: string
+            total_cents: number
+          }
+          listing: {
+            id: string
+          }
+        }
+      }
       commit_reservation: {
         Args: { p_idempotency_key?: string; p_reservation_id: string }
         Returns: {

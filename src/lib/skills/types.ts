@@ -87,6 +87,7 @@ export interface SkillExecutionContext {
   campaignId?: string
   parentExecutionId?: string   // For nested skill calls
   sharedContext?: Record<string, unknown>  // For workflow data passing
+  abortSignal?: AbortSignal    // For cancellation support
 }
 
 /**

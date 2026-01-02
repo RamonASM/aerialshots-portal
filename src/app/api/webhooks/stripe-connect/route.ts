@@ -1,49 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyConnectWebhook, syncAccountStatus, ConnectAccountType } from '@/lib/payments/stripe-connect'
+import { verifyConnectWebhook, syncAccountStatus } from '@/lib/payments/stripe-connect'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { webhookLogger } from '@/lib/logger'
 
 /**
  * POST /api/webhooks/stripe-connect
  * Handle Stripe Connect webhook events
  *
  * Events handled:
- * - account.updated: Sync account status to database
- * - transfer.created: Log successful transfer
- * - transfer.reversed: Mark payout as reversed
+ * - account.updated: Sync account status when charges/payouts enabled changes
+ * - account.application.deauthorized: Mark account as disconnected
  */
 export async function POST(request: NextRequest) {
   try {
+    // Get raw body and signature
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
 
     if (!signature) {
-      console.error('[Connect Webhook] Missing signature')
-      return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
+      webhookLogger.warn('Missing Stripe signature header')
+      return NextResponse.json(
+        { error: 'Missing signature header' },
+        { status: 400 }
+      )
     }
 
     // Verify webhook signature
     const event = verifyConnectWebhook(body, signature)
     if (!event) {
-      console.error('[Connect Webhook] Invalid signature')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+      webhookLogger.warn('Webhook signature verification failed')
+      return NextResponse.json(
+        { error: 'Webhook verification failed' },
+        { status: 400 }
+      )
     }
 
-    console.log('[Connect Webhook] Received event:', event.type)
+    webhookLogger.info({ eventType: event.type }, 'Received Connect webhook')
 
     const supabase = createAdminClient()
+
+    // Check for idempotency
+    const { data: existingEvent } = await supabase
+      .from('processed_events')
+      .select('event_id')
+      .eq('event_id', event.id)
+      .single()
+
+    if (existingEvent) {
+      webhookLogger.info({ eventId: event.id }, 'Event already processed, skipping')
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
+    // Record event
+    await supabase
+      .from('processed_events')
+      .insert({
+        event_id: event.id,
+        provider: 'stripe_connect',
+        metadata: { type: event.type }
+      })
 
     switch (event.type) {
       case 'account.updated': {
         const account = event.data.object as {
           id: string
-          metadata?: { entity_type?: string; entity_id?: string }
+          charges_enabled: boolean
+          payouts_enabled: boolean
+          details_submitted?: boolean
+          metadata?: {
+            entity_type?: string
+            entity_id?: string
+          }
         }
 
-        const entityType = account.metadata?.entity_type as ConnectAccountType | undefined
-        const entityId = account.metadata?.entity_id
+        // Get entity info from metadata or lookup from database
+        let entityType = account.metadata?.entity_type as 'staff' | 'partner' | undefined
+        let entityId = account.metadata?.entity_id
 
         if (!entityType || !entityId) {
-          // Try to find the account in our database
+          // Lookup from database if not in metadata
+          const supabase = createAdminClient()
+
+          // Try staff first
           const { data: staff } = await supabase
             .from('staff')
             .select('id')
@@ -51,13 +89,10 @@ export async function POST(request: NextRequest) {
             .single()
 
           if (staff) {
-            await syncAccountStatus({
-              type: 'staff',
-              entityId: staff.id,
-              accountId: account.id,
-            })
-            console.log('[Connect Webhook] Synced staff account:', account.id)
+            entityType = 'staff'
+            entityId = staff.id
           } else {
+            // Try partners
             const { data: partner } = await supabase
               .from('partners')
               .select('id')
@@ -65,98 +100,70 @@ export async function POST(request: NextRequest) {
               .single()
 
             if (partner) {
-              await syncAccountStatus({
-                type: 'partner',
-                entityId: partner.id,
-                accountId: account.id,
-              })
-              console.log('[Connect Webhook] Synced partner account:', account.id)
-            } else {
-              console.warn('[Connect Webhook] Unknown account:', account.id)
+              entityType = 'partner'
+              entityId = partner.id
             }
           }
-        } else {
+        }
+
+        if (entityType && entityId) {
+          webhookLogger.info(
+            { accountId: account.id, entityType, entityId },
+            'Syncing account status'
+          )
+
           await syncAccountStatus({
             type: entityType,
             entityId,
             accountId: account.id,
           })
-          console.log(`[Connect Webhook] Synced ${entityType} account:`, account.id)
-        }
-        break
-      }
-
-      case 'transfer.created': {
-        const transfer = event.data.object as {
-          id: string
-          metadata?: { order_id?: string; staff_id?: string; partner_id?: string }
-        }
-
-        console.log('[Connect Webhook] Transfer created:', transfer.id, transfer.metadata)
-        // Transfer is already recorded when we create it - this is just for logging
-        break
-      }
-
-      case 'transfer.reversed': {
-        const transfer = event.data.object as {
-          id: string
-          metadata?: { order_id?: string; staff_id?: string; partner_id?: string }
-        }
-
-        const orderId = transfer.metadata?.order_id
-        const staffId = transfer.metadata?.staff_id
-        const partnerId = transfer.metadata?.partner_id
-
-        console.log('[Connect Webhook] Transfer reversed:', transfer.id)
-
-        // Update staff payout record
-        if (staffId) {
-          await supabase
-            .from('staff_payouts')
-            .update({
-              status: 'reversed',
-              reversed_at: new Date().toISOString(),
-              reversal_reason: 'Transfer reversed via Stripe',
-            })
-            .eq('stripe_transfer_id', transfer.id)
-        }
-
-        // Update partner payout record
-        if (partnerId) {
-          await supabase
-            .from('partner_payouts')
-            .update({
-              status: 'reversed',
-              reversed_at: new Date().toISOString(),
-              reversal_reason: 'Transfer reversed via Stripe',
-            })
-            .eq('stripe_transfer_id', transfer.id)
+        } else {
+          webhookLogger.warn(
+            { accountId: account.id },
+            'Could not find entity for Connect account'
+          )
         }
 
         break
       }
 
-      case 'payout.paid': {
-        // When Stripe pays out to connected account's bank
-        console.log('[Connect Webhook] Payout paid to connected account')
-        break
-      }
+      case 'account.application.deauthorized': {
+        // Account was disconnected from the platform
+        const accountId = event.account || (event.data.object as { id: string }).id
 
-      case 'payout.failed': {
-        // When payout to connected account fails
-        const payout = event.data.object as { id: string; failure_message?: string }
-        console.error('[Connect Webhook] Payout failed:', payout.id, payout.failure_message)
-        // Could add notification to admin here
+        webhookLogger.info({ accountId }, 'Account deauthorized')
+
+        const supabase = createAdminClient()
+
+        // Update staff if exists
+        await supabase
+          .from('staff')
+          .update({
+            stripe_connect_status: 'not_started',
+            stripe_payouts_enabled: false,
+          })
+          .eq('stripe_connect_id', accountId)
+
+        // Update partners if exists
+        await supabase
+          .from('partners')
+          .update({
+            stripe_connect_status: 'not_started',
+            stripe_payouts_enabled: false,
+          })
+          .eq('stripe_connect_id', accountId)
+
         break
       }
 
       default:
-        console.log('[Connect Webhook] Unhandled event type:', event.type)
+        // Acknowledge unhandled events
+        webhookLogger.info({ eventType: event.type }, 'Unhandled event type')
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('[Connect Webhook] Error processing webhook:', error)
+    webhookLogger.error({ error }, 'Error processing Connect webhook')
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

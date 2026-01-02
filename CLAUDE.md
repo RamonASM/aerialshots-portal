@@ -27,7 +27,7 @@ ASM Portal is a Next.js 16 application for Aerial Shots Media, providing:
 - **State Management:** Zustand with persistence + Immer
 - **Payments:** Stripe Elements
 - **Testing:** Vitest (2,473+ tests passing)
-- **Integrations:** 27+ services (see Integrations section below)
+- **Integrations:** 28+ services (see Integrations section below)
 
 ## Key Commands
 
@@ -154,10 +154,42 @@ const getData = unstable_cache(
 ### Database Types
 Types are generated from Supabase schema in `src/lib/supabase/types.ts`. Custom interfaces for JSONB columns are defined there (e.g., `CommunityMarketSnapshot`, `CommunitySchoolInfo`).
 
-### Authentication
-- Magic link auth via Supabase + Resend
-- Staff identified by `@aerialshots.media` email domain
-- RLS policies enforce access control
+### Authentication (Clerk)
+The portal uses [Clerk](https://clerk.com) for authentication with role-based sign-in:
+
+**Sign-In Pages:**
+- `/sign-in` - Agent portal (real estate agents)
+- `/sign-in/seller` - Homeowner portal (sellers viewing delivery)
+- `/sign-in/staff` - Team portal (photographer, videographer, QC, admin)
+- `/sign-in/partner` - Partner portal (business partners)
+
+**User Roles:**
+- `agent` - Real estate agents managing listings
+- `seller` - Homeowners viewing their property media
+- `photographer` / `videographer` / `qc` - ASM team members
+- `admin` - Full admin access
+- `partner` - Business partners with team management
+
+**Role Sync:**
+- Clerk webhook at `/api/webhooks/clerk` syncs users to database
+- On sign-up, users are auto-linked to existing records by email
+- New users without existing records become agents by default
+- Role stored in Clerk public metadata for middleware access
+
+**Helper Functions:**
+```typescript
+import { getCurrentUser, requireAuth, requireRole, isAdmin } from '@/lib/auth/clerk'
+
+// Get current user with database info
+const user = await getCurrentUser()
+// user.role, user.userId, user.userTable
+
+// Require authentication (throws if not logged in)
+const user = await requireAuth()
+
+// Require specific role(s)
+const user = await requireRole(['admin', 'photographer'])
+```
 
 ### Booking Flow
 The multi-step booking flow uses Zustand for state management:
@@ -237,6 +269,11 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_APP_URL=https://app.aerialshots.media
+
+# Clerk Authentication (REQUIRED)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...  # From Clerk Dashboard
+CLERK_SECRET_KEY=sk_...                    # From Clerk Dashboard
+CLERK_WEBHOOK_SECRET=whsec_...             # From Clerk Webhooks
 
 # AI
 ANTHROPIC_API_KEY=
@@ -370,13 +407,14 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 | API Routes | 211 |
 | Test Files | 272 |
 | SQL Migrations | 53 |
-| Integrations | 27 |
+| Integrations | 28 |
 | Tests Passing | 2,473+ |
 
 ### All Integrations
 
 | Integration | Purpose | Status |
 |-------------|---------|--------|
+| **Clerk** | Authentication, user management | ✅ Complete (add env vars) |
 | **RunPod/FoundDR** | HDR photo processing | ✅ Ready (add env vars) |
 | **Cubicasa** | Floor plan generation | ⏳ Manual upload for now |
 | **Aloft** | Drone airspace checks | ✅ Works (free FAA fallback) |
@@ -468,6 +506,7 @@ Endpoints at `/api/founddr/`:
 | Content Retainer Booking | ✅ Complete (/book/retainer) |
 | Stripe Connect Payouts | ⏳ Ready (run migration, add env vars) |
 | Time Tracking (QC) | ⏳ Ready (run migration) |
+| Clerk Authentication | ✅ Complete (add env vars) |
 
 ### Stripe Connect & Team Payouts
 
@@ -541,9 +580,54 @@ Available child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `
 
 ---
 
+## Claude Code MCP Servers
+
+The project uses several MCP (Model Context Protocol) servers for AI-assisted development:
+
+### Configured MCPs
+
+| MCP Server | Purpose | Configuration |
+|------------|---------|---------------|
+| **Clerk** | User management, authentication setup | `npx -y @clerk/agent-toolkit -p=local-mcp` |
+| **Supabase** | Database queries, migrations | Project ref: `awoabqaszgeqdlvcevmd` |
+| **Stripe** | Payment management, products, customers | Via Stripe MCP |
+| **GitHub** | Repository management, PRs | Via GitHub MCP |
+| **Vercel** | Deployment management | Via Vercel MCP |
+| **Filesystem** | Local file operations | `~/Projects` |
+
+### Clerk MCP Usage
+
+The Clerk MCP enables Claude Code to:
+- Create and manage users
+- Configure authentication settings
+- Set up webhooks
+- Manage organization settings
+- View user sessions and activity
+
+**Required Environment:**
+```bash
+CLERK_SECRET_KEY=sk_test_...  # Must be set for MCP to authenticate
+```
+
+**Webhook Endpoint:** `/api/webhooks/clerk`
+- Events: `user.created`, `user.updated`, `user.deleted`
+- Syncs users to database tables (agents, staff, partners, sellers)
+
+---
+
 ## Current Work Status (2026-01-02)
 
 ### Completed This Session
+
+#### Clerk Authentication System
+- ✅ Installed `@clerk/nextjs` and `@clerk/themes`
+- ✅ Updated root layout with ClerkProvider and dark theme
+- ✅ Rewrote middleware for Clerk with role-based routing
+- ✅ Created sign-in pages: agent (blue), staff (purple), seller (green), partner (amber)
+- ✅ Created sign-up pages: agent, seller
+- ✅ Created Clerk webhook handler at `/api/webhooks/clerk`
+- ✅ Created auth helper library at `/lib/auth/clerk.ts`
+- ✅ Added Clerk MCP to Claude Code configuration
 
 #### Security Fixes
 - ✅ `/api/rewards/redeem` - Added auth + ownership verification
@@ -563,32 +647,21 @@ Available child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `
 - ✅ Fixed `skill-match.ts` nullable fields
 - ✅ Fixed `integration-handoffs.ts` type mismatches
 - ✅ Fixed `ZapierWebhook` interface and client
+- ✅ Added `sellers` table type to Supabase types
+- ✅ Added `clerk_user_id` to agents, staff, partners types
 
 #### Configuration
 - ✅ Created `.mcp.json` for project-level Supabase MCP (project ref: `awoabqaszgeqdlvcevmd`)
+- ✅ Added Clerk MCP to Claude Code
 
-### Commits Ready to Push
-```
-8d9617f Add rate limiting and fix rewards/redeem security vulnerability
-06b95dd Fix TypeScript errors and security vulnerabilities
-```
-
-### Pending Items
-
-#### Database Migration Sync (Non-Critical)
-The migration history is out of sync - tables exist in the remote database but aren't tracked in the `supabase_migrations.schema_migrations` table. This is a **metadata issue only** - the application works correctly.
-
-**To fix later (optional):**
-```bash
-# Mark untracked migrations as already applied
-npx supabase migration repair <version> --status applied
-```
-
-The failing migration was `20241210_002_storywork_and_unified_credits` with error "relation storywork_users already exists".
+### Pending Clerk Setup
+1. ✅ Secret key added to `.env.local`
+2. ⏳ Add publishable key (from Clerk Dashboard → API Keys)
+3. ⏳ Create webhook endpoint in Clerk Dashboard
+4. ⏳ Add webhook secret to `.env.local`
 
 ### Environment Notes
 - **Supabase CLI**: Correctly linked to `awoabqaszgeqdlvcevmd` (ASM Portal)
-- **Supabase MCP**: Now configured per-project via `.mcp.json`
-  - Global (`~/.claude.json`): `slomugiwblohzcwtueav` (video production)
-  - Project (`.mcp.json`): `awoabqaszgeqdlvcevmd` (ASM Portal)
-- **Build Status**: ✅ Passing
+- **Supabase MCP**: Project-level via `.mcp.json`
+- **Clerk MCP**: Added via `claude mcp add clerk`
+- **Build Status**: Requires Clerk env vars to compile
