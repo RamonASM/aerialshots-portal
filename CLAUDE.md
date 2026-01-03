@@ -109,16 +109,18 @@ src/
 
 ## Design System
 
-The portal uses an Apple-inspired dark theme (iPhone 12 era aesthetic):
+The platform uses two distinct themes:
 
-### Color Palette
+### Portal Theme (Dashboard, Admin, Team)
+Apple-inspired dark theme with blue accents:
+
 ```css
 /* Backgrounds */
 --bg-primary: #000000;        /* Pure black - main */
 --bg-secondary: #0a0a0a;      /* Near black - cards */
 --bg-elevated: #1c1c1e;       /* iOS elevated surface */
 
-/* Blue Accent */
+/* Blue Accent (Portal) */
 --blue-500: #0077ff;          /* Primary accent */
 --blue-400: #3395ff;          /* Light accent */
 
@@ -131,11 +133,29 @@ The portal uses an Apple-inspired dark theme (iPhone 12 era aesthetic):
 --border-primary: rgba(255, 255, 255, 0.08);
 ```
 
+### Marketing Site Theme (Luxury Palette)
+High-end luxury black/white aesthetic matching aerialshots.media:
+
+```css
+/* Luxury Accents (Marketing) */
+--cta-primary: #ff4533;       /* Orange-red CTAs */
+--cta-hover: #e63d2e;         /* CTA hover state */
+--link: #09f;                 /* Cyan links */
+--accent-warm: #f5a623;       /* Gold hints (subtle) */
+
+/* Typography */
+--font-primary: 'Satoshi', sans-serif;  /* 500-700 weights */
+
+/* Same backgrounds as portal */
+```
+
 ### Component Patterns
 - Cards: `rounded-xl border border-white/[0.08] bg-[#1c1c1e]`
 - Glass: `bg-[#1c1c1e]/72 backdrop-blur-xl`
 - Buttons: Min height 44px for touch targets (WCAG compliance)
 - Transitions: CSS-only (no Framer Motion for performance)
+- Marketing CTAs: `bg-[#ff4533] hover:bg-[#e63d2e] text-white`
+- Marketing Links: `text-[#09f] hover:text-[#00bbff]`
 
 ## Important Patterns
 

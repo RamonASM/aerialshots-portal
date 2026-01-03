@@ -4,6 +4,65 @@ All notable changes to the ASM Portal are documented here.
 
 ## [Unreleased] - 2026-01-02
 
+### Changed - Luxury Marketing Site Redesign
+
+Complete visual overhaul of the marketing site from Apple-inspired blue theme to high-end luxury black/white aesthetic matching www.aerialshots.media.
+
+#### Design System Updates
+- **Typography**: Added Satoshi font (500-700 weights) via Google Fonts
+- **CTA Color**: Blue (#0077ff) → Orange-red (#ff4533)
+- **Link Color**: Blue (#0077ff) → Cyan (#09f)
+- **Icons**: Blue accents → Neutral white/70 opacity
+- **Logo**: Camera icon → ASM monogram images (logo-dark.png, logo-light.png)
+
+#### Files Modified
+
+**Core Design System**
+- `src/app/layout.tsx` - Added Satoshi font import
+- `src/app/globals.css` - Added luxury color variables, typography utilities
+
+**Marketing Components**
+- `src/components/marketing/nav/MarketingNav.tsx` - ASM logo, orange-red CTA
+- `src/components/marketing/footer/MarketingFooter.tsx` - ASM logo, cyan links
+- `src/components/marketing/hero/HeroSection.tsx` - Removed blue gradients, orange-red CTA
+
+**Homepage Sections**
+- `src/components/marketing/sections/TrustBar.tsx` - Neutral styling
+- `src/components/marketing/sections/ValuePropositionGrid.tsx` - Neutral icons/badges
+- `src/components/marketing/sections/ProcessTimeline.tsx` - Neutral step indicators
+- `src/components/marketing/sections/CTASection.tsx` - Neutral gradients, orange-red CTA
+- `src/components/marketing/sections/FAQAccordion.tsx` - Orange-red focus rings, cyan links
+- `src/app/(marketing)/components/PackagesPreview.tsx` - Orange-red popular badge/button
+- `src/app/(marketing)/components/PortfolioPreview.tsx` - Orange-red filters, cyan hover
+
+**Service Pages** (7 pages updated)
+- `/services/page.tsx` - Overview
+- `/services/photography/page.tsx`
+- `/services/drone/page.tsx`
+- `/services/video/page.tsx`
+- `/services/3d-tours/page.tsx`
+- `/services/virtual-staging/page.tsx`
+- `/services/floor-plans/page.tsx`
+
+**Legal & Support Pages**
+- `/legal/terms/page.tsx`
+- `/legal/privacy/page.tsx`
+- `/legal/copyright/page.tsx`
+- `/faqs/page.tsx`
+- `/careers/page.tsx`
+- `/contact/page.tsx`
+
+#### Assets Added
+- `public/logo-dark.png` - ASM monogram for light backgrounds
+- `public/logo-light.png` - ASM monogram for dark backgrounds
+
+#### Two-Theme Architecture
+Portal and marketing site now have distinct color palettes:
+- **Portal Theme**: Blue accents (#0077ff) for dashboard, admin, team portals
+- **Marketing Theme**: Luxury palette with orange-red CTAs, cyan links, Satoshi font
+
+---
+
 ### Added - Clerk Authentication System
 
 Complete role-based authentication using [Clerk](https://clerk.com).
