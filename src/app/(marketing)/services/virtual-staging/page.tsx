@@ -1,14 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  Sparkles,
-  Wand2,
-  Palette,
-  Clock,
-  CheckCircle2,
-  ArrowRight,
-  Layers,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { BreadcrumbJsonLd } from '@/lib/seo/json-ld'
 
 export const metadata: Metadata = {
@@ -23,24 +15,20 @@ export const metadata: Metadata = {
 
 const features = [
   {
-    icon: Wand2,
     title: 'AI-Powered',
     description: 'Advanced AI technology for photorealistic results',
   },
   {
-    icon: Palette,
     title: 'Multiple Styles',
     description: 'Modern, traditional, coastal, and more design options',
   },
   {
-    icon: Clock,
     title: 'Fast Turnaround',
     description: '24-48 hour delivery on all staging orders',
   },
   {
-    icon: Layers,
     title: 'Revisions Included',
-    description: 'Free revisions until you&apos;re completely satisfied',
+    description: 'Free revisions until you\'re completely satisfied',
   },
 ]
 
@@ -62,6 +50,12 @@ const roomTypes = [
   'Kitchens',
 ]
 
+const stagingProcess = [
+  { step: 1, title: 'Upload Photos', description: 'Send us your empty room photos' },
+  { step: 2, title: 'Choose Style', description: 'Select furniture and decor style' },
+  { step: 3, title: 'Receive Staged Photos', description: '24-48 hour delivery' },
+]
+
 export default function VirtualStagingPage() {
   const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://aerialshots.media'
 
@@ -76,33 +70,31 @@ export default function VirtualStagingPage() {
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <section className="relative pt-32 pb-24">
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
-              <Sparkles className="h-4 w-4" />
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
               AI-Powered Staging
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Virtual Staging That
-              <span className="block text-gradient">Transforms Spaces</span>
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+              Virtual Staging That<br />
+              Transforms Spaces
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[17px] text-[#8A847F] max-w-xl mx-auto leading-relaxed mb-10">
               Turn empty or dated rooms into beautifully furnished spaces.
               Help buyers visualize their future home.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
               >
                 Order Staging
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-800 px-8 py-3 font-medium text-white hover:bg-neutral-700 transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 border border-white/[0.12] hover:border-white/[0.24] text-white text-[15px] font-medium transition-colors"
               >
                 View Pricing
               </Link>
@@ -112,40 +104,51 @@ export default function VirtualStagingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-white/70" />
+          <div className="grid lg:grid-cols-[1fr,2fr] gap-16">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Features
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1]">
+                Professional<br />Virtual Staging
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-12">
+              {features.map((feature, index) => (
+                <div key={feature.title}>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-3 block">
+                    0{index + 1}
+                  </span>
+                  <h3 className="text-[17px] font-medium text-white mb-2">{feature.title}</h3>
+                  <p className="text-[15px] text-[#8A847F]">{feature.description}</p>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Styles & Rooms */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-16">
             {/* Styles */}
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Available Styles</h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Styles
+              </p>
+              <h2 className="font-serif text-2xl text-white mb-6">Available Styles</h2>
+              <p className="text-[15px] text-[#8A847F] mb-8">
                 Choose from a variety of design styles to match the property.
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {styles.map((style) => (
-                  <div key={style} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span className="text-sm">{style}</span>
+                  <div key={style} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                    <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
+                    {style}
                   </div>
                 ))}
               </div>
@@ -153,15 +156,18 @@ export default function VirtualStagingPage() {
 
             {/* Room Types */}
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Room Types</h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Rooms
+              </p>
+              <h2 className="font-serif text-2xl text-white mb-6">Room Types</h2>
+              <p className="text-[15px] text-[#8A847F] mb-8">
                 We can stage any room in the property.
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {roomTypes.map((room) => (
-                  <div key={room} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span className="text-sm">{room}</span>
+                  <div key={room} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                    <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
+                    {room}
                   </div>
                 ))}
               </div>
@@ -170,25 +176,26 @@ export default function VirtualStagingPage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 border-t border-white/5">
+      {/* Process */}
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">How It Works</h2>
+          <div className="text-center mb-16">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+              Process
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl text-white">
+              How It Works
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { step: 1, title: 'Upload Photos', description: 'Send us your empty room photos' },
-              { step: 2, title: 'Choose Style', description: 'Select furniture and decor style' },
-              { step: 3, title: 'Receive Staged Photos', description: '24-48 hour delivery' },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white font-bold mb-4">
+          <div className="grid md:grid-cols-3 gap-px bg-white/[0.06]">
+            {stagingProcess.map((item) => (
+              <div key={item.step} className="bg-black p-10 text-center">
+                <span className="inline-flex items-center justify-center w-10 h-10 border border-white/[0.12] text-[#A29991] text-[14px] font-medium mb-4">
                   {item.step}
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+                </span>
+                <h3 className="text-[17px] font-medium text-white mb-2">{item.title}</h3>
+                <p className="text-[14px] text-[#8A847F]">{item.description}</p>
               </div>
             ))}
           </div>
@@ -196,25 +203,22 @@ export default function VirtualStagingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-white/5">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Sparkles className="h-12 w-12 text-white/60 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-foreground">
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">
               Ready to Stage Your Listing?
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-[17px] text-[#8A847F] mb-10">
               Virtual staging at a fraction of the cost of physical staging.
             </p>
-            <div className="mt-8">
-              <Link
-                href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
-              >
-                Order Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            <Link
+              href="/book"
+              className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
+            >
+              Order Now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

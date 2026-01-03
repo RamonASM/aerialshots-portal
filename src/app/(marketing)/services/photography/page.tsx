@@ -1,15 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  Camera,
-  Sun,
-  Moon,
-  Layers,
-  CheckCircle2,
-  ArrowRight,
-  Clock,
-  Image as ImageIcon,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { BreadcrumbJsonLd } from '@/lib/seo/json-ld'
 
 export const metadata: Metadata = {
@@ -24,22 +15,18 @@ export const metadata: Metadata = {
 
 const features = [
   {
-    icon: Layers,
     title: 'HDR Processing',
     description: 'Multiple exposures blended for perfectly balanced lighting in every room',
   },
   {
-    icon: Sun,
     title: 'Interior & Exterior',
     description: 'Complete coverage of your property from every angle',
   },
   {
-    icon: Moon,
     title: 'Twilight Photography',
     description: 'Stunning dusk shots that make properties glow',
   },
   {
-    icon: ImageIcon,
     title: 'MLS Ready',
     description: 'Properly sized and formatted for all MLS systems',
   },
@@ -50,6 +37,15 @@ const shootingProcess = [
   { step: 2, title: 'We Shoot', description: 'Professional photographer arrives on time' },
   { step: 3, title: 'HDR Editing', description: 'Expert color correction and enhancement' },
   { step: 4, title: 'Delivery', description: '24-hour turnaround to your portal' },
+]
+
+const included = [
+  'Professional HDR processing',
+  'Color correction and white balance',
+  'Lens correction and straightening',
+  'Sky replacement when needed',
+  'MLS-ready sizing and formatting',
+  '24-hour turnaround standard',
 ]
 
 export default function PhotographyPage() {
@@ -66,33 +62,31 @@ export default function PhotographyPage() {
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <section className="relative pt-32 pb-24">
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
-              <Camera className="h-4 w-4" />
-              Professional Photography
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Photography That
-              <span className="block text-gradient">Sells Homes</span>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
+              Photography
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+              Photography That<br />
+              Sells Homes
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[17px] text-[#8A847F] max-w-xl mx-auto leading-relaxed mb-10">
               Professional HDR photography that captures every property in its best light.
               Our images help listings get more views and sell faster.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
               >
                 Book Photography
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-800 px-8 py-3 font-medium text-white hover:bg-neutral-700 transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 border border-white/[0.12] hover:border-white/[0.24] text-white text-[15px] font-medium transition-colors"
               >
                 View Pricing
               </Link>
@@ -102,82 +96,87 @@ export default function PhotographyPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">What You Get</h2>
-            <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-              Every photo shoot includes professional-grade equipment and expert editing.
-            </p>
-          </div>
+          <div className="grid lg:grid-cols-[1fr,2fr] gap-16">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                What You Get
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1]">
+                Professional-Grade<br />Equipment & Editing
+              </h2>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-white/70" />
+            <div className="grid sm:grid-cols-2 gap-12">
+              {features.map((feature, index) => (
+                <div key={feature.title}>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-3 block">
+                    0{index + 1}
+                  </span>
+                  <h3 className="text-[17px] font-medium text-white mb-2">{feature.title}</h3>
+                  <p className="text-[15px] text-[#8A847F]">{feature.description}</p>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* What's Included */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-foreground">What&apos;s Included</h2>
-              <p className="mt-4 text-muted-foreground">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Included
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1] mb-6">
+                What&apos;s Included
+              </h2>
+              <p className="text-[17px] text-[#8A847F] mb-8">
                 Every photography package includes professional editing and fast delivery.
               </p>
-              <ul className="mt-6 space-y-4">
-                {[
-                  'Professional HDR processing',
-                  'Color correction and white balance',
-                  'Lens correction and straightening',
-                  'Sky replacement when needed',
-                  'MLS-ready sizing and formatting',
-                  '24-hour turnaround standard',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-muted-foreground">
-                    <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+              <ul className="space-y-4">
+                {included.map((item) => (
+                  <li key={item} className="flex items-center gap-4 text-[15px] text-[#B5ADA6]">
+                    <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="relative aspect-video rounded-2xl overflow-hidden bg-neutral-900 flex items-center justify-center">
-              <Camera className="h-20 w-20 text-muted-foreground/30" />
+            <div className="relative aspect-[4/3] bg-[#0a0a0a] border border-white/[0.06]">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[#6a6765] text-[13px] uppercase tracking-[0.2em]">
+                  Sample Gallery
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Process */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Our Process</h2>
-            <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-              From booking to delivery, we make it easy.
+          <div className="text-center mb-16">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+              Process
             </p>
+            <h2 className="font-serif text-3xl md:text-4xl text-white">
+              Our Process
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-4 gap-px bg-white/[0.06]">
             {shootingProcess.map((step) => (
-              <div key={step.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20 text-white font-bold mb-4">
+              <div key={step.step} className="bg-black p-8 text-center">
+                <span className="inline-flex items-center justify-center w-10 h-10 border border-white/[0.12] text-[#A29991] text-[14px] font-medium mb-4">
                   {step.step}
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
+                </span>
+                <h3 className="text-[17px] font-medium text-white mb-2">{step.title}</h3>
+                <p className="text-[14px] text-[#8A847F]">{step.description}</p>
               </div>
             ))}
           </div>
@@ -185,25 +184,22 @@ export default function PhotographyPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-white/5">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Clock className="h-12 w-12 text-white/60 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-foreground">
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">
               Book Your Photo Shoot Today
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-[17px] text-[#8A847F] mb-10">
               Most shoots delivered within 24 hours. Same-day available.
             </p>
-            <div className="mt-8">
-              <Link
-                href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
-              >
-                Book Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            <Link
+              href="/book"
+              className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
+            >
+              Book Now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

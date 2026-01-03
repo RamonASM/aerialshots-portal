@@ -1,14 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  Home,
-  Eye,
-  Smartphone,
-  Globe,
-  CheckCircle2,
-  ArrowRight,
-  Box,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { BreadcrumbJsonLd } from '@/lib/seo/json-ld'
 
 export const metadata: Metadata = {
@@ -23,22 +15,18 @@ export const metadata: Metadata = {
 
 const features = [
   {
-    icon: Eye,
     title: 'Immersive Experience',
     description: 'Virtual walkthroughs that feel like being there in person',
   },
   {
-    icon: Smartphone,
     title: 'Works Everywhere',
     description: 'Desktop, mobile, and VR headset compatible',
   },
   {
-    icon: Globe,
     title: 'Reach More Buyers',
     description: 'Let out-of-town buyers tour properties remotely',
   },
   {
-    icon: Box,
     title: 'Dollhouse View',
     description: '3D floorplan model for complete property overview',
   },
@@ -57,6 +45,12 @@ const platforms = [
   },
 ]
 
+const stats = [
+  { value: '95%', label: 'Buyers use virtual tours' },
+  { value: '300%', label: 'More listing engagement' },
+  { value: '31%', label: 'Faster sales with 3D' },
+]
+
 export default function ThreeDToursPage() {
   const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://aerialshots.media'
 
@@ -71,33 +65,31 @@ export default function ThreeDToursPage() {
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <section className="relative pt-32 pb-24">
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
-              <Home className="h-4 w-4" />
-              Virtual Property Tours
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              3D Tours That
-              <span className="block text-gradient">Sell Properties</span>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
+              Virtual Tours
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+              3D Tours That<br />
+              Sell Properties
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[17px] text-[#8A847F] max-w-xl mx-auto leading-relaxed mb-10">
               Let buyers explore every room from anywhere in the world.
               Matterport and Zillow 3D Home tours that drive engagement.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
               >
                 Book 3D Tour
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-800 px-8 py-3 font-medium text-white hover:bg-neutral-700 transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 border border-white/[0.12] hover:border-white/[0.24] text-white text-[15px] font-medium transition-colors"
               >
                 View Pricing
               </Link>
@@ -107,47 +99,60 @@ export default function ThreeDToursPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-white/70" />
+          <div className="grid lg:grid-cols-[1fr,2fr] gap-16">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Benefits
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1]">
+                Immersive<br />Virtual Tours
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-12">
+              {features.map((feature, index) => (
+                <div key={feature.title}>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-3 block">
+                    0{index + 1}
+                  </span>
+                  <h3 className="text-[17px] font-medium text-white mb-2">{feature.title}</h3>
+                  <p className="text-[15px] text-[#8A847F]">{feature.description}</p>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Platforms */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">3D Tour Options</h2>
-            <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+              Platforms
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl text-white">
+              3D Tour Options
+            </h2>
+            <p className="text-[15px] text-[#8A847F] mt-4 max-w-xl mx-auto">
               We offer industry-leading 3D capture solutions for every need.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {platforms.map((platform) => (
-              <div
-                key={platform.name}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <h3 className="text-xl font-semibold text-foreground mb-2">{platform.name}</h3>
-                <p className="text-muted-foreground mb-4">{platform.description}</p>
-                <ul className="space-y-2">
+          <div className="grid md:grid-cols-2 gap-px bg-white/[0.06]">
+            {platforms.map((platform, index) => (
+              <div key={platform.name} className="bg-black p-10">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-4 block">
+                  0{index + 1}
+                </span>
+                <h3 className="font-serif text-2xl text-white mb-2">{platform.name}</h3>
+                <p className="text-[15px] text-[#8A847F] mb-6">{platform.description}</p>
+                <ul className="space-y-3">
                   {platform.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <li key={feature} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                      <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
                       {feature}
                     </li>
                   ))}
@@ -159,17 +164,13 @@ export default function ThreeDToursPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            {[
-              { value: '95%', label: 'Buyers use virtual tours' },
-              { value: '300%', label: 'More listing engagement' },
-              { value: '31%', label: 'Faster sales with 3D' },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-4xl font-bold text-foreground mb-2">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
+          <div className="grid md:grid-cols-3 gap-px bg-white/[0.06]">
+            {stats.map((stat) => (
+              <div key={stat.label} className="bg-black p-12 text-center">
+                <div className="font-serif text-5xl text-white mb-3">{stat.value}</div>
+                <div className="text-[14px] text-[#8A847F]">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -177,25 +178,22 @@ export default function ThreeDToursPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-white/5">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Home className="h-12 w-12 text-white/60 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-foreground">
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">
               Give Buyers the Full Experience
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-[17px] text-[#8A847F] mb-10">
               Book a 3D tour and let properties sell themselves.
             </p>
-            <div className="mt-8">
-              <Link
-                href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
-              >
-                Book Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            <Link
+              href="/book"
+              className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
+            >
+              Book Now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -13,8 +13,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Typography - Satoshi for luxury feel */
+  /* Typography - Satoshi for body, serif for headlines */
   --font-sans: var(--font-satoshi);
+  --font-serif: var(--font-playfair);
   --font-mono: var(--font-geist-mono);
 
   /* Semantic Colors */
@@ -85,9 +86,9 @@
   --secondary: rgba(255, 255, 255, 0.05);
   --secondary-foreground: #ffffff;
 
-  /* Muted - iOS-style secondary text (WCAG AA compliant: 4.5:1 contrast) */
+  /* Muted - warm secondary text (WCAG AA compliant: 4.5:1 contrast) */
   --muted: #1c1c1e;
-  --muted-foreground: #b8b8bd;
+  --muted-foreground: #B5ADA6;
 
   /* Accent */
   --accent: rgba(255, 255, 255, 0.08);
@@ -119,25 +120,30 @@
   --sidebar-ring: #0077ff;
 
   /* ========== Custom Design Tokens ========== */
-  /* Text hierarchy (iOS-inspired, WCAG AA compliant) */
+  /* Text hierarchy (warm neutrals, WCAG AA compliant) */
   --text-primary: #ffffff;
-  --text-secondary: #a1a1a6;
-  --text-tertiary: #8e8e93;  /* Updated for 4.5:1 contrast ratio */
-  --text-quaternary: #636366;
+  --text-secondary: #B5ADA6;  /* Warm secondary from brand */
+  --text-tertiary: #8A847F;   /* Warm muted */
+  --text-quaternary: #6a6765; /* Brand charcoal light */
 
-  /* ========== Luxury Marketing Accent Colors ========== */
-  /* Primary CTA - Orange-red for high-end feel */
-  --cta-primary: #ff4533;
-  --cta-primary-hover: #e63d2e;
-  --cta-primary-active: #cc3528;
+  /* ========== Premium Marketing Accent Colors ========== */
+  /* Primary CTA - Warm tan for premium feel */
+  --cta-primary: #A29991;
+  --cta-primary-hover: #B5ADA6;
+  --cta-primary-active: #8A847F;
 
-  /* Links - Cyan for refined contrast */
-  --accent-link: #09f;
-  --accent-link-hover: #00bbff;
+  /* Links - Warm neutral for refined contrast */
+  --accent-link: #B5ADA6;
+  --accent-link-hover: #D1D0CB;
 
-  /* Warm accents - Gold hints */
-  --accent-warm: #f5a623;
-  --accent-warm-muted: rgba(245, 166, 35, 0.15);
+  /* Warm accents - Brand palette */
+  --accent-warm: #A29991;
+  --accent-warm-hover: #B5ADA6;
+  --accent-warm-muted: rgba(162, 153, 145, 0.15);
+
+  /* Cream for contrast elements */
+  --cream: #F3F4EF;
+  --charcoal: #262626;
 
   /* Status colors - for processing states, badges, etc */
   --status-success: #34c759;
@@ -225,9 +231,9 @@
     scroll-behavior: smooth;
   }
 
-  /* Selection color */
+  /* Selection color - warm neutral */
   ::selection {
-    background-color: rgba(0, 119, 255, 0.3);
+    background-color: rgba(162, 153, 145, 0.3);
     color: #ffffff;
   }
 }
@@ -254,14 +260,14 @@
 
   /* Text styles */
   .text-gradient {
-    background: linear-gradient(to right, #ffffff, #a1a1a6);
+    background: linear-gradient(to right, #ffffff, #B5ADA6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .text-gradient-blue {
-    background: linear-gradient(135deg, #3395ff 0%, #0077ff 100%);
+  .text-gradient-warm {
+    background: linear-gradient(135deg, #D1D0CB 0%, #A29991 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -309,9 +315,9 @@
     display: none;
   }
 
-  /* Focus ring - Apple style */
+  /* Focus ring - warm neutral */
   .focus-ring {
-    @apply outline-none ring-2 ring-[#0077ff]/50 ring-offset-2 ring-offset-black;
+    @apply outline-none ring-2 ring-[#A29991]/50 ring-offset-2 ring-offset-black;
   }
 }
 
@@ -406,10 +412,10 @@
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 119, 255, 0.3);
+    box-shadow: 0 0 20px rgba(162, 153, 145, 0.2);
   }
   50% {
-    box-shadow: 0 0 40px rgba(0, 119, 255, 0.5);
+    box-shadow: 0 0 30px rgba(162, 153, 145, 0.3);
   }
 }
 
@@ -477,11 +483,11 @@
     opacity: 0;
   }
 
-  /* Gradient backgrounds for marketing */
-  .gradient-radial-blue {
+  /* Gradient backgrounds for marketing - warm neutrals */
+  .gradient-radial-warm {
     background: radial-gradient(
       ellipse 80% 50% at 50% -20%,
-      rgba(0, 119, 255, 0.15) 0%,
+      rgba(162, 153, 145, 0.08) 0%,
       transparent 70%
     );
   }
@@ -489,16 +495,16 @@
   .gradient-radial-top {
     background: radial-gradient(
       ellipse 100% 100% at 50% -50%,
-      rgba(0, 119, 255, 0.08) 0%,
+      rgba(162, 153, 145, 0.05) 0%,
       transparent 60%
     );
   }
 
   .gradient-mesh {
     background-image:
-      radial-gradient(at 0% 0%, rgba(0, 119, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(51, 149, 255, 0.08) 0%, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(0, 119, 255, 0.06) 0%, transparent 50%);
+      radial-gradient(at 0% 0%, rgba(162, 153, 145, 0.04) 0%, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(181, 173, 166, 0.03) 0%, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(162, 153, 145, 0.02) 0%, transparent 50%);
   }
 
   /* Typography scale for marketing */
@@ -540,6 +546,43 @@
     font-size: 1rem;
     line-height: 1.6;
     color: var(--text-secondary);
+  }
+
+  /* Premium typography - serif headlines */
+  .font-serif {
+    font-family: var(--font-serif), Georgia, serif;
+  }
+
+  .text-headline-xl {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  .text-headline-lg {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+
+  .text-headline-md {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.15;
+    font-weight: 400;
+  }
+
+  /* Uppercase label style */
+  .text-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 500;
+    color: var(--accent-warm);
   }
 
   /* Reduced motion support */

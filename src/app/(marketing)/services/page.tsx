@@ -1,15 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  Camera,
-  Plane,
-  Video,
-  Home,
-  Sparkles,
-  LayoutGrid,
-  ArrowRight,
-  CheckCircle2,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { BreadcrumbJsonLd } from '@/lib/seo/json-ld'
 
 export const metadata: Metadata = {
@@ -27,66 +18,39 @@ const services = [
     name: 'Photography',
     slug: 'photography',
     description: 'Professional HDR photography that makes every room look its best',
-    icon: Camera,
-    color: 'blue',
     features: ['HDR Processing', 'Interior & Exterior', 'Twilight Shots'],
-    cta: 'Learn More',
   },
   {
     name: 'Drone & Aerial',
     slug: 'drone',
     description: 'FAA Part 107 certified aerial photography and video',
-    icon: Plane,
-    color: 'cyan',
     features: ['FAA Licensed', '4K Video', 'Property & Neighborhood'],
-    cta: 'Learn More',
   },
   {
     name: 'Video Tours',
     slug: 'video',
     description: 'Cinematic property tours that capture buyer attention',
-    icon: Video,
-    color: 'purple',
     features: ['Cinematic Style', 'Social Media Ready', 'Licensed Music'],
-    cta: 'Learn More',
   },
   {
     name: '3D Tours',
     slug: '3d-tours',
     description: 'Immersive Matterport and Zillow 3D Home tours',
-    icon: Home,
-    color: 'green',
     features: ['Matterport Pro3', 'Zillow 3D Home', 'Virtual Walkthroughs'],
-    cta: 'Learn More',
   },
   {
     name: 'Virtual Staging',
     slug: 'virtual-staging',
     description: 'AI-powered virtual staging for empty or dated spaces',
-    icon: Sparkles,
-    color: 'amber',
     features: ['AI-Powered', 'Multiple Styles', '24-48hr Turnaround'],
-    cta: 'Learn More',
   },
   {
     name: 'Floor Plans',
     slug: 'floor-plans',
     description: 'Professional 2D and 3D floor plans with accurate measurements',
-    icon: LayoutGrid,
-    color: 'rose',
     features: ['2D & 3D Options', 'Accurate Measurements', 'MLS Ready'],
-    cta: 'Learn More',
   },
 ]
-
-const colorClasses: Record<string, string> = {
-  blue: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-  cyan: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-  purple: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-  green: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-  amber: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-  rose: 'bg-white/[0.05] text-white/70 border-white/[0.08] group-hover:bg-white/[0.08]',
-}
 
 export default function ServicesPage() {
   const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://aerialshots.media'
@@ -101,17 +65,17 @@ export default function ServicesPage() {
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/[0.03] rounded-full blur-[120px]" />
-
+      <section className="relative pt-32 pb-24">
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Real Estate Media
-              <span className="block text-gradient">Done Right</span>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
+              Our Services
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+              Real Estate Media<br />
+              Done Right
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[17px] text-[#8A847F] max-w-xl mx-auto leading-relaxed">
               From stunning photography to immersive 3D tours, we provide everything
               you need to market properties and close deals faster.
             </p>
@@ -120,39 +84,39 @@ export default function ServicesPage() {
       </section>
 
       {/* Services Grid */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06]">
+            {services.map((service, index) => (
               <Link
                 key={service.slug}
                 href={`/services/${service.slug}`}
-                className="group rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6 transition-all duration-200 hover:border-white/[0.16] hover:bg-[#1c1c1e]/80"
+                className="group bg-black p-10 transition-colors hover:bg-[#0a0a0a]"
               >
-                <div className={`h-12 w-12 rounded-xl border ${colorClasses[service.color]} flex items-center justify-center mb-4 transition-colors`}>
-                  <service.icon className="h-6 w-6" />
-                </div>
+                <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-4 block">
+                  0{index + 1}
+                </span>
 
-                <h2 className="text-xl font-semibold text-foreground mb-2">
+                <h2 className="font-serif text-2xl text-white mb-3 group-hover:text-[#A29991] transition-colors">
                   {service.name}
                 </h2>
-                <p className="text-muted-foreground text-sm mb-4">
+                <p className="text-[15px] text-[#8A847F] mb-6 leading-relaxed">
                   {service.description}
                 </p>
 
-                <ul className="space-y-2 mb-6">
+                <ul className="space-y-2 mb-8">
                   {service.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <li key={feature} className="flex items-center gap-3 text-[14px] text-[#6a6765]">
+                      <span className="w-1 h-1 bg-[#A29991] rounded-full" />
                       {feature}
                     </li>
                   ))}
                 </ul>
 
-                <div className="flex items-center gap-2 text-[#09f] text-sm font-medium group-hover:gap-3 transition-all">
-                  {service.cta}
-                  <ArrowRight className="h-4 w-4" />
-                </div>
+                <span className="inline-flex items-center gap-2 text-[13px] text-[#A29991] font-medium group-hover:gap-3 transition-all">
+                  Learn More
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
               </Link>
             ))}
           </div>
@@ -160,55 +124,59 @@ export default function ServicesPage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">
-              Why Choose Aerial Shots Media?
-            </h2>
-            <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-              We combine professional equipment, artistic vision, and fast turnaround
-              to deliver media that helps you sell homes faster.
-            </p>
-          </div>
+          <div className="grid lg:grid-cols-[1fr,2fr] gap-16">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Why Us
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1]">
+                Why Choose<br />Aerial Shots Media
+              </h2>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: '24-Hour Turnaround', description: 'Most orders delivered next day' },
-              { title: 'FAA Certified', description: 'Licensed Part 107 drone pilots' },
-              { title: 'MLS Ready', description: 'Properly sized and formatted' },
-              { title: '100% Satisfaction', description: 'Free re-shoots if needed' },
-            ].map((item) => (
-              <div key={item.title} className="text-center p-6">
-                <div className="text-lg font-semibold text-foreground mb-2">{item.title}</div>
-                <div className="text-sm text-muted-foreground">{item.description}</div>
-              </div>
-            ))}
+            <div className="grid sm:grid-cols-2 gap-12">
+              {[
+                { title: '24-Hour Turnaround', description: 'Most orders delivered next day' },
+                { title: 'FAA Certified', description: 'Licensed Part 107 drone pilots' },
+                { title: 'MLS Ready', description: 'Properly sized and formatted' },
+                { title: '100% Satisfaction', description: 'Free re-shoots if needed' },
+              ].map((item, index) => (
+                <div key={item.title}>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-3 block">
+                    0{index + 1}
+                  </span>
+                  <h3 className="text-[17px] font-medium text-white mb-2">{item.title}</h3>
+                  <p className="text-[15px] text-[#8A847F]">{item.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 border-t border-white/5">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-foreground">
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">
               Ready to Get Started?
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-[17px] text-[#8A847F] mb-10">
               Book your shoot today and see the difference professional media makes.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
               >
                 Book a Shoot
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-800 px-8 py-3 font-medium text-white hover:bg-neutral-700 transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 border border-white/[0.12] hover:border-white/[0.24] text-white text-[15px] font-medium transition-colors"
               >
                 View Pricing
               </Link>

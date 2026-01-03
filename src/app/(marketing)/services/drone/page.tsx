@@ -1,14 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import {
-  Plane,
-  Shield,
-  Video,
-  MapPin,
-  CheckCircle2,
-  ArrowRight,
-  Camera,
-} from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { BreadcrumbJsonLd } from '@/lib/seo/json-ld'
 
 export const metadata: Metadata = {
@@ -23,22 +15,18 @@ export const metadata: Metadata = {
 
 const features = [
   {
-    icon: Shield,
     title: 'FAA Part 107 Certified',
     description: 'Fully licensed and insured commercial drone operators',
   },
   {
-    icon: Video,
     title: '4K Video',
     description: 'Cinema-quality aerial video footage of your property',
   },
   {
-    icon: Camera,
     title: 'High-Resolution Stills',
     description: '48MP aerial photography for stunning property views',
   },
   {
-    icon: MapPin,
     title: 'Neighborhood Context',
     description: 'Show proximity to amenities, water, and landmarks',
   },
@@ -51,6 +39,28 @@ const equipment = [
   '4K/120fps Video',
   '48MP Photography',
   'Obstacle Avoidance',
+]
+
+const compliance = [
+  'FAA Part 107 Remote Pilot Certificate',
+  '$2M liability insurance coverage',
+  'LAANC authorization for controlled airspace',
+  'Compliance with all local regulations',
+]
+
+const useCases = [
+  {
+    title: 'Waterfront Properties',
+    description: 'Showcase water views, docks, and proximity to lakes or ocean',
+  },
+  {
+    title: 'Large Estates',
+    description: 'Capture the full scope of expansive properties and acreage',
+  },
+  {
+    title: 'Neighborhood Context',
+    description: 'Show nearby amenities, parks, and community features',
+  },
 ]
 
 export default function DronePage() {
@@ -67,33 +77,31 @@ export default function DronePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <section className="relative pt-32 pb-24">
         <div className="container relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2 text-sm text-[#a1a1a6] mb-6">
-              <Plane className="h-4 w-4" />
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
               FAA Part 107 Licensed
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
-              Aerial Views That
-              <span className="block text-gradient">Captivate Buyers</span>
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+              Aerial Views That<br />
+              Captivate Buyers
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-[17px] text-[#8A847F] max-w-xl mx-auto leading-relaxed mb-10">
               Professional drone photography and video that showcases properties
               from stunning perspectives buyers can&apos;t resist.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
               >
                 Book Drone Shoot
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-800 px-8 py-3 font-medium text-white hover:bg-neutral-700 transition-colors"
+                className="inline-flex items-center justify-center h-12 px-8 border border-white/[0.12] hover:border-white/[0.24] text-white text-[15px] font-medium transition-colors"
               >
                 View Pricing
               </Link>
@@ -103,40 +111,51 @@ export default function DronePage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <div className="h-12 w-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-white/70" />
+          <div className="grid lg:grid-cols-[1fr,2fr] gap-16">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Capabilities
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-white leading-[1.1]">
+                Professional<br />Aerial Media
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-12">
+              {features.map((feature, index) => (
+                <div key={feature.title}>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-3 block">
+                    0{index + 1}
+                  </span>
+                  <h3 className="text-[17px] font-medium text-white mb-2">{feature.title}</h3>
+                  <p className="text-[15px] text-[#8A847F]">{feature.description}</p>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Equipment & Compliance */}
-      <section className="py-20 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-16">
             {/* Equipment */}
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Professional Equipment</h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Equipment
+              </p>
+              <h2 className="font-serif text-2xl text-white mb-6">Professional Gear</h2>
+              <p className="text-[15px] text-[#8A847F] mb-8">
                 We use the latest DJI drones for reliable, high-quality aerial media.
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {equipment.map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span className="text-sm">{item}</span>
+                  <div key={item} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                    <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
+                    {item}
                   </div>
                 ))}
               </div>
@@ -144,20 +163,18 @@ export default function DronePage() {
 
             {/* Compliance */}
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-6">Fully Compliant</h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+                Compliance
+              </p>
+              <h2 className="font-serif text-2xl text-white mb-6">Fully Compliant</h2>
+              <p className="text-[15px] text-[#8A847F] mb-8">
                 All operators are FAA certified with proper insurance coverage.
               </p>
-              <ul className="space-y-3">
-                {[
-                  'FAA Part 107 Remote Pilot Certificate',
-                  '$2M liability insurance coverage',
-                  'LAANC authorization for controlled airspace',
-                  'Compliance with all local regulations',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-muted-foreground">
-                    <Shield className="h-5 w-5 text-white/60 shrink-0" />
-                    <span className="text-sm">{item}</span>
+              <ul className="space-y-4">
+                {compliance.map((item) => (
+                  <li key={item} className="flex items-center gap-4 text-[14px] text-[#B5ADA6]">
+                    <span className="w-1.5 h-1.5 bg-[#A29991] rounded-full shrink-0" />
+                    {item}
                   </li>
                 ))}
               </ul>
@@ -167,33 +184,25 @@ export default function DronePage() {
       </section>
 
       {/* Use Cases */}
-      <section className="py-20 border-t border-white/5">
+      <section className="py-24 border-t border-white/[0.06]">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Perfect For</h2>
+          <div className="text-center mb-16">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-4">
+              Ideal For
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl text-white">
+              Perfect For
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                title: 'Waterfront Properties',
-                description: 'Showcase water views, docks, and proximity to lakes or ocean',
-              },
-              {
-                title: 'Large Estates',
-                description: 'Capture the full scope of expansive properties and acreage',
-              },
-              {
-                title: 'Neighborhood Context',
-                description: 'Show nearby amenities, parks, and community features',
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-xl border border-white/[0.08] bg-[#1c1c1e] p-6"
-              >
-                <h3 className="font-semibold text-foreground mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+          <div className="grid md:grid-cols-3 gap-px bg-white/[0.06]">
+            {useCases.map((item, index) => (
+              <div key={item.title} className="bg-black p-10">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-4 block">
+                  0{index + 1}
+                </span>
+                <h3 className="font-serif text-xl text-white mb-3">{item.title}</h3>
+                <p className="text-[15px] text-[#8A847F]">{item.description}</p>
               </div>
             ))}
           </div>
@@ -201,25 +210,22 @@ export default function DronePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-white/5">
+      <section className="py-32 border-t border-white/[0.06]">
         <div className="container">
           <div className="max-w-2xl mx-auto text-center">
-            <Plane className="h-12 w-12 text-white/60 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-foreground">
+            <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">
               Ready for Stunning Aerials?
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-[17px] text-[#8A847F] mb-10">
               Book your drone shoot today and give buyers a new perspective.
             </p>
-            <div className="mt-8">
-              <Link
-                href="/book"
-                className="inline-flex items-center justify-center rounded-full bg-[#ff4533] px-8 py-3 font-medium text-white hover:bg-[#e63d2e] transition-colors"
-              >
-                Book Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            <Link
+              href="/book"
+              className="inline-flex items-center justify-center h-12 px-8 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
+            >
+              Book Now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

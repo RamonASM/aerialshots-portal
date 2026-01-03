@@ -9,129 +9,133 @@ export default function BookPage() {
   const retainerStartPrice = Math.min(...RETAINER_PACKAGES.map(p => p.price))
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
+    <div className="min-h-screen bg-black text-white">
+      <div className="container py-24">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#A29991] mb-6">
             Book Your Shoot
+          </p>
+          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-white leading-[1.0] tracking-[-0.02em] mb-6">
+            Professional Real Estate<br />Media Services
           </h1>
-          <p className="text-lg text-neutral-400">
-            Professional real estate media with transparent pricing.
-            <br />
+          <p className="text-[17px] text-[#8A847F] leading-relaxed">
+            Transparent pricing. Outstanding quality.<br />
             Choose your service to get started.
           </p>
         </div>
 
         {/* Service Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-px bg-white/[0.06] max-w-4xl mx-auto">
           {/* Listing Media */}
           <Link
             href="/book/listing"
-            className="group relative bg-neutral-900 border border-neutral-800 rounded-2xl p-8 hover:border-blue-500/50 transition-all"
+            className="group relative bg-black p-10 transition-colors hover:bg-[#0a0a0a]"
           >
-            <div className="absolute top-4 right-4">
-              <ArrowRight className="w-5 h-5 text-neutral-500 group-hover:text-blue-400 transition-colors" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-6 block">
+              01
+            </span>
+
+            <div className="w-12 h-12 flex items-center justify-center border border-[#A29991] text-[#A29991] mb-6">
+              <Camera className="w-6 h-6" />
             </div>
 
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-500/10 mb-6">
-              <Camera className="w-7 h-7 text-blue-400" />
-            </div>
-
-            <h2 className="text-2xl font-bold mb-2">Listing Media</h2>
-            <p className="text-neutral-400 mb-6">
+            <h2 className="font-serif text-2xl text-white mb-3 group-hover:text-[#A29991] transition-colors">
+              Listing Media
+            </h2>
+            <p className="text-[15px] text-[#8A847F] mb-8">
               Per-property photography, video, 3D tours, and more.
               Perfect for individual listings.
             </p>
 
-            <div className="text-sm text-neutral-500 mb-4">
-              Starting from{' '}
-              <span className="text-xl font-bold text-white">
+            <div className="mb-8">
+              <span className="text-[13px] text-[#6a6765]">Starting from</span>
+              <span className="font-serif text-3xl text-white block mt-1">
                 {formatCurrency(listingStartPrice)}
               </span>
             </div>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 mb-10">
               {[
                 'Professional Photography',
                 'Aerial/Drone Shots',
                 'Zillow 3D Tour',
                 'Floor Plans & Virtual Staging',
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-2 text-neutral-300">
-                  <Check className="w-4 h-4 text-blue-400" />
+                <div key={i} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                  <span className="w-1.5 h-1.5 bg-[#A29991] shrink-0" />
                   <span>{feature}</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-neutral-800">
-              <span className="inline-flex items-center gap-2 text-blue-400 font-medium group-hover:gap-3 transition-all">
-                Book Now <ArrowRight className="w-4 h-4" />
-              </span>
+            <div className="flex items-center gap-2 text-[#A29991] text-[15px] font-medium group-hover:gap-3 transition-all">
+              Book Now
+              <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
 
           {/* Content Retainer */}
           <Link
             href="/book/retainer"
-            className="group relative bg-neutral-900 border border-neutral-800 rounded-2xl p-8 hover:border-purple-500/50 transition-all"
+            className="group relative bg-black p-10 transition-colors hover:bg-[#0a0a0a]"
           >
-            <div className="absolute top-4 right-4">
-              <ArrowRight className="w-5 h-5 text-neutral-500 group-hover:text-purple-400 transition-colors" />
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#6a6765] mb-6 block">
+              02
+            </span>
+
+            <div className="w-12 h-12 flex items-center justify-center border border-[#A29991] text-[#A29991] mb-6">
+              <Video className="w-6 h-6" />
             </div>
 
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-purple-500/10 mb-6">
-              <Video className="w-7 h-7 text-purple-400" />
-            </div>
-
-            <h2 className="text-2xl font-bold mb-2">Content Retainer</h2>
-            <p className="text-neutral-400 mb-6">
+            <h2 className="font-serif text-2xl text-white mb-3 group-hover:text-[#A29991] transition-colors">
+              Content Retainer
+            </h2>
+            <p className="text-[15px] text-[#8A847F] mb-8">
               Monthly video subscription for consistent social media content
               and personal branding.
             </p>
 
-            <div className="text-sm text-neutral-500 mb-4">
-              Starting from{' '}
-              <span className="text-xl font-bold text-white">
+            <div className="mb-8">
+              <span className="text-[13px] text-[#6a6765]">Starting from</span>
+              <span className="font-serif text-3xl text-white block mt-1">
                 {formatCurrency(retainerStartPrice)}
+                <span className="text-[15px] text-[#6a6765] font-sans">/mo</span>
               </span>
-              <span className="text-neutral-500">/mo</span>
             </div>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 mb-10">
               {[
                 '8-20 Videos Per Month',
                 '2-4 Shoot Days',
                 'Scripts Written For You',
                 'Strategy & Planning',
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-2 text-neutral-300">
-                  <Check className="w-4 h-4 text-purple-400" />
+                <div key={i} className="flex items-center gap-3 text-[14px] text-[#B5ADA6]">
+                  <span className="w-1.5 h-1.5 bg-[#A29991] shrink-0" />
                   <span>{feature}</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-neutral-800">
-              <span className="inline-flex items-center gap-2 text-purple-400 font-medium group-hover:gap-3 transition-all">
-                View Packages <ArrowRight className="w-4 h-4" />
-              </span>
+            <div className="flex items-center gap-2 text-[#A29991] text-[15px] font-medium group-hover:gap-3 transition-all">
+              View Packages
+              <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
         </div>
 
         {/* Trust Indicators */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/[0.06] max-w-4xl mx-auto">
           {[
             { value: '500+', label: 'Properties Shot' },
             { value: '24hr', label: 'Avg Turnaround' },
             { value: '100%', label: 'Satisfaction' },
             { value: '5.0', label: 'Google Rating' },
           ].map((stat, i) => (
-            <div key={i} className="p-4">
-              <div className="text-2xl font-bold text-white">{stat.value}</div>
-              <div className="text-sm text-neutral-500">{stat.label}</div>
+            <div key={i} className="bg-black p-8 text-center">
+              <div className="font-serif text-3xl text-white mb-1">{stat.value}</div>
+              <div className="text-[13px] text-[#6a6765]">{stat.label}</div>
             </div>
           ))}
         </div>

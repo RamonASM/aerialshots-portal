@@ -73,10 +73,14 @@ export function MarketingNav() {
             href="/"
             className="flex items-center gap-3 group"
           >
-            <span className="text-xl font-bold tracking-tight text-white transition-opacity group-hover:opacity-80">
-              ASM
-            </span>
-            <span className="hidden sm:block text-[15px] font-medium text-[#a1a1a6]">
+            <Image
+              src="/asm-logo-light.png"
+              alt="Aerial Shots Media"
+              width={40}
+              height={40}
+              className="transition-opacity group-hover:opacity-80"
+            />
+            <span className="hidden sm:block text-[15px] font-medium text-[#B5ADA6]">
               Aerial Shots Media
             </span>
           </Link>
@@ -96,7 +100,7 @@ export function MarketingNav() {
                       'flex items-center gap-1 px-4 py-2 text-[14px] font-medium transition-colors',
                       pathname.startsWith('/services')
                         ? 'text-white'
-                        : 'text-[#a1a1a6] hover:text-white'
+                        : 'text-[#B5ADA6] hover:text-white'
                     )}
                   >
                     {item.name}
@@ -117,25 +121,25 @@ export function MarketingNav() {
                         : 'opacity-0 -translate-y-2 pointer-events-none'
                     )}
                   >
-                    <div className="w-72 rounded-xl bg-[#1c1c1e]/95 backdrop-blur-xl border border-white/[0.08] p-2 shadow-2xl">
+                    <div className="w-72 bg-[#0a0a0a] border border-white/[0.06] p-2 shadow-2xl">
                       {servicesDropdown.map((service) => (
                         <Link
                           key={service.name}
                           href={service.href}
-                          className="flex flex-col gap-0.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.05]"
+                          className="flex flex-col gap-0.5 px-3 py-2.5 transition-colors hover:bg-white/[0.04]"
                         >
                           <span className="text-[14px] font-medium text-white">
                             {service.name}
                           </span>
-                          <span className="text-[12px] text-[#8e8e93]">
+                          <span className="text-[12px] text-[#8A847F]">
                             {service.description}
                           </span>
                         </Link>
                       ))}
-                      <div className="mt-1 pt-1 border-t border-white/[0.08]">
+                      <div className="mt-1 pt-1 border-t border-white/[0.06]">
                         <Link
                           href="/services"
-                          className="flex items-center justify-between rounded-lg px-3 py-2.5 text-[14px] font-medium text-[#09f] transition-colors hover:bg-white/[0.05] hover:text-[#00bbff]"
+                          className="flex items-center justify-between px-3 py-2.5 text-[14px] font-medium text-[#A29991] transition-colors hover:bg-white/[0.04] hover:text-white"
                         >
                           View all services
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -152,7 +156,7 @@ export function MarketingNav() {
                     'px-4 py-2 text-[14px] font-medium transition-colors',
                     pathname === item.href
                       ? 'text-white'
-                      : 'text-[#a1a1a6] hover:text-white'
+                      : 'text-[#B5ADA6] hover:text-white'
                   )}
                 >
                   {item.name}
@@ -166,14 +170,14 @@ export function MarketingNav() {
             <Link href="/sign-in">
               <Button
                 variant="ghost"
-                className="text-[14px] text-[#a1a1a6] hover:text-white"
+                className="text-[14px] text-[#B5ADA6] hover:text-white"
               >
                 Agent Login
               </Button>
             </Link>
             <Link href="/book">
               <Button
-                className="bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[14px] font-medium px-5"
+                className="bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[14px] font-medium px-5"
               >
                 Book Now
               </Button>
@@ -213,24 +217,24 @@ export function MarketingNav() {
         {/* Menu Panel */}
         <div
           className={cn(
-            'absolute top-16 left-0 right-0 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0a0a0a] border-b border-white/[0.08] transition-transform duration-300',
+            'absolute top-16 left-0 right-0 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0a0a0a] border-b border-white/[0.06] transition-transform duration-300',
             isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
           )}
         >
           <nav className="p-4 space-y-1">
             {/* Services with submenu */}
-            <div className="pb-2 mb-2 border-b border-white/[0.08]">
-              <span className="block px-4 py-2 text-[12px] font-medium text-[#8e8e93] uppercase tracking-wider">
+            <div className="pb-2 mb-2 border-b border-white/[0.06]">
+              <span className="block px-4 py-2 text-[12px] font-medium text-[#A29991] uppercase tracking-wider">
                 Services
               </span>
               {servicesDropdown.map((service) => (
                 <Link
                   key={service.name}
                   href={service.href}
-                  className="flex items-center justify-between px-4 py-3 text-[15px] text-white rounded-lg hover:bg-white/[0.05]"
+                  className="flex items-center justify-between px-4 py-3 text-[15px] text-white hover:bg-white/[0.04]"
                 >
                   {service.name}
-                  <ArrowRight className="h-4 w-4 text-[#8e8e93]" />
+                  <ArrowRight className="h-4 w-4 text-[#8A847F]" />
                 </Link>
               ))}
             </div>
@@ -241,30 +245,30 @@ export function MarketingNav() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center justify-between px-4 py-3 text-[15px] rounded-lg',
+                  'flex items-center justify-between px-4 py-3 text-[15px]',
                   pathname === item.href
-                    ? 'text-white bg-white/[0.05]'
-                    : 'text-[#a1a1a6] hover:text-white hover:bg-white/[0.05]'
+                    ? 'text-white bg-white/[0.04]'
+                    : 'text-[#B5ADA6] hover:text-white hover:bg-white/[0.04]'
                 )}
               >
                 {item.name}
-                <ArrowRight className="h-4 w-4 text-[#8e8e93]" />
+                <ArrowRight className="h-4 w-4 text-[#8A847F]" />
               </Link>
             ))}
 
             {/* CTA Buttons */}
-            <div className="pt-4 mt-4 border-t border-white/[0.08] space-y-3">
+            <div className="pt-4 mt-4 border-t border-white/[0.06] space-y-3">
               <Link href="/sign-in" className="block">
                 <Button
                   variant="outline"
-                  className="w-full h-12 text-[15px] border-white/[0.16] hover:bg-white/[0.05]"
+                  className="w-full h-12 text-[15px] border-white/[0.12] hover:bg-white/[0.04]"
                 >
                   Agent Login
                 </Button>
               </Link>
               <Link href="/book" className="block">
                 <Button
-                  className="w-full h-12 bg-[#ff4533] hover:bg-[#e63d2e] text-white text-[15px] font-medium"
+                  className="w-full h-12 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium"
                 >
                   Book Now
                 </Button>

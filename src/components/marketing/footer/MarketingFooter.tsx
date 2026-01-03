@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, Phone, MapPin, Instagram, Facebook, Linkedin } from 'lucide-react'
 
 const footerLinks = {
@@ -41,22 +42,26 @@ export function MarketingFooter() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-[#0a0a0a] border-t border-white/[0.08]">
+    <footer className="bg-[#0a0a0a] border-t border-white/[0.06]">
       {/* Main Footer Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 group">
-              <span className="text-xl font-bold tracking-tight text-white transition-opacity group-hover:opacity-80">
-                ASM
-              </span>
-              <span className="text-[15px] font-medium text-[#a1a1a6]">
+              <Image
+                src="/asm-logo-light.png"
+                alt="Aerial Shots Media"
+                width={40}
+                height={40}
+                className="transition-opacity group-hover:opacity-80"
+              />
+              <span className="text-[15px] font-medium text-[#B5ADA6]">
                 Aerial Shots Media
               </span>
             </Link>
 
-            <p className="mt-4 text-[14px] text-[#8e8e93] leading-relaxed max-w-sm">
+            <p className="mt-4 text-[14px] text-[#8A847F] leading-relaxed max-w-sm">
               Central Florida&apos;s premier real estate media company. Professional photography,
               drone, video, 3D tours, and virtual staging for top-producing agents.
             </p>
@@ -65,20 +70,20 @@ export function MarketingFooter() {
             <div className="mt-6 space-y-3">
               <a
                 href="mailto:hello@aerialshots.media"
-                className="flex items-center gap-2.5 text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                className="flex items-center gap-2.5 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
               >
-                <Mail className="h-4 w-4 text-white/50" />
+                <Mail className="h-4 w-4 text-[#A29991]" />
                 hello@aerialshots.media
               </a>
               <a
                 href="tel:+14075551234"
-                className="flex items-center gap-2.5 text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                className="flex items-center gap-2.5 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
               >
-                <Phone className="h-4 w-4 text-white/50" />
+                <Phone className="h-4 w-4 text-[#A29991]" />
                 (407) 555-1234
               </a>
-              <div className="flex items-center gap-2.5 text-[14px] text-[#8e8e93]">
-                <MapPin className="h-4 w-4 text-white/50" />
+              <div className="flex items-center gap-2.5 text-[14px] text-[#8A847F]">
+                <MapPin className="h-4 w-4 text-[#A29991]" />
                 Orlando, FL
               </div>
             </div>
@@ -91,7 +96,7 @@ export function MarketingFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-[#a1a1a6] transition-all hover:bg-[#ff4533]/10 hover:text-[#ff4533]"
+                  className="flex h-10 w-10 items-center justify-center bg-white/[0.04] text-[#B5ADA6] transition-all hover:bg-[#A29991]/10 hover:text-[#A29991]"
                   aria-label={social.name}
                 >
                   <social.icon className="h-4 w-4" />
@@ -102,7 +107,7 @@ export function MarketingFooter() {
 
           {/* Services */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
               Services
             </h3>
             <ul className="mt-4 space-y-3">
@@ -110,7 +115,7 @@ export function MarketingFooter() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -121,7 +126,7 @@ export function MarketingFooter() {
 
           {/* Company */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
               Company
             </h3>
             <ul className="mt-4 space-y-3">
@@ -129,7 +134,7 @@ export function MarketingFooter() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -140,7 +145,7 @@ export function MarketingFooter() {
 
           {/* Resources */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
               Resources
             </h3>
             <ul className="mt-4 space-y-3">
@@ -148,7 +153,7 @@ export function MarketingFooter() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -159,7 +164,7 @@ export function MarketingFooter() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#8e8e93] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
               Legal
             </h3>
             <ul className="mt-4 space-y-3">
@@ -167,7 +172,7 @@ export function MarketingFooter() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#a1a1a6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -179,19 +184,19 @@ export function MarketingFooter() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-white/[0.08]">
+      <div className="border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[13px] text-[#8e8e93]">
+            <p className="text-[13px] text-[#8A847F]">
               &copy; {currentYear} Aerial Shots Media. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <span className="flex items-center gap-2 text-[13px] text-[#8e8e93]">
-                <span className="h-2 w-2 rounded-full bg-[#34c759]" />
+              <span className="flex items-center gap-2 text-[13px] text-[#8A847F]">
+                <span className="h-2 w-2 rounded-full bg-[#A29991]" />
                 FAA Part 107 Licensed
               </span>
-              <span className="flex items-center gap-2 text-[13px] text-[#8e8e93]">
-                <span className="h-2 w-2 rounded-full bg-white/40" />
+              <span className="flex items-center gap-2 text-[13px] text-[#8A847F]">
+                <span className="h-2 w-2 rounded-full bg-[#B5ADA6]" />
                 Zillow Certified
               </span>
             </div>

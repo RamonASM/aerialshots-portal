@@ -11,8 +11,50 @@ import {
   LISTING_ADDONS,
 } from '@/lib/booking/config'
 
+// Selection mode for services
+export type SelectionMode = 'package' | 'individual'
+
+// Property access types
+export type AccessType = 'vacant' | 'occupied'
+export type OccupancyStatus = 'vacant' | 'owner-occupied' | 'tenant-occupied'
+
+// Homeowner/tenant info for occupied properties
+export interface HomeownerInfo {
+  name: string
+  email: string
+  phone: string
+  preferredContactMethod: 'email' | 'phone' | 'text'
+  accessInstructions?: string
+  petInfo?: string
+  gateCode?: string
+  lockboxCode?: string
+}
+
+// Individual service selection (when not using packages)
+export interface SelectedService {
+  serviceId: string
+  serviceName: string
+  price: number
+  duration: number
+  quantity: number
+}
+
 // Extended booking form data with new fields
 export interface ExtendedBookingFormData extends BookingFormData {
+  // Selection mode (package vs individual services)
+  selectionMode: SelectionMode
+
+  // Individual services (when selectionMode is 'individual')
+  selectedServices: SelectedService[]
+
+  // Property access
+  accessType: AccessType
+  occupancyStatus: OccupancyStatus
+
+  // Homeowner/tenant info (for occupied properties)
+  homeownerInfo?: HomeownerInfo
+  notifyHomeowner: boolean
+
   // Property location (from Google Places)
   propertyLat?: number
   propertyLng?: number
@@ -103,6 +145,21 @@ interface BookingActions {
   toggleAddon: (addonId: string) => void
   setAddonQuantity: (addonId: string, quantity: number) => void
 
+  // Selection mode
+  setSelectionMode: (mode: SelectionMode) => void
+
+  // Individual services (for individual mode)
+  addService: (service: SelectedService) => void
+  removeService: (serviceId: string) => void
+  updateServiceQuantity: (serviceId: string, quantity: number) => void
+  clearServices: () => void
+
+  // Property access
+  setAccessType: (type: AccessType) => void
+  setOccupancyStatus: (status: OccupancyStatus) => void
+  setHomeownerInfo: (info: HomeownerInfo) => void
+  setNotifyHomeowner: (notify: boolean) => void
+
   // Property
   setPropertyAddress: (address: {
     formatted: string
@@ -151,13 +208,25 @@ interface BookingActions {
 
 // Initial form data
 const initialFormData: ExtendedBookingFormData = {
+  // Selection
+  selectionMode: 'package',
   packageKey: '',
   sqftTier: 'lt2000',
   addons: [],
+  selectedServices: [],
+
+  // Property access
+  accessType: 'vacant',
+  occupancyStatus: 'vacant',
+  notifyHomeowner: true,
+
+  // Property address
   propertyAddress: '',
   propertyCity: '',
   propertyState: 'FL',
   propertyZip: '',
+
+  // Contact
   contactName: '',
   contactEmail: '',
   contactPhone: '',
@@ -199,7 +268,7 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       setStep: (step) => set({ currentStep: step }),
 
       nextStep: () => set((state) => {
-        state.currentStep = Math.min(state.currentStep + 1, 4)
+        state.currentStep = Math.min(state.currentStep + 1, 3) // 4 steps: 0-3
         state.formData.lastUpdatedAt = new Date().toISOString()
       }),
 
@@ -248,6 +317,93 @@ export const useBookingStore = create<BookingState & BookingActions>()(
         })
         get().recalculatePricing()
       },
+
+      // Selection mode
+      setSelectionMode: (mode) => {
+        set((state) => {
+          state.formData.selectionMode = mode
+          // Clear the other selection when switching modes
+          if (mode === 'package') {
+            state.formData.selectedServices = []
+          } else {
+            state.formData.packageKey = ''
+          }
+          state.formData.lastUpdatedAt = new Date().toISOString()
+        })
+        get().recalculatePricing()
+      },
+
+      // Individual services
+      addService: (service) => {
+        set((state) => {
+          const existing = state.formData.selectedServices.find(s => s.serviceId === service.serviceId)
+          if (existing) {
+            existing.quantity += service.quantity
+          } else {
+            state.formData.selectedServices.push(service)
+          }
+          state.formData.lastUpdatedAt = new Date().toISOString()
+        })
+        get().recalculatePricing()
+      },
+
+      removeService: (serviceId) => {
+        set((state) => {
+          state.formData.selectedServices = state.formData.selectedServices.filter(s => s.serviceId !== serviceId)
+          state.formData.lastUpdatedAt = new Date().toISOString()
+        })
+        get().recalculatePricing()
+      },
+
+      updateServiceQuantity: (serviceId, quantity) => {
+        set((state) => {
+          const service = state.formData.selectedServices.find(s => s.serviceId === serviceId)
+          if (service) {
+            service.quantity = quantity
+          }
+          state.formData.lastUpdatedAt = new Date().toISOString()
+        })
+        get().recalculatePricing()
+      },
+
+      clearServices: () => {
+        set((state) => {
+          state.formData.selectedServices = []
+          state.formData.lastUpdatedAt = new Date().toISOString()
+        })
+        get().recalculatePricing()
+      },
+
+      // Property access
+      setAccessType: (type) => set((state) => {
+        state.formData.accessType = type
+        // Update occupancy status to match
+        if (type === 'vacant') {
+          state.formData.occupancyStatus = 'vacant'
+          state.formData.homeownerInfo = undefined
+        }
+        state.formData.lastUpdatedAt = new Date().toISOString()
+      }),
+
+      setOccupancyStatus: (status) => set((state) => {
+        state.formData.occupancyStatus = status
+        // Update access type to match
+        state.formData.accessType = status === 'vacant' ? 'vacant' : 'occupied'
+        if (status === 'vacant') {
+          state.formData.homeownerInfo = undefined
+        }
+        state.formData.lastUpdatedAt = new Date().toISOString()
+      }),
+
+      setHomeownerInfo: (info) => set((state) => {
+        state.formData.homeownerInfo = info
+        state.formData.lastUpdatedAt = new Date().toISOString()
+      }),
+
+      setNotifyHomeowner: (notify) => set((state) => {
+        state.formData.notifyHomeowner = notify
+        state.formData.lastUpdatedAt = new Date().toISOString()
+      }),
 
       // Property address (from Google Places)
       setPropertyAddress: (address) => {
@@ -362,16 +518,39 @@ export const useBookingStore = create<BookingState & BookingActions>()(
 
       // Recalculate pricing
       recalculatePricing: () => set((state) => {
-        const baseCalc = calculateBookingTotal(state.formData)
+        let packagePrice = 0
+        let addonsTotal = 0
+        const breakdown: Array<{ name: string; price: number; quantity?: number }> = []
+
+        // Calculate based on selection mode
+        if (state.formData.selectionMode === 'individual') {
+          // Individual services mode
+          for (const service of state.formData.selectedServices) {
+            const serviceTotal = service.price * service.quantity
+            addonsTotal += serviceTotal
+            breakdown.push({
+              name: service.serviceName,
+              price: service.price,
+              quantity: service.quantity,
+            })
+          }
+        } else {
+          // Package mode - use existing calculation
+          const baseCalc = calculateBookingTotal(state.formData)
+          packagePrice = baseCalc.packagePrice
+          addonsTotal = baseCalc.addonsTotal
+          breakdown.push(...baseCalc.breakdown)
+        }
 
         // Add travel fee
         const travelFee = state.formData.travelFee || 0
 
         // Calculate coupon discount
         let couponDiscount = 0
+        const baseSubtotal = packagePrice + addonsTotal
         if (state.formData.couponCode && state.formData.couponDiscount) {
           if (state.formData.couponType === 'percent') {
-            couponDiscount = Math.round(baseCalc.subtotal * (state.formData.couponDiscount / 100))
+            couponDiscount = Math.round(baseSubtotal * (state.formData.couponDiscount / 100))
           } else {
             couponDiscount = state.formData.couponDiscount
           }
@@ -380,11 +559,10 @@ export const useBookingStore = create<BookingState & BookingActions>()(
         // Loyalty points value
         const loyaltyDiscount = state.formData.loyaltyPointsValue || 0
 
-        const subtotal = baseCalc.subtotal + travelFee
+        const subtotal = baseSubtotal + travelFee
         const total = Math.max(0, subtotal - couponDiscount - loyaltyDiscount)
 
-        // Build breakdown
-        const breakdown = [...baseCalc.breakdown]
+        // Add additional breakdown items
         if (travelFee > 0) {
           breakdown.push({ name: 'Travel Fee', price: travelFee })
         }
@@ -396,8 +574,8 @@ export const useBookingStore = create<BookingState & BookingActions>()(
         }
 
         state.pricing = {
-          packagePrice: baseCalc.packagePrice,
-          addonsTotal: baseCalc.addonsTotal,
+          packagePrice,
+          addonsTotal,
           travelFee,
           couponDiscount,
           loyaltyDiscount,
@@ -454,14 +632,24 @@ export const useBookingStore = create<BookingState & BookingActions>()(
   )
 )
 
+// Step labels for the 4-step flow
+export const BOOKING_STEPS = [
+  { id: 0, label: 'Services', shortLabel: '01' },
+  { id: 1, label: 'Property', shortLabel: '02' },
+  { id: 2, label: 'Schedule', shortLabel: '03' },
+  { id: 3, label: 'Payment', shortLabel: '04' },
+] as const
+
 // Selectors for common derived state
 export const useBookingProgress = () => {
   const currentStep = useBookingStore((s) => s.currentStep)
   return {
     currentStep,
-    progress: ((currentStep + 1) / 5) * 100,
+    steps: BOOKING_STEPS,
+    progress: ((currentStep + 1) / 4) * 100,
     isFirstStep: currentStep === 0,
-    isLastStep: currentStep === 4,
+    isLastStep: currentStep === 3,
+    currentStepLabel: BOOKING_STEPS[currentStep]?.label || '',
   }
 }
 
@@ -479,19 +667,29 @@ export const useCanProceed = () => {
   const { currentStep, formData } = useBookingStore()
 
   switch (currentStep) {
-    case 0: // Package
-      return !!formData.packageKey && !!formData.sqftTier
-    case 1: // Addons
-      return true // Addons are optional
-    case 2: // Property
-      return !!(
+    case 0: // Services (package or individual)
+      if (formData.selectionMode === 'package') {
+        return !!formData.packageKey && !!formData.sqftTier
+      } else {
+        return formData.selectedServices.length > 0
+      }
+    case 1: // Property (address + access type)
+      const hasAddress = !!(
         formData.propertyAddress &&
         formData.propertyCity &&
         formData.propertyZip
       )
-    case 3: // Schedule
+      // If occupied, must have homeowner info
+      if (formData.accessType === 'occupied') {
+        return hasAddress && !!(
+          formData.homeownerInfo?.name &&
+          formData.homeownerInfo?.phone
+        )
+      }
+      return hasAddress
+    case 2: // Schedule
       return !!(formData.scheduledDate && formData.scheduledTime)
-    case 4: // Payment
+    case 3: // Payment
       return !!(
         formData.contactName &&
         formData.contactEmail &&
@@ -499,5 +697,46 @@ export const useCanProceed = () => {
       )
     default:
       return false
+  }
+}
+
+// Selector for total service/shoot duration
+export const useEstimatedDuration = () => {
+  const { formData } = useBookingStore()
+
+  if (formData.selectionMode === 'individual') {
+    return formData.selectedServices.reduce((total, s) => total + (s.duration * s.quantity), 0)
+  }
+
+  // Package-based duration estimation
+  const sqft = formData.propertySqft || 2000
+  let baseDuration = sqft < 3500 ? 75 : 90 // minutes
+
+  // Add time for addons
+  for (const addon of formData.addons) {
+    if (addon.id.includes('drone')) baseDuration += 20
+    if (addon.id.includes('zillow') || addon.id.includes('3d')) baseDuration += 30
+    if (addon.id.includes('video')) baseDuration += 45
+  }
+
+  return baseDuration
+}
+
+// Selector for services total (individual mode)
+export const useSelectedServices = () => {
+  const services = useBookingStore((s) => s.formData.selectedServices)
+  const total = services.reduce((sum, s) => sum + (s.price * s.quantity), 0)
+  return { services, total, count: services.length }
+}
+
+// Selector for property access info
+export const usePropertyAccess = () => {
+  const formData = useBookingStore((s) => s.formData)
+  return {
+    accessType: formData.accessType,
+    occupancyStatus: formData.occupancyStatus,
+    homeownerInfo: formData.homeownerInfo,
+    notifyHomeowner: formData.notifyHomeowner,
+    isOccupied: formData.accessType === 'occupied',
   }
 }

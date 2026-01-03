@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowRight, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useScrollReveal } from '@/lib/hooks/use-scroll-reveal'
@@ -74,40 +73,40 @@ export function PortfolioPreview() {
       : portfolioItems.filter((item) => item.category === activeCategory)
 
   return (
-    <section className="py-24 bg-[#0a0a0a]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-32 bg-[#0a0a0a]">
+      <div className="mx-auto max-w-6xl px-6">
         {/* Section header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
           <div>
-            <h2 className="text-display-lg text-white mb-4">
-              Our Work Speaks for Itself
-            </h2>
-            <p className="text-body-lg max-w-xl">
-              Browse our portfolio of recent projects for Central Florida&apos;s top agents
+            <p className="text-sm uppercase tracking-[0.2em] text-[#A29991] mb-4">
+              Portfolio
             </p>
+            <h2 className="font-serif text-4xl lg:text-5xl text-white">
+              Our Work
+            </h2>
           </div>
           <Link href="/portfolio">
             <Button
-              variant="outline"
-              className="border-white/[0.16] hover:bg-white/[0.05]"
+              variant="ghost"
+              className="text-[#B5ADA6] hover:text-white"
             >
-              View Full Portfolio
+              View All
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
 
         {/* Category filter */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-3 mb-12">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
               className={cn(
-                'px-4 py-2 rounded-lg text-[14px] font-medium transition-all',
+                'px-4 py-2 text-[13px] font-medium transition-colors',
                 activeCategory === category
-                  ? 'bg-[#ff4533] text-white'
-                  : 'bg-white/[0.05] text-[#a1a1a6] hover:bg-white/[0.1] hover:text-white'
+                  ? 'bg-[#A29991] text-black'
+                  : 'bg-white/[0.04] text-[#B5ADA6] hover:bg-white/[0.08] hover:text-white'
               )}
             >
               {category}
@@ -125,7 +124,7 @@ export function PortfolioPreview() {
               key={item.id}
               href={`/portfolio/${item.id}`}
               className={cn(
-                'group relative aspect-[4/3] rounded-xl overflow-hidden bg-[#1c1c1e] transition-all duration-700',
+                'group relative aspect-[4/3] overflow-hidden bg-[#141414] transition-all duration-700',
                 isVisible
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-8'
@@ -135,26 +134,18 @@ export function PortfolioPreview() {
               }}
             >
               {/* Placeholder gradient for missing images */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#1c1c1e] to-[#2c2c2e]" />
-
-              {/* Image would go here */}
-              {/* <Image
-                src={item.image}
-                alt={item.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              /> */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1c1c1e] to-[#262626]" />
 
               {/* Video indicator */}
               {item.hasVideo && (
-                <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+                <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center bg-black/50 backdrop-blur-sm">
                   <Play className="h-5 w-5 text-white fill-white" />
                 </div>
               )}
 
               {/* Before/After indicator */}
               {item.beforeAfter && (
-                <div className="absolute top-4 right-4 rounded-full bg-black/50 backdrop-blur-sm px-3 py-1">
+                <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-3 py-1">
                   <span className="text-[12px] font-medium text-white">
                     Before/After
                   </span>
@@ -162,15 +153,15 @@ export function PortfolioPreview() {
               )}
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-70 group-hover:opacity-100 transition-opacity" />
 
               {/* Content */}
               <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <h3 className="text-[16px] font-semibold text-white mb-1 group-hover:text-[#09f] transition-colors">
+                <h3 className="text-[15px] font-medium text-white mb-1 group-hover:text-[#A29991] transition-colors">
                   {item.title}
                 </h3>
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-[#a1a1a6]">
+                  <span className="text-[13px] text-[#B5ADA6]">
                     {item.location}
                   </span>
                   <span className="text-[13px] font-medium text-white">
@@ -180,7 +171,7 @@ export function PortfolioPreview() {
               </div>
 
               {/* Hover border */}
-              <div className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-white/20 transition-colors" />
+              <div className="absolute inset-0 border border-transparent group-hover:border-white/[0.12] transition-colors" />
             </Link>
           ))}
         </div>

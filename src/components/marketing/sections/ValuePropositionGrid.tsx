@@ -1,116 +1,89 @@
 'use client'
 
-import { useStaggeredReveal } from '@/lib/hooks/use-scroll-reveal'
-import { Zap, Camera, Sparkles, Shield, Clock, Award } from 'lucide-react'
+import { useScrollReveal } from '@/lib/hooks/use-scroll-reveal'
 import { cn } from '@/lib/utils'
 
 const valueProps = [
   {
-    icon: Clock,
+    number: '01',
     title: '24-Hour Turnaround',
-    description:
-      'Photos delivered next day. Video and 3D tours within 48 hours. Rush delivery available.',
-    highlight: 'Same-day booking',
+    description: 'Photos delivered next day. Video and 3D tours within 48 hours.',
   },
   {
-    icon: Camera,
+    number: '02',
     title: 'Professional Quality',
-    description:
-      'HDR photography, cinematic video, and industry-leading 3D tours that make listings stand out.',
-    highlight: '4K resolution',
+    description: 'HDR photography, cinematic video, and industry-leading 3D tours.',
   },
   {
-    icon: Sparkles,
+    number: '03',
     title: 'AI-Powered Editing',
-    description:
-      'Advanced AI enhancement for perfect skies, balanced lighting, and stunning virtual staging.',
-    highlight: 'Smart enhancement',
+    description: 'Perfect skies, balanced lighting, and stunning virtual staging.',
   },
   {
-    icon: Zap,
+    number: '04',
     title: 'Instant Publishing',
-    description:
-      'Direct upload to MLS, Zillow, Realtor.com, and all major platforms with one click.',
-    highlight: 'One-click publish',
+    description: 'Direct upload to MLS, Zillow, and all major platforms.',
   },
   {
-    icon: Shield,
+    number: '05',
     title: 'Licensed & Insured',
-    description:
-      'FAA Part 107 certified drone pilots. Fully insured for all shoots. Zillow Showcase certified.',
-    highlight: 'FAA certified',
+    description: 'FAA Part 107 certified. Zillow Showcase certified.',
   },
   {
-    icon: Award,
+    number: '06',
     title: 'White-Glove Service',
-    description:
-      'Dedicated support team, agent portal access, and automated delivery notifications.',
-    highlight: '5-star rated',
+    description: 'Dedicated support and automated delivery notifications.',
   },
 ]
 
 export function ValuePropositionGrid() {
-  const { containerRef, isContainerVisible, getItemDelay } = useStaggeredReveal(
-    valueProps.length,
-    75
-  )
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 })
 
   return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 gradient-radial-top" />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-32">
+      <div className="mx-auto max-w-6xl px-6">
         {/* Section header */}
-        <div className="text-center mb-16">
-          <h2 className="text-display-lg text-white mb-4">
-            Why Top Agents Choose Us
-          </h2>
-          <p className="text-body-lg max-w-2xl mx-auto">
-            Professional media that helps you win more listings and sell homes faster
+        <div className="text-center mb-20">
+          <p className="text-sm uppercase tracking-[0.2em] text-[#A29991] mb-4">
+            Why Choose Us
           </p>
+          <h2 className="font-serif text-4xl lg:text-5xl text-white">
+            Built for Top Producers
+          </h2>
         </div>
 
         {/* Grid */}
         <div
-          ref={containerRef as React.RefObject<HTMLDivElement>}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          ref={ref as React.RefObject<HTMLDivElement>}
+          className="grid gap-x-12 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"
         >
           {valueProps.map((prop, index) => (
             <div
               key={prop.title}
               className={cn(
-                'group relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-6 transition-all duration-500 hover:border-white/[0.16] hover:bg-[#111]',
-                isContainerVisible
+                'transition-all duration-700',
+                isVisible
                   ? 'opacity-100 translate-y-0'
                   : 'opacity-0 translate-y-8'
               )}
               style={{
-                transitionDelay: isContainerVisible
-                  ? `${getItemDelay(index)}ms`
-                  : '0ms',
+                transitionDelay: isVisible ? `${index * 75}ms` : '0ms',
               }}
             >
-              {/* Icon */}
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.05] border border-white/[0.08] text-white/70 transition-transform group-hover:scale-110">
-                <prop.icon className="h-6 w-6" />
-              </div>
-
-              {/* Content */}
-              <h3 className="text-[18px] font-semibold text-white mb-2">
-                {prop.title}
-              </h3>
-              <p className="text-[14px] text-[#8e8e93] leading-relaxed mb-4">
-                {prop.description}
-              </p>
-
-              {/* Highlight badge */}
-              <span className="inline-flex items-center rounded-full bg-white/[0.05] border border-white/[0.08] px-3 py-1 text-[12px] font-medium text-[#a1a1a6]">
-                {prop.highlight}
+              {/* Number */}
+              <span className="text-sm text-[#A29991] font-medium mb-4 block">
+                {prop.number}
               </span>
 
-              {/* Hover glow effect */}
-              <div className="absolute inset-0 rounded-2xl bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              {/* Title */}
+              <h3 className="text-xl font-medium text-white mb-3">
+                {prop.title}
+              </h3>
+
+              {/* Description */}
+              <p className="text-[15px] text-[#8A847F] leading-relaxed">
+                {prop.description}
+              </p>
             </div>
           ))}
         </div>
