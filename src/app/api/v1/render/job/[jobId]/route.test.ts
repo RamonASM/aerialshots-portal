@@ -53,6 +53,7 @@ describe('GET /api/v1/render/job/[jobId]', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     process.env = originalEnv
   })
 
@@ -114,9 +115,9 @@ describe('GET /api/v1/render/job/[jobId]', () => {
     })
 
     it('should allow unauthenticated in development without secret', async () => {
-      process.env.NODE_ENV = 'development'
-      delete process.env.RENDER_API_SECRET
-      delete process.env.AGENT_SHARED_SECRET
+      vi.stubEnv('NODE_ENV', 'development')
+      vi.stubEnv('RENDER_API_SECRET', '')
+      vi.stubEnv('AGENT_SHARED_SECRET', '')
 
       mockSingle.mockResolvedValue({
         data: { id: validJobId, job_type: 'single_image', status: 'pending', created_at: new Date().toISOString() },
@@ -488,7 +489,7 @@ describe('GET /api/v1/render/job/[jobId]', () => {
     })
 
     it('should sanitize error details in production', async () => {
-      process.env.NODE_ENV = 'production'
+      vi.stubEnv('NODE_ENV', 'production')
 
       mockSingle.mockRejectedValue(new Error('Internal database details'))
 
@@ -502,7 +503,7 @@ describe('GET /api/v1/render/job/[jobId]', () => {
     })
 
     it('should show detailed errors in development', async () => {
-      process.env.NODE_ENV = 'development'
+      vi.stubEnv('NODE_ENV', 'development')
 
       mockSingle.mockRejectedValue(new Error('Detailed error message'))
 

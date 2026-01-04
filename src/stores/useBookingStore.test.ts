@@ -177,11 +177,11 @@ describe('useBookingStore', () => {
       const { result } = renderHook(() => useBookingStore())
 
       act(() => {
-        result.current.setPackage('signature', '2001_2500')
+        result.current.setPackage('signature', '2001_3500')
       })
 
       expect(result.current.formData.packageKey).toBe('signature')
-      expect(result.current.formData.sqftTier).toBe('2001_2500')
+      expect(result.current.formData.sqftTier).toBe('2001_3500')
     })
 
     it('should trigger recalculatePricing on setPackage', () => {
@@ -503,7 +503,7 @@ describe('useBookingStore', () => {
       const { result } = renderHook(() => useBookingStore())
 
       act(() => {
-        result.current.setPackage('signature', '2001_2500')
+        result.current.setPackage('signature', '2001_3500')
         result.current.toggleAddon('rush-delivery')
         result.current.setStep(3)
         result.current.markAsAbandoned()

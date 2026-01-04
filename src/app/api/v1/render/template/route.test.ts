@@ -75,6 +75,7 @@ describe('Template API', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     process.env = originalEnv
   })
 
@@ -183,9 +184,9 @@ describe('Template API', () => {
     })
 
     it('should allow unauthenticated in development without secret', async () => {
-      process.env.NODE_ENV = 'development'
-      delete process.env.RENDER_API_SECRET
-      delete process.env.AGENT_SHARED_SECRET
+      vi.stubEnv('NODE_ENV', 'development')
+      vi.stubEnv('RENDER_API_SECRET', '')
+      vi.stubEnv('AGENT_SHARED_SECRET', '')
 
       mockRange.mockResolvedValue({ data: [], error: null, count: 0 })
 

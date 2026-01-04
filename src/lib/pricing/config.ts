@@ -128,6 +128,44 @@ export const PHOTO_ONLY_PRICING = [
   { id: '5001_10000', label: '5,001-10,000', price: 550 },
 ] as const
 
+// ============================================
+// À LA CARTE SERVICES
+// ============================================
+
+// Photography Add-Ons
+export const PHOTOGRAPHY_ADDONS = [
+  { id: 'drone_addon', name: 'Drone/Aerial (Add-On)', price: 75, note: 'When added to photo booking' },
+  { id: 'drone_standalone', name: 'Drone/Aerial (Standalone)', price: 150, note: 'Without base photography' },
+  { id: 'floor_plan_2d', name: '2D Floor Plan', price: 0, note: 'Included FREE with any photo booking' },
+  { id: 'floor_plan_3d', name: '3D Floor Plan', price: 75, note: 'Interactive 3D floor plan' },
+  { id: 'zillow_3d_tour', name: 'Zillow 3D Tour + Interactive Floor Plan', price: 150, note: 'Virtual tour with floor plan' },
+  { id: 'virtual_twilight', name: 'Virtual Twilight', price: 15, note: 'Per photo - golden hour look without reshoot' },
+  { id: 'real_twilight', name: 'Real Twilight Photography', price: 150, note: 'On-site twilight photo session' },
+] as const
+
+// Listing Video Services (for property marketing)
+export const VIDEO_SERVICES = [
+  { id: 'listing_video', name: 'Listing Video', price: 350, note: 'Script assist; agent optional on camera' },
+  { id: 'lifestyle_video', name: 'Lifestyle Listing Video', price: 425, note: 'Adds 1-2 lifestyle locations' },
+  { id: 'day_to_night', name: 'Day-to-Night Video', price: 750, note: 'Day-to-twilight cinematic' },
+  { id: 'cinematic_signature', name: 'Cinematic Video (Signature)', price: 900, note: 'Premium cinematic production' },
+  { id: 'video_3d_render', name: '3D Video Render', price: 250, note: '3D walkthrough showcase' },
+] as const
+
+// Virtual Staging Options
+export const VIRTUAL_STAGING = [
+  { id: 'staging_core_per_photo', name: 'Core Virtual Staging (per photo)', price: 12, note: 'Digital furniture & decor' },
+  { id: 'staging_premium_per_photo', name: 'Premium Virtual Staging (per photo)', price: 25, note: 'Premium furniture set' },
+  { id: 'staging_core_bundle', name: 'Core Virtual Staging (Full Home)', price: 125, note: 'All vacant areas staged' },
+] as const
+
+// Combined list of all à la carte services for booking/quoting
+export const ALL_ALA_CARTE_SERVICES = [
+  ...PHOTOGRAPHY_ADDONS,
+  ...VIDEO_SERVICES,
+  ...VIRTUAL_STAGING,
+] as const
+
 // Content Retainer Packages
 export interface VideoBreakdown {
   type: string
@@ -333,4 +371,5 @@ export function getLowestPrice(pkg: ListingPackage): number {
 export const BOOKING_URLS = {
   listingMedia: 'https://portal.aerialshots.media/order-forms/0194d29e-75cb-737e-a3ad-78d798ce0161',
   contentRetainer: 'https://portal.aerialshots.media/order-forms/0194aa3b-e54d-7219-a396-60fec026e7bb',
+  payAtClosing: 'https://www.gotitus.com/estimate/aerial-shots-media',
 } as const

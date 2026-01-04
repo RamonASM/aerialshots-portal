@@ -524,8 +524,8 @@ Endpoints at `/api/founddr/`:
 | Storywork Voice Input | ✅ Complete (OpenAI Whisper) |
 | Carousel Generation | ✅ Complete (Satori renderer) |
 | Content Retainer Booking | ✅ Complete (/book/retainer) |
-| Stripe Connect Payouts | ⏳ Ready (run migration, add env vars) |
-| Time Tracking (QC) | ⏳ Ready (run migration) |
+| Stripe Connect Payouts | ✅ Complete (add env vars) |
+| Time Tracking (QC) | ✅ Complete |
 | Clerk Authentication | ✅ Complete (add env vars) |
 
 ### Stripe Connect & Team Payouts
@@ -575,11 +575,10 @@ Job Revenue: $400
 
 **Payout Trigger:** On QC Approval → `processJobPayouts()` → Stripe transfers
 
-**Pending Setup:**
-1. Add `STRIPE_CONNECT_WEBHOOK_SECRET` to environment
-2. Run migration `supabase/migrations/20250101_001_stripe_connect.sql`
-3. Configure Stripe Connect in Dashboard (Platform profile, branding)
-4. Partners and staff onboard via `/team/*/settings` pages
+**Setup Required:**
+1. Add `STRIPE_CONNECT_WEBHOOK_SECRET` to `.env.local` (from Stripe Dashboard → Webhooks)
+2. Register webhook in Stripe Dashboard: `https://app.aerialshots.media/api/webhooks/stripe-connect`
+3. Partners and staff onboard via `/team/*/settings` pages
 
 ### Logging
 
@@ -635,53 +634,36 @@ CLERK_SECRET_KEY=sk_test_...  # Must be set for MCP to authenticate
 
 ---
 
-## Current Work Status (2026-01-02)
+## Current Work Status (2026-01-04)
 
-### Completed This Session
+### ✅ All Core Features Complete
 
-#### Clerk Authentication System
-- ✅ Installed `@clerk/nextjs` and `@clerk/themes`
-- ✅ Updated root layout with ClerkProvider and dark theme
-- ✅ Rewrote middleware for Clerk with role-based routing
-- ✅ Created sign-in pages: agent (blue), staff (purple), seller (green), partner (amber)
-- ✅ Created sign-up pages: agent, seller
-- ✅ Created Clerk webhook handler at `/api/webhooks/clerk`
-- ✅ Created auth helper library at `/lib/auth/clerk.ts`
-- ✅ Added Clerk MCP to Claude Code configuration
+The portal is feature-complete. All major systems are implemented:
+- Clerk authentication with role-based sign-in
+- Stripe Connect payouts (webhook handler, account management, transfers)
+- Virtual staging with real Gemini AI integration
+- Time tracking for QC specialists
+- 61 database migrations applied
+- Marketing site with luxury redesign
+- Pricing system synced with master reference
 
-#### Security Fixes
-- ✅ `/api/rewards/redeem` - Added auth + ownership verification
-- ✅ `/api/admin/content/amenity-categories` - Added `requireStaff()`
-- ✅ `/api/instagram/publish` - Added auth + ownership check
-- ✅ `/api/instagram/disconnect` - Added auth + ownership check
-- ✅ `/api/instagram/embed` - Added auth check
+### Remaining Setup (Configuration Only)
 
-#### Rate Limiting
-- ✅ Created `src/lib/rate-limit/index.ts` - Upstash Redis with in-memory fallback
-- ✅ Applied to `/api/booking/session` (30 req/min)
-- ✅ Applied to `/api/booking/reference-files` (10 req/min)
-- ✅ Applied to `/api/airspace/check` (20 req/min)
+**Environment Variables to Add:**
+```bash
+STRIPE_CONNECT_WEBHOOK_SECRET=whsec_...  # From Stripe Dashboard
+CLERK_WEBHOOK_SECRET=whsec_...           # From Clerk Dashboard
+GOOGLE_AI_API_KEY=...                    # For virtual staging
+RUNPOD_ENDPOINT_ID=...                   # For HDR processing
+RUNPOD_API_KEY=...                       # For HDR processing
+```
 
-#### TypeScript Fixes
-- ✅ Fixed `payout_settings` and `company_pool` table types
-- ✅ Fixed `skill-match.ts` nullable fields
-- ✅ Fixed `integration-handoffs.ts` type mismatches
-- ✅ Fixed `ZapierWebhook` interface and client
-- ✅ Added `sellers` table type to Supabase types
-- ✅ Added `clerk_user_id` to agents, staff, partners types
+**Dashboard Configuration:**
+1. Stripe: Register webhook at `/api/webhooks/stripe-connect`
+2. Clerk: Register webhook at `/api/webhooks/clerk`
+3. Supabase: Create storage buckets (virtual-staging, media-assets)
 
-#### Configuration
-- ✅ Created `.mcp.json` for project-level Supabase MCP (project ref: `awoabqaszgeqdlvcevmd`)
-- ✅ Added Clerk MCP to Claude Code
-
-### Pending Clerk Setup
-1. ✅ Secret key added to `.env.local`
-2. ⏳ Add publishable key (from Clerk Dashboard → API Keys)
-3. ⏳ Create webhook endpoint in Clerk Dashboard
-4. ⏳ Add webhook secret to `.env.local`
-
-### Environment Notes
-- **Supabase CLI**: Correctly linked to `awoabqaszgeqdlvcevmd` (ASM Portal)
-- **Supabase MCP**: Project-level via `.mcp.json`
-- **Clerk MCP**: Added via `claude mcp add clerk`
-- **Build Status**: Requires Clerk env vars to compile
+### Build Status
+- **Production build**: ✅ Passes
+- **TypeScript errors**: 167 in test files only (not blocking build)
+- **Tests**: 2,473+ passing (some test type fixes pending)

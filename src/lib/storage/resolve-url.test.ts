@@ -12,12 +12,38 @@ import {
   getMediaStats,
   isNativeUrl,
 } from './resolve-url'
-import type { Database } from '@/lib/supabase/types'
-
-type MediaAsset = Database['public']['Tables']['media_assets']['Row']
+// Test-specific type that includes all fields used in resolve-url.ts
+// This avoids dependency on generated Supabase types which may be out of sync
+type TestMediaAsset = {
+  id: string
+  listing_id: string
+  aryeo_url: string | null
+  media_url: string | null
+  storage_bucket: string | null
+  type: string
+  category: string | null
+  sort_order: number | null
+  tip_text: string | null
+  storage_path: string | null
+  qc_status: string | null
+  qc_notes: string | null
+  created_at: string | null
+  processing_job_id: string | null
+  processed_storage_path: string | null
+  approved_storage_path: string | null
+  edit_history: unknown[]
+  qc_assigned_to: string | null
+  needs_editing: boolean
+  original_filename: string | null
+  file_size_bytes: number | null
+  image_width: number | null
+  image_height: number | null
+  migration_status: string
+  migrated_at: string | null
+}
 
 // Factory for creating test media assets
-function createAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
+function createAsset(overrides: Partial<TestMediaAsset> = {}): TestMediaAsset {
   return {
     id: 'test-id',
     listing_id: 'listing-123',

@@ -176,9 +176,9 @@ describe('POST /api/v1/render/carousel', () => {
     })
 
     it('should allow unauthenticated in development without secret configured', async () => {
-      process.env.NODE_ENV = 'development'
-      delete process.env.RENDER_API_SECRET
-      delete process.env.AGENT_SHARED_SECRET
+      vi.stubEnv('NODE_ENV', 'development')
+      vi.stubEnv('RENDER_API_SECRET', '')
+      vi.stubEnv('AGENT_SHARED_SECRET', '')
 
       vi.mocked(renderCarouselSkill.execute).mockResolvedValueOnce({
         success: true,
@@ -742,7 +742,7 @@ describe('POST /api/v1/render/carousel', () => {
     })
 
     it('should sanitize error messages in production', async () => {
-      process.env.NODE_ENV = 'production'
+      vi.stubEnv('NODE_ENV', 'production')
 
       vi.mocked(renderCarouselSkill.execute).mockRejectedValueOnce(
         new Error('Internal database connection failed at /etc/secrets')
@@ -762,7 +762,7 @@ describe('POST /api/v1/render/carousel', () => {
     })
 
     it('should allow safe error messages through', async () => {
-      process.env.NODE_ENV = 'production'
+      vi.stubEnv('NODE_ENV', 'production')
 
       vi.mocked(renderCarouselSkill.execute).mockRejectedValueOnce(
         new Error('Template not found: xyz')
@@ -779,7 +779,7 @@ describe('POST /api/v1/render/carousel', () => {
     })
 
     it('should show detailed errors in development', async () => {
-      process.env.NODE_ENV = 'development'
+      vi.stubEnv('NODE_ENV', 'development')
 
       vi.mocked(renderCarouselSkill.execute).mockRejectedValueOnce(
         new Error('Detailed internal error message')

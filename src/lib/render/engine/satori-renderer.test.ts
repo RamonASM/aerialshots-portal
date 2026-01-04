@@ -31,11 +31,8 @@ vi.mock('./fonts', () => ({
 }))
 
 describe('isValidImageUrl', () => {
-  const originalEnv = process.env.NODE_ENV
-
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv
-    delete process.env.DEV_ALLOW_IMAGE_DOMAINS
+    vi.unstubAllEnvs()
   })
 
   describe('protocol validation', () => {
@@ -46,12 +43,12 @@ describe('isValidImageUrl', () => {
     })
 
     it('should reject HTTP URLs in production', () => {
-      process.env.NODE_ENV = 'production'
+      vi.stubEnv('NODE_ENV', 'production')
       expect(isValidImageUrl('http://cdn.aerialshots.media/image.jpg')).toBe(false)
     })
 
     it('should allow HTTP URLs in development for allowed domains', () => {
-      process.env.NODE_ENV = 'development'
+      vi.stubEnv('NODE_ENV', 'development')
       expect(isValidImageUrl('http://cdn.aerialshots.media/image.jpg')).toBe(true)
     })
 
@@ -158,23 +155,23 @@ describe('isValidImageUrl', () => {
 
   describe('DEV_ALLOW_IMAGE_DOMAINS', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'development'
+      vi.stubEnv('NODE_ENV', 'development')
     })
 
     it('should allow domains specified in DEV_ALLOW_IMAGE_DOMAINS', () => {
-      process.env.DEV_ALLOW_IMAGE_DOMAINS = 'example.com,mycdn.net'
+      vi.stubEnv('DEV_ALLOW_IMAGE_DOMAINS', 'example.com,mycdn.net')
       expect(isValidImageUrl('https://example.com/image.jpg')).toBe(true)
       expect(isValidImageUrl('https://mycdn.net/photo.png')).toBe(true)
       expect(isValidImageUrl('https://sub.example.com/image.jpg')).toBe(true)
     })
 
     it('should trim whitespace from domain list', () => {
-      process.env.DEV_ALLOW_IMAGE_DOMAINS = ' example.com , mycdn.net '
+      vi.stubEnv('DEV_ALLOW_IMAGE_DOMAINS', ' example.com , mycdn.net ')
       expect(isValidImageUrl('https://example.com/image.jpg')).toBe(true)
     })
 
     it('should still reject blocked IPs even with custom domains', () => {
-      process.env.DEV_ALLOW_IMAGE_DOMAINS = 'localhost,127.0.0.1'
+      vi.stubEnv('DEV_ALLOW_IMAGE_DOMAINS', 'localhost,127.0.0.1')
       expect(isValidImageUrl('https://localhost/image.jpg')).toBe(false)
       expect(isValidImageUrl('https://127.0.0.1/image.jpg')).toBe(false)
     })
