@@ -52,11 +52,17 @@ export default async function TeamOverviewPage() {
     redirect('/sign-in')
   }
 
-  // Get team stats
-  const { count: staffCount } = await supabase
-    .from('staff')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_active', true)
+  // Get team stats (wrapped in try-catch to prevent page crashes)
+  let staffCount = 0
+  try {
+    const { count } = await supabase
+      .from('staff')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+    staffCount = count || 0
+  } catch (error) {
+    console.error('Error fetching staff count:', error)
+  }
 
   const quickLinks = [
     {

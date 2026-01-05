@@ -68,31 +68,43 @@ export default async function AdminLayout({
     }
   }
 
-  // Fetch badge counts for navigation
-  const [pendingJobs, readyForQc, careTasks, activeClients] = await Promise.all([
-    adminSupabase
-      .from('listings')
-      .select('id', { count: 'exact', head: true })
-      .in('ops_status', ['pending', 'scheduled']),
-    adminSupabase
-      .from('listings')
-      .select('id', { count: 'exact', head: true })
-      .eq('ops_status', 'ready_for_qc'),
-    adminSupabase
-      .from('care_tasks')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending'),
-    adminSupabase
-      .from('agents')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true),
-  ])
+  // Fetch badge counts for navigation (wrapped in try-catch to prevent page crashes)
+  let badgeCounts = {
+    pending_jobs: 0,
+    ready_for_qc: 0,
+    care_tasks: 0,
+    active_clients: 0,
+  }
 
-  const badgeCounts = {
-    pending_jobs: pendingJobs.count || 0,
-    ready_for_qc: readyForQc.count || 0,
-    care_tasks: careTasks.count || 0,
-    active_clients: activeClients.count || 0,
+  try {
+    const [pendingJobs, readyForQc, careTasks, activeClients] = await Promise.all([
+      adminSupabase
+        .from('listings')
+        .select('id', { count: 'exact', head: true })
+        .in('ops_status', ['pending', 'scheduled']),
+      adminSupabase
+        .from('listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('ops_status', 'ready_for_qc'),
+      adminSupabase
+        .from('care_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
+      adminSupabase
+        .from('agents')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true),
+    ])
+
+    badgeCounts = {
+      pending_jobs: pendingJobs.count || 0,
+      ready_for_qc: readyForQc.count || 0,
+      care_tasks: careTasks.count || 0,
+      active_clients: activeClients.count || 0,
+    }
+  } catch (error) {
+    console.error('Error fetching badge counts in admin layout:', error)
+    // Continue with default zero counts - don't crash the page
   }
 
   return (
