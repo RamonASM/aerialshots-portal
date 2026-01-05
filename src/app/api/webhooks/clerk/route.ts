@@ -199,11 +199,15 @@ async function syncUserToDatabase(
 
   // Check staff
   if (!role) {
-    const { data: staffMember } = await supabase
+    const { data: staffMember, error: staffError } = await supabase
       .from('staff')
       .select('id, role, clerk_user_id')
       .eq('email', emailLower)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Clerk Webhook] Staff query error:', staffError)
+    }
 
     if (staffMember) {
       if (!staffMember.clerk_user_id) {
@@ -220,11 +224,15 @@ async function syncUserToDatabase(
 
   // Check agents
   if (!role) {
-    const { data: agent } = await supabase
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('id, clerk_user_id')
       .eq('email', emailLower)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('[Clerk Webhook] Agent query error:', agentError)
+    }
 
     if (agent) {
       if (!agent.clerk_user_id) {
@@ -241,11 +249,15 @@ async function syncUserToDatabase(
 
   // Check sellers
   if (!role) {
-    const { data: seller } = await supabase
+    const { data: seller, error: sellerError } = await supabase
       .from('sellers')
       .select('id, clerk_user_id')
       .eq('email', emailLower)
-      .single()
+      .maybeSingle()
+
+    if (sellerError) {
+      console.error('[Clerk Webhook] Seller query error:', sellerError)
+    }
 
     if (seller) {
       if (!seller.clerk_user_id) {
@@ -319,7 +331,7 @@ async function handleUserDeleted(clerkUserId: string) {
       .from(table)
       .select('id')
       .eq('clerk_user_id', clerkUserId)
-      .single()
+      .maybeSingle()
 
     if (data) {
       // Mark as inactive and clear Clerk ID
