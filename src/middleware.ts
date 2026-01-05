@@ -143,12 +143,21 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     if (pathname.startsWith('/team/qc') && userRole !== 'qc' && userRole !== 'admin') {
       return NextResponse.redirect(new URL('/team', request.url))
     }
+
+    // Admin route access check
     if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      // Allow partner access to specific admin pages
-      if (userRole === 'partner' && pathname.startsWith('/admin/team')) {
+      // Check if user is a partner (by role OR by allowed email domain)
+      const isPartnerByRole = userRole === 'partner'
+      const isPartnerByEmail = userEmail?.toLowerCase().endsWith('@aerialshots.media')
+      const isPartner = isPartnerByRole || isPartnerByEmail
+
+      // Allow partner access to /admin/team
+      if (isPartner && pathname.startsWith('/admin/team')) {
         return NextResponse.next()
       }
-      if (userRole !== 'partner') {
+
+      // Non-partners/non-admins go to /team
+      if (!isPartner) {
         return NextResponse.redirect(new URL('/team', request.url))
       }
     }
