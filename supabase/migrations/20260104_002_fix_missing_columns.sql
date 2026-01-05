@@ -71,6 +71,18 @@ BEGIN
     END IF;
 END $$;
 
--- 7. Add comments
+-- 7. Add certifications column to staff table
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'staff' AND column_name = 'certifications'
+    ) THEN
+        ALTER TABLE staff ADD COLUMN certifications JSONB DEFAULT '[]'::jsonb;
+    END IF;
+END $$;
+
+-- 8. Add comments
 COMMENT ON COLUMN media_assets.media_url IS 'Native ASM storage URL (Supabase Storage)';
 COMMENT ON COLUMN staff.team_role IS 'Team role for portal access';
+COMMENT ON COLUMN staff.certifications IS 'Array of certifications (FAA Part 107, etc.)';
