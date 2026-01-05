@@ -78,11 +78,23 @@ BEGIN
         SELECT 1 FROM information_schema.columns
         WHERE table_name = 'staff' AND column_name = 'certifications'
     ) THEN
-        ALTER TABLE staff ADD COLUMN certifications JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE staff ADD COLUMN certifications TEXT[] DEFAULT '{}';
     END IF;
 END $$;
 
--- 8. Add comments
+-- 8. Add skills column to staff table
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'staff' AND column_name = 'skills'
+    ) THEN
+        ALTER TABLE staff ADD COLUMN skills TEXT[] DEFAULT '{}';
+    END IF;
+END $$;
+
+-- 9. Add comments
 COMMENT ON COLUMN media_assets.media_url IS 'Native ASM storage URL (Supabase Storage)';
 COMMENT ON COLUMN staff.team_role IS 'Team role for portal access';
 COMMENT ON COLUMN staff.certifications IS 'Array of certifications (FAA Part 107, etc.)';
+COMMENT ON COLUMN staff.skills IS 'Array of skills (drone, video, HDR, etc.)';
