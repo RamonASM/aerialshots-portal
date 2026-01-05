@@ -9,6 +9,7 @@ import {
   MapPin,
   TrendingUp,
   ArrowRight,
+  Server,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -130,6 +131,13 @@ export default async function TeamOverviewPage() {
   }
 
   const quickLinks = [
+    {
+      title: 'StashDR Processing',
+      description: 'HDR photo processing pipeline and queue',
+      href: '/admin/team/processing',
+      icon: Server,
+      color: 'bg-gradient-to-br from-violet-500 to-purple-600',
+    },
     {
       title: 'Team Payouts',
       description: 'Configure payout splits and view earnings',
