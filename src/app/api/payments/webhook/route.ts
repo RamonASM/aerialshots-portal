@@ -13,7 +13,7 @@ const logger = apiLogger.child({ route: 'payments/webhook' })
  * Uses aryeo_event_id column with 'stripe:' prefix for Stripe events
  */
 async function isEventProcessed(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   eventId: string
 ): Promise<boolean> {
   const { data } = await supabase
@@ -31,7 +31,7 @@ async function isEventProcessed(
  * Uses 'stripe:' prefix to distinguish from Aryeo events
  */
 async function recordWebhookEvent(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createAdminClient>,
   event: Stripe.Event,
   status: 'processing' | 'success' | 'failed',
   error?: string

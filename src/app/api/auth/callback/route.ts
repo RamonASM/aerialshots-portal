@@ -128,10 +128,12 @@ export async function GET(request: NextRequest) {
 
     logger.info({ email: user?.email }, 'User authenticated')
 
-    try {
-      await syncAuthUserRecords(user)
-    } catch (syncError) {
-      logger.error({ ...formatError(syncError) }, 'Failed to sync auth user records')
+    if (user) {
+      try {
+        await syncAuthUserRecords(user)
+      } catch (syncError) {
+        logger.error({ ...formatError(syncError) }, 'Failed to sync auth user records')
+      }
     }
 
     if (user?.email) {

@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 // Get orders for an agent
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const requestedAgentId = searchParams.get('agentId')
 

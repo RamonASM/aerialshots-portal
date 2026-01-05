@@ -18,7 +18,7 @@ export async function syncAuthUserRecords(user: User) {
       .maybeSingle(),
     adminSupabase
       .from('partners')
-      .select('id, user_id, is_active')
+      .select('id, clerk_user_id, is_active')
       .eq('email', email)
       .maybeSingle(),
     adminSupabase
@@ -59,10 +59,10 @@ export async function syncAuthUserRecords(user: User) {
       .eq('id', staff.id)
   }
 
-  if (partner && partner.user_id !== user.id) {
+  if (partner && partner.clerk_user_id !== user.id) {
     await adminSupabase
       .from('partners')
-      .update({ user_id: user.id })
+      .update({ clerk_user_id: user.id })
       .eq('id', partner.id)
   }
 
