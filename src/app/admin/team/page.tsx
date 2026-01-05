@@ -12,6 +12,12 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
+// Allowed partner emails - same list as in Clerk webhook and admin layout
+const ALLOWED_PARTNER_EMAILS = [
+  'ramon@aerialshots.media',
+  'alex@aerialshots.media',
+]
+
 export default async function TeamOverviewPage() {
   let user
   try {
@@ -43,13 +49,57 @@ export default async function TeamOverviewPage() {
     .maybeSingle()
 
   if (partnerError) {
-    console.error('Partner query error:', partnerError)
-    redirect('/sign-in/partner?error=query_error')
+    console.error('Partner query error in team page:', {
+      error: partnerError,
+      code: partnerError?.code,
+      message: partnerError?.message,
+      details: partnerError?.details,
+      hint: partnerError?.hint,
+      userEmail,
+    })
+    // Don't redirect on query error - let the page try to render with fallback
   }
 
+  // Handle case where partner record doesn't exist
+  let partnerData = partner
   if (!partner) {
-    // Not a partner, redirect to appropriate portal
-    redirect('/sign-in')
+    // Check if this email is an allowed partner email
+    const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(userEmail)
+
+    if (isAllowedPartner) {
+      // Partner record doesn't exist but email is allowed - create it
+      // (This should have been done by admin layout, but just in case)
+      console.log(`[Team Page] Creating partner record for allowed email: ${userEmail}`)
+      const userName = user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.firstName || userEmail.split('@')[0]
+
+      const { data: newPartner, error: createError } = await supabase
+        .from('partners')
+        .insert({
+          name: userName,
+          email: userEmail,
+          clerk_user_id: user.id,
+          is_active: true,
+        })
+        .select('*')
+        .single()
+
+      if (createError) {
+        console.error('[Team Page] Failed to create partner:', createError)
+        // Redirect to dashboard if we can't create the partner record
+        redirect('/dashboard?error=partner_creation_failed')
+      }
+
+      if (newPartner) {
+        console.log(`[Team Page] Created partner record: ${newPartner.id}`)
+        partnerData = newPartner
+      }
+    } else {
+      // Not an allowed partner email - redirect to sign-in
+      console.log(`[Team Page] User ${userEmail} is not a partner, redirecting to sign-in`)
+      redirect('/sign-in')
+    }
   }
 
   // Get team stats (wrapped in try-catch to prevent page crashes)
@@ -100,7 +150,7 @@ export default async function TeamOverviewPage() {
       {/* Welcome Header */}
       <div>
         <h1 className="text-[28px] font-semibold tracking-tight text-white">
-          Welcome, {partner.name?.split(' ')[0] || 'Partner'}
+          Welcome, {partnerData?.name?.split(' ')[0] || 'Partner'}
         </h1>
         <p className="mt-1 text-[15px] text-[#a1a1a6]">
           Manage your team, payouts, and operations.

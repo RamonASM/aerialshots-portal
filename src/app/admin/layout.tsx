@@ -3,6 +3,12 @@ import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminShell } from '@/components/admin/layout/AdminShell'
 
+// Allowed partner emails - same list as in Clerk webhook
+const ALLOWED_PARTNER_EMAILS = [
+  'ramon@aerialshots.media',
+  'alex@aerialshots.media',
+]
+
 export default async function AdminLayout({
   children,
 }: {
@@ -53,18 +59,65 @@ export default async function AdminLayout({
       .maybeSingle()
 
     if (partnerError) {
-      console.error('Partner query error in admin layout:', partnerError)
+      console.error('Partner query error in admin layout:', {
+        error: partnerError,
+        code: partnerError?.code,
+        message: partnerError?.message,
+        details: partnerError?.details,
+        hint: partnerError?.hint,
+        userEmail,
+      })
     }
 
     if (!partner) {
-      redirect('/dashboard')
-    }
+      // Check if this email is an allowed partner email
+      const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(userEmail)
 
-    adminUser = {
-      id: partner.id,
-      name: partner.name,
-      email: partner.email,
-      role: 'partner',
+      if (isAllowedPartner) {
+        // Partner record doesn't exist but email is allowed - create it
+        console.log(`[Admin Layout] Creating partner record for allowed email: ${userEmail}`)
+        const userName = user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || userEmail.split('@')[0]
+
+        const { data: newPartner, error: createError } = await adminSupabase
+          .from('partners')
+          .insert({
+            name: userName,
+            email: userEmail,
+            clerk_user_id: user.id,
+            is_active: true,
+          })
+          .select('id, name, email')
+          .single()
+
+        if (createError) {
+          console.error('[Admin Layout] Failed to create partner:', createError)
+          // Still redirect to dashboard if we can't create the record
+          redirect('/dashboard?error=partner_creation_failed')
+        }
+
+        if (newPartner) {
+          console.log(`[Admin Layout] Created partner record: ${newPartner.id}`)
+          adminUser = {
+            id: newPartner.id,
+            name: newPartner.name,
+            email: newPartner.email,
+            role: 'partner',
+          }
+        }
+      } else {
+        // Not an allowed partner email - redirect to dashboard
+        console.log(`[Admin Layout] User ${userEmail} is not a partner, redirecting to dashboard`)
+        redirect('/dashboard')
+      }
+    } else {
+      adminUser = {
+        id: partner.id,
+        name: partner.name,
+        email: partner.email,
+        role: 'partner',
+      }
     }
   }
 
@@ -105,6 +158,12 @@ export default async function AdminLayout({
   } catch (error) {
     console.error('Error fetching badge counts in admin layout:', error)
     // Continue with default zero counts - don't crash the page
+  }
+
+  // Final safety check - should never reach here without adminUser
+  if (!adminUser) {
+    console.error('[Admin Layout] No admin user found after all checks, redirecting to dashboard')
+    redirect('/dashboard?error=no_admin_user')
   }
 
   return (

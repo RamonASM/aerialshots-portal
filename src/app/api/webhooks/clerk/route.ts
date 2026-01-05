@@ -149,22 +149,51 @@ async function syncUserToDatabase(
   const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(emailLower)
 
   if (isAllowedPartner) {
-    const { data: partner } = await supabase
+    const { data: partner, error: partnerError } = await supabase
       .from('partners')
       .select('id, clerk_user_id')
       .eq('email', emailLower)
-      .single()
+      .maybeSingle()
+
+    if (partnerError) {
+      console.error('[Clerk Webhook] Error querying partner:', partnerError)
+    }
 
     if (partner) {
+      // Partner record exists - link Clerk user ID if not already linked
       if (!partner.clerk_user_id) {
         await supabase
           .from('partners')
           .update({ clerk_user_id: clerkUserId })
           .eq('id', partner.id)
+        console.log(`[Clerk Webhook] Linked Clerk user ${clerkUserId} to existing partner ${partner.id}`)
       }
       role = 'partner'
       userId = partner.id
       userTable = 'partners'
+    } else {
+      // Partner record doesn't exist but email is allowed - CREATE IT
+      // This handles the case where migrations haven't seeded the partner yet
+      console.log(`[Clerk Webhook] Creating partner record for allowed email: ${emailLower}`)
+      const { data: newPartner, error: createError } = await supabase
+        .from('partners')
+        .insert({
+          name: name,
+          email: emailLower,
+          clerk_user_id: clerkUserId,
+          is_active: true,
+        })
+        .select('id')
+        .single()
+
+      if (createError) {
+        console.error('[Clerk Webhook] Failed to create partner:', createError)
+      } else if (newPartner) {
+        console.log(`[Clerk Webhook] Created partner record ${newPartner.id} for ${emailLower}`)
+        role = 'partner'
+        userId = newPartner.id
+        userTable = 'partners'
+      }
     }
   }
 
