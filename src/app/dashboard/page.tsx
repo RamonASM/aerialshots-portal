@@ -21,21 +21,39 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default async function DashboardPage() {
-  const user = await currentUser()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk currentUser() error:', error)
+    redirect('/sign-in?error=clerk_error')
+  }
 
   if (!user?.emailAddresses?.[0]?.emailAddress) {
     redirect('/sign-in')
   }
 
   const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
-  const supabase = createAdminClient()
+
+  let supabase
+  try {
+    supabase = createAdminClient()
+  } catch (error) {
+    console.error('Supabase client error:', error)
+    redirect('/sign-in?error=db_error')
+  }
 
   // Get agent with stats
-  const { data: agent } = await supabase
+  const { data: agent, error: agentError } = await supabase
     .from('agents')
     .select('*')
     .eq('email', userEmail)
-    .single()
+    .maybeSingle()
+
+  if (agentError) {
+    console.error('Agent query error:', agentError)
+    redirect('/sign-in?error=query_error')
+  }
 
   if (!agent) {
     // Create agent record if it doesn't exist

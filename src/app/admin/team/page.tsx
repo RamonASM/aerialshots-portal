@@ -13,21 +13,39 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default async function TeamOverviewPage() {
-  const user = await currentUser()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk currentUser() error:', error)
+    redirect('/sign-in/partner?error=clerk_error')
+  }
 
   if (!user?.emailAddresses?.[0]?.emailAddress) {
     redirect('/sign-in/partner')
   }
 
   const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
-  const supabase = createAdminClient()
+
+  let supabase
+  try {
+    supabase = createAdminClient()
+  } catch (error) {
+    console.error('Supabase client error:', error)
+    redirect('/sign-in/partner?error=db_error')
+  }
 
   // Check if user is a partner
-  const { data: partner } = await supabase
+  const { data: partner, error: partnerError } = await supabase
     .from('partners')
     .select('*')
     .eq('email', userEmail)
-    .single()
+    .maybeSingle()
+
+  if (partnerError) {
+    console.error('Partner query error:', partnerError)
+    redirect('/sign-in/partner?error=query_error')
+  }
 
   if (!partner) {
     // Not a partner, redirect to appropriate portal
