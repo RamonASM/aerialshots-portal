@@ -41,12 +41,20 @@ export default async function TeamOverviewPage() {
     redirect('/sign-in/partner?error=db_error')
   }
 
-  // Check if user is a partner
-  const { data: partner, error: partnerError } = await supabase
-    .from('partners')
-    .select('*')
-    .eq('email', userEmail)
-    .maybeSingle()
+  // Check if user is a partner - wrap in try-catch for robustness
+  let partner = null
+  let partnerError = null
+  try {
+    const result = await supabase
+      .from('partners')
+      .select('*')
+      .eq('email', userEmail)
+      .maybeSingle()
+    partner = result.data
+    partnerError = result.error
+  } catch (error) {
+    console.error('Partner query exception in team page:', error)
+  }
 
   if (partnerError) {
     console.error('Partner query error in team page:', {
@@ -57,8 +65,12 @@ export default async function TeamOverviewPage() {
       hint: partnerError?.hint,
       userEmail,
     })
-    // Don't redirect on query error - let the page try to render with fallback
   }
+
+  // Generate fallback name for use in fallbacks
+  const userName = user.firstName && user.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : user.firstName || userEmail.split('@')[0]
 
   // Handle case where partner record doesn't exist
   let partnerData = partner
@@ -68,32 +80,34 @@ export default async function TeamOverviewPage() {
 
     if (isAllowedPartner) {
       // Partner record doesn't exist but email is allowed - create it
-      // (This should have been done by admin layout, but just in case)
       console.log(`[Team Page] Creating partner record for allowed email: ${userEmail}`)
-      const userName = user.firstName && user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : user.firstName || userEmail.split('@')[0]
 
-      const { data: newPartner, error: createError } = await supabase
-        .from('partners')
-        .insert({
-          name: userName,
-          email: userEmail,
-          clerk_user_id: user.id,
-          is_active: true,
-        })
-        .select('*')
-        .single()
+      try {
+        const { data: newPartner, error: createError } = await supabase
+          .from('partners')
+          .insert({
+            name: userName,
+            email: userEmail,
+            clerk_user_id: user.id,
+            is_active: true,
+          })
+          .select('*')
+          .single()
 
-      if (createError) {
-        console.error('[Team Page] Failed to create partner:', createError)
-        // Redirect to dashboard if we can't create the partner record
-        redirect('/dashboard?error=partner_creation_failed')
-      }
-
-      if (newPartner) {
-        console.log(`[Team Page] Created partner record: ${newPartner.id}`)
-        partnerData = newPartner
+        if (createError) {
+          console.error('[Team Page] Failed to create partner:', createError)
+          // Use fallback partner data so page can still render
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          partnerData = { name: userName, email: userEmail } as any
+        } else if (newPartner) {
+          console.log(`[Team Page] Created partner record: ${newPartner.id}`)
+          partnerData = newPartner
+        }
+      } catch (error) {
+        console.error('[Team Page] Partner insert exception:', error)
+        // Use fallback partner data so page can still render
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        partnerData = { name: userName, email: userEmail } as any
       }
     } else {
       // Not an allowed partner email - redirect to sign-in

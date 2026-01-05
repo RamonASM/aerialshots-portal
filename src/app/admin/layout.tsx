@@ -37,12 +37,20 @@ export default async function AdminLayout({
   }
 
   // Check if user is staff or partner
-  const { data: staff, error: staffError } = await adminSupabase
-    .from('staff')
-    .select('id, name, role, email')
-    .eq('email', userEmail)
-    .eq('is_active', true)
-    .maybeSingle()
+  let staff = null
+  let staffError = null
+  try {
+    const result = await adminSupabase
+      .from('staff')
+      .select('id, name, role, email')
+      .eq('email', userEmail)
+      .eq('is_active', true)
+      .maybeSingle()
+    staff = result.data
+    staffError = result.error
+  } catch (error) {
+    console.error('Staff query exception in admin layout:', error)
+  }
 
   if (staffError) {
     console.error('Staff query error in admin layout:', staffError)
@@ -51,12 +59,20 @@ export default async function AdminLayout({
   let adminUser = staff
 
   if (!adminUser) {
-    const { data: partner, error: partnerError } = await adminSupabase
-      .from('partners')
-      .select('id, name, email')
-      .eq('email', userEmail)
-      .eq('is_active', true)
-      .maybeSingle()
+    let partner = null
+    let partnerError = null
+    try {
+      const result = await adminSupabase
+        .from('partners')
+        .select('id, name, email')
+        .eq('email', userEmail)
+        .eq('is_active', true)
+        .maybeSingle()
+      partner = result.data
+      partnerError = result.error
+    } catch (error) {
+      console.error('Partner query exception in admin layout:', error)
+    }
 
     if (partnerError) {
       console.error('Partner query error in admin layout:', {
@@ -80,29 +96,43 @@ export default async function AdminLayout({
           ? `${user.firstName} ${user.lastName}`
           : user.firstName || userEmail.split('@')[0]
 
-        const { data: newPartner, error: createError } = await adminSupabase
-          .from('partners')
-          .insert({
+        try {
+          const { data: newPartner, error: createError } = await adminSupabase
+            .from('partners')
+            .insert({
+              name: userName,
+              email: userEmail,
+              clerk_user_id: user.id,
+              is_active: true,
+            })
+            .select('id, name, email')
+            .single()
+
+          if (createError) {
+            console.error('[Admin Layout] Failed to create partner:', createError)
+            // Use fallback partner data so page can still render
+            adminUser = {
+              id: user.id,
+              name: userName,
+              email: userEmail,
+              role: 'partner',
+            }
+          } else if (newPartner) {
+            console.log(`[Admin Layout] Created partner record: ${newPartner.id}`)
+            adminUser = {
+              id: newPartner.id,
+              name: newPartner.name,
+              email: newPartner.email,
+              role: 'partner',
+            }
+          }
+        } catch (error) {
+          console.error('[Admin Layout] Partner insert exception:', error)
+          // Use fallback partner data so page can still render
+          adminUser = {
+            id: user.id,
             name: userName,
             email: userEmail,
-            clerk_user_id: user.id,
-            is_active: true,
-          })
-          .select('id, name, email')
-          .single()
-
-        if (createError) {
-          console.error('[Admin Layout] Failed to create partner:', createError)
-          // Still redirect to dashboard if we can't create the record
-          redirect('/dashboard?error=partner_creation_failed')
-        }
-
-        if (newPartner) {
-          console.log(`[Admin Layout] Created partner record: ${newPartner.id}`)
-          adminUser = {
-            id: newPartner.id,
-            name: newPartner.name,
-            email: newPartner.email,
             role: 'partner',
           }
         }
@@ -121,44 +151,46 @@ export default async function AdminLayout({
     }
   }
 
-  // Fetch badge counts for navigation (wrapped in try-catch to prevent page crashes)
-  let badgeCounts = {
+  // Fetch badge counts for navigation (each query wrapped separately to handle missing tables)
+  const badgeCounts = {
     pending_jobs: 0,
     ready_for_qc: 0,
     care_tasks: 0,
     active_clients: 0,
   }
 
+  // Fetch each count separately to avoid one failure breaking all
   try {
-    const [pendingJobs, readyForQc, careTasks, activeClients] = await Promise.all([
-      adminSupabase
-        .from('listings')
-        .select('id', { count: 'exact', head: true })
-        .in('ops_status', ['pending', 'scheduled']),
-      adminSupabase
-        .from('listings')
-        .select('id', { count: 'exact', head: true })
-        .eq('ops_status', 'ready_for_qc'),
-      adminSupabase
-        .from('care_tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending'),
-      adminSupabase
-        .from('agents')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_active', true),
-    ])
+    const { count } = await adminSupabase
+      .from('listings')
+      .select('id', { count: 'exact', head: true })
+      .in('ops_status', ['pending', 'scheduled'])
+    badgeCounts.pending_jobs = count || 0
+  } catch (e) { /* ignore */ }
 
-    badgeCounts = {
-      pending_jobs: pendingJobs.count || 0,
-      ready_for_qc: readyForQc.count || 0,
-      care_tasks: careTasks.count || 0,
-      active_clients: activeClients.count || 0,
-    }
-  } catch (error) {
-    console.error('Error fetching badge counts in admin layout:', error)
-    // Continue with default zero counts - don't crash the page
-  }
+  try {
+    const { count } = await adminSupabase
+      .from('listings')
+      .select('id', { count: 'exact', head: true })
+      .eq('ops_status', 'ready_for_qc')
+    badgeCounts.ready_for_qc = count || 0
+  } catch (e) { /* ignore */ }
+
+  try {
+    const { count } = await adminSupabase
+      .from('care_tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    badgeCounts.care_tasks = count || 0
+  } catch (e) { /* ignore */ }
+
+  try {
+    const { count } = await adminSupabase
+      .from('agents')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+    badgeCounts.active_clients = count || 0
+  } catch (e) { /* ignore */ }
 
   // Final safety check - should never reach here without adminUser
   if (!adminUser) {
