@@ -46,12 +46,13 @@ export default async function DashboardPage() {
         email: userEmail,
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || userEmail.split('@')[0],
         slug: `${slug}-${Date.now().toString(36)}`,
-        auth_user_id: user.id,
+        clerk_user_id: user.id,
       })
       .select()
       .single()
 
     if (error || !newAgent) {
+      console.error('Agent creation failed:', error)
       redirect('/sign-in?error=agent_creation_failed')
     }
 

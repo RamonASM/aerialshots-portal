@@ -13,7 +13,7 @@ export async function syncAuthUserRecords(user: User) {
   const [staffResult, partnerResult, agentResult, clientResult] = await Promise.all([
     adminSupabase
       .from('staff')
-      .select('id, auth_user_id, is_active')
+      .select('id, clerk_user_id, is_active')
       .eq('email', email)
       .maybeSingle(),
     adminSupabase
@@ -23,7 +23,7 @@ export async function syncAuthUserRecords(user: User) {
       .maybeSingle(),
     adminSupabase
       .from('agents')
-      .select('id, auth_user_id')
+      .select('id, clerk_user_id')
       .eq('email', email)
       .maybeSingle(),
     adminSupabase
@@ -50,12 +50,12 @@ export async function syncAuthUserRecords(user: User) {
       name,
       role: 'photographer',
       is_active: true,
-      auth_user_id: user.id,
+      clerk_user_id: user.id,
     })
-  } else if (staff && staff.auth_user_id !== user.id) {
+  } else if (staff && staff.clerk_user_id !== user.id) {
     await adminSupabase
       .from('staff')
-      .update({ auth_user_id: user.id })
+      .update({ clerk_user_id: user.id })
       .eq('id', staff.id)
   }
 
@@ -73,12 +73,12 @@ export async function syncAuthUserRecords(user: User) {
         email,
         name: user.user_metadata?.full_name || email.split('@')[0],
         slug: `${slug}-${Date.now().toString(36)}`,
-        auth_user_id: user.id,
+        clerk_user_id: user.id,
       })
-    } else if (agent.auth_user_id !== user.id) {
+    } else if (agent.clerk_user_id !== user.id) {
       await adminSupabase
         .from('agents')
-        .update({ auth_user_id: user.id })
+        .update({ clerk_user_id: user.id })
         .eq('id', agent.id)
     }
   }
