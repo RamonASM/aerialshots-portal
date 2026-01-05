@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { webhookLogger, formatError } from '@/lib/logger'
 import crypto from 'crypto'
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     webhookLogger.info({ source: 'cubicasa', event, orderId: order_id }, 'Received Cubicasa webhook')
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Find the listing by Cubicasa order ID
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

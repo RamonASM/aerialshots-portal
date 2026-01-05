@@ -113,12 +113,6 @@ function StaffLoginForm() {
     try {
       setError(null)
 
-      // Validate email domain before sending
-      if (!data.email.toLowerCase().endsWith('@aerialshots.media')) {
-        setError('Access restricted to @aerialshots.media accounts only.')
-        return
-      }
-
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: {
@@ -126,7 +120,8 @@ function StaffLoginForm() {
         },
         body: JSON.stringify({ 
           email: data.email,
-          redirectTo: '/admin'
+          redirectTo: '/admin',
+          portal: 'admin',
         }),
       })
 
@@ -191,7 +186,7 @@ function StaffLoginForm() {
           <div className="text-center mb-6">
             <h1 className="text-[20px] font-semibold text-white">ASM Team Portal</h1>
             <p className="mt-2 text-[14px] text-[#636366]">
-              Access restricted to @aerialshots.media accounts
+              Access restricted to staff or partner accounts
             </p>
           </div>
 

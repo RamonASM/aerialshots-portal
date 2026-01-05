@@ -103,7 +103,8 @@ function DeveloperLoginForm() {
         },
         body: JSON.stringify({
           email: data.email,
-          redirectTo: '/developers/keys'
+          redirectTo: '/developers/keys',
+          portal: 'developer',
         }),
       })
 

@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Type assertion helper for render tables (until types are regenerated)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,7 +128,7 @@ export async function GET(
     }
 
     const { templateId } = await params
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Check query params for version
     const url = new URL(request.url)
@@ -241,7 +241,7 @@ export async function PUT(
     }
 
     const updates = parsed.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Check if template exists
     const { data: existing } = await asRenderClient(supabase)
@@ -328,7 +328,7 @@ export async function DELETE(
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Check if template exists and is not a system template
     const { data: existing } = await asRenderClient(supabase)

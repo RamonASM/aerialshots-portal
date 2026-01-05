@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { renderWithSatori } from '@/lib/render/engine'
 import type { TemplateDefinition, BrandKit } from '@/lib/render/types'
 import {
@@ -145,13 +145,14 @@ const RenderImageSchema = z.object({
 )
 
 type RenderImageRequest = z.infer<typeof RenderImageSchema>
+type RenderSupabaseClient = ReturnType<typeof createAdminClient>
 
 // =====================
 // HELPER FUNCTIONS
 // =====================
 
 async function getTemplate(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: RenderSupabaseClient,
   templateId?: string,
   templateSlug?: string
 ): Promise<TemplateDefinition | null> {
@@ -209,7 +210,7 @@ function mapDbToTemplate(data: unknown): TemplateDefinition {
 }
 
 async function resolveTemplateInheritance(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: RenderSupabaseClient,
   template: TemplateDefinition
 ): Promise<TemplateDefinition> {
   if (!template.extends) {
@@ -233,7 +234,7 @@ async function resolveTemplateInheritance(
 }
 
 async function createRenderJob(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: RenderSupabaseClient,
   request: RenderImageRequest,
   templateId: string
 ): Promise<string> {
@@ -262,7 +263,7 @@ async function createRenderJob(
 }
 
 async function updateJobStatus(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: RenderSupabaseClient,
   jobId: string,
   status: 'completed' | 'failed',
   result: { outputUrl?: string; error?: string; renderTimeMs?: number }
@@ -280,7 +281,7 @@ async function updateJobStatus(
 }
 
 async function uploadToStorage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: RenderSupabaseClient,
   buffer: Buffer,
   format: string,
   jobId: string
@@ -342,7 +343,7 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get template
     let template: TemplateDefinition | null = null

@@ -28,15 +28,14 @@ export async function requireStaff(): Promise<StaffUser> {
 
   // Check if email is staff domain
   const email = user.email || ''
-  if (!email.endsWith('@aerialshots.media')) {
-    throw new Error('Unauthorized: Not staff')
-  }
+  const isStaffDomain = email.endsWith('@aerialshots.media')
 
   // Get staff record by email
   const { data: staff, error: staffError } = await supabase
     .from('staff')
     .select('id, email, role, name')
     .eq('email', email)
+    .eq('is_active', true)
     .maybeSingle()
 
   if (staffError) {
@@ -44,24 +43,50 @@ export async function requireStaff(): Promise<StaffUser> {
     throw new Error('Unauthorized: Staff lookup failed')
   }
 
-  // If no staff record, create one (self-registration for @aerialshots.media emails)
-  if (!staff) {
-    const { data: newStaff, error: insertError } = await supabase
-      .from('staff')
-      .insert({
-        email,
-        role: 'staff',
-        name: email.split('@')[0],
-      })
-      .select('id, email, role, name')
-      .single()
-
-    if (insertError || !newStaff) {
-      throw new Error('Unauthorized: Failed to create staff record')
-    }
-
-    return newStaff as StaffUser
+  if (staff) {
+    return staff as StaffUser
   }
 
-  return staff as StaffUser
+  // Allow partners to access staff-protected endpoints
+  const { data: partner, error: partnerError } = await supabase
+    .from('partners')
+    .select('id, email, name')
+    .eq('email', email)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (partnerError) {
+    console.error('Partner lookup error:', partnerError)
+    throw new Error('Unauthorized: Partner lookup failed')
+  }
+
+  if (partner) {
+    return {
+      id: partner.id,
+      email: partner.email,
+      name: partner.name,
+      role: 'partner',
+    }
+  }
+
+  if (!isStaffDomain) {
+    throw new Error('Unauthorized: Not staff or partner')
+  }
+
+  // If no staff record, create one (self-registration for @aerialshots.media emails)
+  const { data: newStaff, error: insertError } = await supabase
+    .from('staff')
+    .insert({
+      email,
+      role: 'staff',
+      name: email.split('@')[0],
+    })
+    .select('id, email, role, name')
+    .single()
+
+  if (insertError || !newStaff) {
+    throw new Error('Unauthorized: Failed to create staff record')
+  }
+
+  return newStaff as StaffUser
 }

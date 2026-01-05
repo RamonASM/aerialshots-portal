@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { getStripe } from '@/lib/payments/stripe'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { apiLogger, formatError } from '@/lib/logger'
 
 const logger = apiLogger.child({ route: 'payments/webhook' })
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Idempotency check: Skip if already processed
   if (await isEventProcessed(supabase, event.id)) {

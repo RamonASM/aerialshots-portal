@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember) {
@@ -98,7 +98,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember || !['admin', 'owner'].includes(staffMember.role)) {
@@ -156,7 +156,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember || !['admin', 'owner'].includes(staffMember.role)) {

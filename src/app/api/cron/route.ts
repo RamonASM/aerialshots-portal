@@ -211,9 +211,9 @@ async function runLowBalanceCheck(): Promise<TaskResult> {
 
 export async function GET(request: NextRequest) {
   // Verify cron secret - MUST be configured
-  const cronSecret = process.env.CRON_SECRET
+  const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET
   if (!cronSecret) {
-    apiLogger.error('CRON_SECRET environment variable is not configured')
+    apiLogger.error('CRON_SECRET or VERCEL_CRON_SECRET environment variable is not configured')
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
   }
 

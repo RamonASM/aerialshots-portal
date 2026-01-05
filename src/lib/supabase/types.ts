@@ -3621,6 +3621,18 @@ export type Database = {
         }
         Relationships: []
       }
+      [key: string]: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
+        Relationships: {
+          foreignKeyName: string
+          columns: string[]
+          isOneToOne?: boolean
+          referencedRelation: string
+          referencedColumns: string[]
+        }[]
+      }
     }
     Views: {
       agent_activity_summary: {
@@ -3636,6 +3648,16 @@ export type Database = {
           total_revenue_cents: number | null
         }
         Relationships: []
+      }
+      [key: string]: {
+        Row: Record<string, any>
+        Relationships: {
+          foreignKeyName: string
+          columns: string[]
+          isOneToOne?: boolean
+          referencedRelation: string
+          referencedColumns: string[]
+        }[]
       }
     }
     Functions: {
@@ -3918,9 +3940,12 @@ export type {
   CarouselSlide,
   BookingSessionRow,
   SellerScheduleRow,
+  SellerAccessControlRow,
+  RescheduleRequestRow,
   ShareLinkRow,
   ShareLinkType,
   ShareLinkInsert,
+  ClientMessageRow,
   PayPeriodRow,
   TimeEntryRow,
   PayoutSettingsRow,

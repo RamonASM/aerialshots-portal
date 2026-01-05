@@ -8,6 +8,7 @@ import { z } from 'zod'
 const magicLinkSchema = z.object({
   email: z.string().email('Invalid email address'),
   redirectTo: z.string().optional(),
+  portal: z.enum(['admin', 'agent', 'developer']).optional(),
 })
 
 // Rate limit: 5 requests per IP per minute
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       throw badRequest(result.error.issues[0].message)
     }
 
-    const { email, redirectTo } = result.data
+    const { email, redirectTo, portal } = result.data
     const normalizedEmail = email.toLowerCase().trim()
 
     // Check email-based rate limit
@@ -69,9 +70,30 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Determine the base URL based on email domain
-    const isStaff = normalizedEmail.endsWith('@aerialshots.media')
-    const baseUrl = isStaff
+    const { data: staffRecord } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    const { data: partnerRecord } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    const isStaff = normalizedEmail.endsWith('@aerialshots.media') || !!staffRecord
+    const isPartner = !!partnerRecord
+    const wantsAdmin = portal === 'admin' || portal === 'developer'
+
+    if (wantsAdmin && !isStaff && !isPartner) {
+      throw badRequest('Access restricted to staff or partners.')
+    }
+
+    // Determine the base URL based on portal request and role
+    const baseUrl = wantsAdmin || isStaff || isPartner
       ? `https://${process.env.NEXT_PUBLIC_ADMIN_DOMAIN || 'asm.aerialshots.media'}`
       : `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'app.aerialshots.media'}`
 

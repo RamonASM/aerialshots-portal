@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/supabase/types'
 import { apiLogger, formatError } from '@/lib/logger'
+import { syncAuthUserRecords } from '@/lib/auth/sync'
 
 const logger = apiLogger.child({ route: 'auth/callback' })
 const STAFF_DOMAIN = '@aerialshots.media'
@@ -126,6 +127,12 @@ export async function GET(request: NextRequest) {
     }
 
     logger.info({ email: user?.email }, 'User authenticated')
+
+    try {
+      await syncAuthUserRecords(user)
+    } catch (syncError) {
+      logger.error({ ...formatError(syncError) }, 'Failed to sync auth user records')
+    }
 
     if (user?.email) {
       const userEmail = user.email.toLowerCase()

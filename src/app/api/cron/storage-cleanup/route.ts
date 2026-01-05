@@ -16,10 +16,10 @@ import { createStorageCleanup } from '@/lib/storage/cleanup'
 // Verify cron secret
 function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
+  const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET
 
   if (!cronSecret) {
-    console.warn('[Storage Cleanup] CRON_SECRET not configured')
+    console.warn('[Storage Cleanup] CRON_SECRET or VERCEL_CRON_SECRET not configured')
     return false
   }
 

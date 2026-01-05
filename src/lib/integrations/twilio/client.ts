@@ -67,7 +67,7 @@ export async function sendSMS(params: SendSMSParams): Promise<SMSResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const fromNumber = process.env.TWILIO_PHONE_NUMBER
-  const reviewLink = process.env.GOOGLE_REVIEW_LINK || ''
+  const reviewLink = process.env.GOOGLE_REVIEW_URL || process.env.GOOGLE_REVIEW_LINK || ''
 
   if (!accountSid || !authToken || !fromNumber) {
     logger.error('Twilio credentials not configured')

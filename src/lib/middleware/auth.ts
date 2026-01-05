@@ -9,7 +9,7 @@ import { SupabaseClient, User } from '@supabase/supabase-js'
 import { Database } from '@/lib/supabase/types'
 import { notAuthenticated, notAuthorized, resourceNotFound } from '@/lib/utils/errors'
 
-type StaffRole = 'admin' | 'photographer' | 'qc' | 'va' | 'editor'
+type StaffRole = 'admin' | 'photographer' | 'qc' | 'va' | 'editor' | 'partner'
 
 // Use the actual database types
 type StaffRecord = Database['public']['Tables']['staff']['Row']
@@ -77,7 +77,28 @@ export async function requireStaff(
     .single()
 
   if (error || !staff) {
-    throw notAuthorized('Staff access required')
+    // Check partner access
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('id, name, email')
+      .eq('email', user.email!.toLowerCase())
+      .eq('is_active', true)
+      .single()
+
+    if (!partner) {
+      throw notAuthorized('Staff access required')
+    }
+
+    return {
+      user,
+      staff: {
+        id: partner.id,
+        email: partner.email,
+        name: partner.name,
+        role: 'partner',
+        is_active: true,
+      } as StaffRecord,
+    }
   }
 
   // Check role if specified

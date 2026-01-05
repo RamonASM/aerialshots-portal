@@ -120,7 +120,7 @@ function LoginForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: data.email }),
+        body: JSON.stringify({ email: data.email, portal: 'agent' }),
       })
 
       const result = await response.json()

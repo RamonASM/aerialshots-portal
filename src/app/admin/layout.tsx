@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminShell } from '@/components/admin/layout/AdminShell'
 
 export default async function AdminLayout({
@@ -8,6 +9,7 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
 
   const {
     data: { user },
@@ -17,33 +19,51 @@ export default async function AdminLayout({
     redirect('/login')
   }
 
-  // Check if user is staff
-  const { data: staff } = await supabase
+  // Check if user is staff or partner
+  const { data: staff } = await adminSupabase
     .from('staff')
     .select('id, name, role, email')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
 
-  if (!staff) {
-    redirect(`https://${process.env.NEXT_PUBLIC_APP_DOMAIN}/dashboard`)
+  let adminUser = staff
+
+  if (!adminUser) {
+    const { data: partner } = await adminSupabase
+      .from('partners')
+      .select('id, name, email')
+      .eq('email', user.email!)
+      .eq('is_active', true)
+      .single()
+
+    if (!partner) {
+      redirect(`https://${process.env.NEXT_PUBLIC_APP_DOMAIN}/dashboard`)
+    }
+
+    adminUser = {
+      id: partner.id,
+      name: partner.name,
+      email: partner.email,
+      role: 'partner',
+    }
   }
 
   // Fetch badge counts for navigation
   const [pendingJobs, readyForQc, careTasks, activeClients] = await Promise.all([
-    supabase
+    adminSupabase
       .from('listings')
       .select('id', { count: 'exact', head: true })
       .in('ops_status', ['pending', 'scheduled']),
-    supabase
+    adminSupabase
       .from('listings')
       .select('id', { count: 'exact', head: true })
       .eq('ops_status', 'ready_for_qc'),
-    supabase
+    adminSupabase
       .from('care_tasks')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending'),
-    supabase
+    adminSupabase
       .from('agents')
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true),
@@ -59,10 +79,10 @@ export default async function AdminLayout({
   return (
     <AdminShell
       staff={{
-        id: staff.id,
-        name: staff.name,
-        email: staff.email || user.email!,
-        role: staff.role,
+        id: adminUser.id,
+        name: adminUser.name,
+        email: adminUser.email || user.email!,
+        role: adminUser.role,
       }}
       badgeCounts={badgeCounts}
     >

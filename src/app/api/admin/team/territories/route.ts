@@ -16,7 +16,7 @@ export async function GET() {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember) {
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember || !['admin', 'owner'].includes(staffMember.role)) {

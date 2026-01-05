@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { trackReviewClick } from '@/lib/marketing/reviews/service'
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -14,7 +16,7 @@ export async function GET(
   const { token } = await params
 
   if (!token) {
-    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL))
+    return NextResponse.redirect(new URL('/', appUrl))
   }
 
   // Track the click and get the review URL
@@ -22,7 +24,7 @@ export async function GET(
 
   if (!reviewUrl) {
     // Token not found or expired, redirect to home
-    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL))
+    return NextResponse.redirect(new URL('/', appUrl))
   }
 
   // Redirect to the actual review page

@@ -345,45 +345,90 @@ export interface BookingSessionRow {
 export interface SellerScheduleRow {
   id: string
   listing_id: string
-  share_link_id?: string
-  seller_name: string
-  seller_email: string
-  seller_phone?: string
+  share_link_id?: string | null
+  seller_name: string | null
+  seller_email: string | null
+  seller_phone?: string | null
   available_slots: Record<string, unknown> // JSONB of TimeSlot[]
-  status: 'submitted' | 'confirmed' | 'cancelled'
-  notes?: string
-  submitted_at: string
-  confirmed_at?: string
-  created_at?: string
+  selected_slot?: Record<string, unknown> | null
+  status: 'pending' | 'submitted' | 'confirmed' | 'rescheduled' | 'cancelled'
+  notes?: string | null
+  submitted_at?: string | null
+  confirmed_at?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  arrival_window_minutes?: number | null
+  flexible_timing?: boolean | null
+  is_vacant_property?: boolean | null
+  anytime_available?: boolean | null
+  anytime_start_date?: string | null
+  anytime_end_date?: string | null
+  access_instructions?: string | null
+  lockbox_code?: string | null
+  gate_code?: string | null
 }
 
 // Share Link Types
-export type ShareLinkType = 'schedule' | 'delivery' | 'property' | 'full' | 'media' | 'seller'
+export type ShareLinkType = 'media' | 'schedule' | 'status' | 'seller'
 
 export interface ShareLinkRow {
   id: string
   listing_id: string
-  agent_id: string
+  agent_id: string | null
   link_type: ShareLinkType
   share_token: string
-  client_name?: string
-  client_email?: string
-  is_active: boolean
-  expires_at?: string
+  client_name?: string | null
+  client_email?: string | null
+  is_active: boolean | null
+  expires_at?: string | null
   access_count: number
-  last_accessed_at?: string
-  created_at: string
+  last_accessed_at?: string | null
+  created_at: string | null
 }
 
 export interface ShareLinkInsert {
   listing_id: string
-  agent_id: string
-  link_type: ShareLinkType
+  agent_id?: string | null
+  link_type?: ShareLinkType
   share_token: string
-  client_name?: string
-  client_email?: string
-  is_active?: boolean
-  expires_at?: string
+  client_name?: string | null
+  client_email?: string | null
+  is_active?: boolean | null
+  expires_at?: string | null
+}
+
+// Seller Access Control Types
+export interface SellerAccessControlRow {
+  id: string
+  listing_id: string
+  media_access_enabled: boolean | null
+  granted_by_payment: boolean | null
+  granted_by_agent: boolean | null
+  granted_by_admin: boolean | null
+  granted_at?: string | null
+  granted_by_user_id?: string | null
+  notes?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+// Reschedule Request Types
+export interface RescheduleRequestRow {
+  id: string
+  listing_id: string
+  share_link_id?: string | null
+  requester_name?: string | null
+  requester_email?: string | null
+  requester_phone?: string | null
+  original_date?: string | null
+  requested_slots: Record<string, unknown>
+  reason?: string | null
+  status: 'pending' | 'approved' | 'denied' | 'cancelled'
+  admin_notes?: string | null
+  handled_by?: string | null
+  handled_at?: string | null
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 // Pay Period Types
@@ -550,13 +595,14 @@ export interface ClientMessageRow {
   id: string
   listing_id: string
   share_link_id?: string | null
-  sender_type: 'agent' | 'seller' | 'staff' | 'system'
+  sender_type: 'client' | 'seller' | 'agent' | 'admin'
   sender_id?: string | null
   sender_name?: string | null
   sender_email?: string | null
   content: string
+  attachments?: Record<string, unknown>[] | null
   read_at?: string | null
-  created_at: string | null
+  created_at?: string | null
 }
 
 // Community Row Type (for communities table not in generated types)

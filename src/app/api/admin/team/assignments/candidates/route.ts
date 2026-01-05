@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const { data: staffMember } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staffMember) {

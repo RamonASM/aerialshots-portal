@@ -20,7 +20,7 @@ export async function GET() {
     const { data: staff } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staff || !['admin', 'owner'].includes(staff.role)) {
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const { data: staff } = await supabase
       .from('staff')
       .select('id, role')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!staff || !['admin', 'owner'].includes(staff.role)) {

@@ -8,9 +8,13 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/login',
   '/staff-login',
+  '/auth(.*)',
+  '/client(.*)',
+  '/developers(.*)',
   '/api/auth/(.*)',
   '/api/stripe/webhook',
   '/api/webhooks/(.*)',
+  '/api/cron(.*)',
   '/api/public/(.*)',
   '/api/v1/(.*)', // Life Here API (public)
   '/property/(.*)', // Property websites (public)
@@ -56,6 +60,19 @@ function getSubdomain(hostname: string): string | null {
   return parts.length >= 3 ? parts[0] : null
 }
 
+function hasSupabaseSession(request: NextRequest): boolean {
+  const cookies = request.cookies.getAll()
+  return cookies.some(({ name }) => {
+    if (name === 'supabase-auth-token') return true
+    if (!name.startsWith('sb-')) return false
+    return (
+      name.endsWith('-auth-token') ||
+      name.endsWith('-access-token') ||
+      name.endsWith('-refresh-token')
+    )
+  })
+}
+
 export default clerkMiddleware(async (auth, request: NextRequest) => {
   const { userId, sessionClaims } = await auth()
   const pathname = request.nextUrl.pathname
@@ -73,6 +90,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   // Public routes are always accessible
   if (isPublicRoute(request)) {
+    return NextResponse.next()
+  }
+
+  // Allow Supabase-authenticated sessions to proceed without Clerk
+  if (!userId && hasSupabaseSession(request)) {
     return NextResponse.next()
   }
 

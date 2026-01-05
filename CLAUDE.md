@@ -174,27 +174,50 @@ const getData = unstable_cache(
 ### Database Types
 Types are generated from Supabase schema in `src/lib/supabase/types.ts`. Custom interfaces for JSONB columns are defined there (e.g., `CommunityMarketSnapshot`, `CommunitySchoolInfo`).
 
-### Authentication (Clerk)
-The portal uses [Clerk](https://clerk.com) for authentication with role-based sign-in:
+### Authentication (Dual: Clerk + Supabase)
+
+The portal uses a **dual authentication system**:
+- **Clerk** - Primary auth for agents, staff, partners (dashboard/admin access)
+- **Supabase Auth** - Magic links for client/seller portals (media delivery access)
 
 **Sign-In Pages:**
-- `/sign-in` - Agent portal (real estate agents)
-- `/sign-in/seller` - Homeowner portal (sellers viewing delivery)
-- `/sign-in/staff` - Team portal (photographer, videographer, QC, admin)
-- `/sign-in/partner` - Partner portal (business partners)
+- `/sign-in` - Agent portal (real estate agents) → Clerk
+- `/sign-in/seller` - Homeowner portal (sellers viewing delivery) → Clerk
+- `/sign-in/staff` - Team portal (photographer, videographer, QC, admin) → Clerk
+- `/sign-in/partner` - Partner portal (business partners) → Clerk
+
+**Magic Link Flows (Supabase Auth):**
+- `/api/auth/magic-link` - Sends magic link with portal context
+- `/api/auth/callback` - Handles magic link verification, syncs user records
+- Supports `portal` query param: `client`, `seller`, `agent`, `staff`
+- Partner checks included for staff domain users
 
 **User Roles:**
 - `agent` - Real estate agents managing listings
 - `seller` - Homeowners viewing their property media
 - `photographer` / `videographer` / `qc` - ASM team members
 - `admin` - Full admin access
-- `partner` - Business partners with team management
+- `partner` - Business partners with team management (treated as staff for admin access)
 
-**Role Sync:**
-- Clerk webhook at `/api/webhooks/clerk` syncs users to database
-- On sign-up, users are auto-linked to existing records by email
-- New users without existing records become agents by default
-- Role stored in Clerk public metadata for middleware access
+**Auth User ID Migration:**
+All RLS policies now use `auth_user_id` instead of legacy `user_id`:
+- `staff.auth_user_id` - Links staff to auth.users
+- `agents.auth_user_id` - Links agents to auth.users
+- `client_accounts.auth_user_id` - Links clients to auth.users
+- `partners.user_id` - Links partners to auth.users
+
+**Role Sync (syncAuthUserRecords):**
+```typescript
+import { syncAuthUserRecords } from '@/lib/auth/sync'
+
+// Called on auth callback - syncs user to correct table based on email
+const { isStaff, isPartner } = await syncAuthUserRecords(user)
+
+// Auto-creates:
+// - Staff record if @aerialshots.media domain
+// - Agent record if no existing staff/partner record
+// Links auth_user_id to existing records by email match
+```
 
 **Helper Functions:**
 ```typescript
@@ -209,6 +232,19 @@ const user = await requireAuth()
 
 // Require specific role(s)
 const user = await requireRole(['admin', 'photographer'])
+```
+
+**Middleware (src/middleware.ts):**
+- Clerk auth for dashboard/admin routes
+- Supabase session cookies bypass Clerk for client portals
+- Partners treated as staff for admin page access
+
+**require-staff Middleware:**
+```typescript
+import { requireStaff } from '@/lib/api/middleware/require-staff'
+
+// Guards API routes - allows staff AND partners
+const { staffId, partnerId } = await requireStaff(request)
 ```
 
 ### Booking Flow
@@ -426,7 +462,7 @@ function hasVideographerAccess(staff: { role: string | null; roles?: string[] | 
 |--------|-------|
 | API Routes | 211 |
 | Test Files | 272 |
-| SQL Migrations | 53 |
+| SQL Migrations | 63 |
 | Integrations | 28 |
 | Tests Passing | 2,473+ |
 
@@ -597,6 +633,59 @@ apiLogger.error({ ...formatError(error) }, 'Failed to process')
 
 Available child loggers: `agentLogger`, `apiLogger`, `authLogger`, `dbLogger`, `webhookLogger`, `cronLogger`, `integrationLogger`
 
+### Security Hardening (2026-01-05)
+
+Two security migrations were applied to harden the database:
+
+**1. SECURITY DEFINER Hardening (`20260105_001_security_definer_hardening.sql`):**
+- Locks `search_path` to `public, auth` for all SECURITY DEFINER functions
+- Revokes PUBLIC access to sensitive RPCs
+- Grants EXECUTE only to `service_role`
+- Affected functions:
+  - `create_order_and_listing`, `deduct_agent_credits`, `record_credit_transaction`
+  - `check_sufficient_credits`, `deduct_credits_for_order`
+  - `get_resolved_template`, `cleanup_render_cache`
+  - `get_seller_portal_data`, `check_seller_media_access`
+  - `sync_staff_auth_user_ids`, `sync_agent_auth_user_ids`
+  - `update_photographer_location`, `cleanup_stale_photographer_locations`
+  - `acquire_payout_lock`, `complete_job_payouts`
+  - `reset_api_key_monthly_usage`
+
+**2. RLS & Storage Hardening (`20260106_002_rls_and_storage_hardening.sql`):**
+- Replaces all legacy `user_id` policies with `auth_user_id`
+- Adds RLS to 30+ tables that lacked per-row protection
+- Storage bucket policies now require active staff membership for writes
+- Public endpoints (share links, renders) use service-role admin client
+
+**Key RLS Policy Patterns:**
+```sql
+-- Staff access pattern
+EXISTS (
+  SELECT 1 FROM staff
+  WHERE auth_user_id = auth.uid()
+  AND is_active = true
+)
+
+-- Agent access pattern
+agent_id IN (
+  SELECT id FROM agents WHERE auth_user_id = auth.uid()
+)
+
+-- Admin-only pattern
+EXISTS (
+  SELECT 1 FROM staff
+  WHERE auth_user_id = auth.uid()
+  AND role IN ('admin', 'owner')
+  AND is_active = true
+)
+```
+
+**Public API Endpoints (use service-role):**
+- `/api/share-links/[token]` - Public share link access
+- `/api/seller/[token]/*` - Seller portal data
+- `/api/storywork/generate` - Render generation
+- All render/carousel generation endpoints
+
 ---
 
 ## Claude Code MCP Servers
@@ -655,16 +744,18 @@ CLERK_SECRET_KEY=sk_test_...  # Must be set for MCP to authenticate
 
 ---
 
-## Current Work Status (2026-01-04)
+## Current Work Status (2026-01-05)
 
 ### ✅ All Core Features Complete
 
 The portal is feature-complete. All major systems are implemented:
-- Clerk authentication with role-based sign-in
+- **Dual auth system** - Clerk + Supabase magic links with portal context
+- **Security hardening** - SECURITY DEFINER lockdown + RLS on 30+ tables
+- **auth_user_id migration** - All policies use auth_user_id instead of legacy user_id
 - Stripe Connect payouts (webhook handler, account management, transfers)
 - Virtual staging with real Gemini AI integration
 - Time tracking for QC specialists
-- 61 database migrations applied
+- **63 database migrations** (including 2 new security hardening migrations)
 - Marketing site with luxury redesign
 - Pricing system synced with master reference
 
@@ -687,57 +778,56 @@ The portal is feature-complete. All major systems are implemented:
 
 ## 🚀 PENDING TASKS (Resume Here After Restart)
 
-**Last Updated:** 2026-01-04
-**Status:** Supabase MCP OAuth fixed - removed stale credentials, ready for re-auth on restart
-
-### Quick Start After Restart
-1. Claude Code will prompt to authenticate with Supabase → Authorize it
-2. Verify connection: `mcp__supabase__get_project_url` should return `awoabqaszgeqdlvcevmd`
-3. Say **"continue pending tasks"** to execute Tasks 1-3 automatically
+**Last Updated:** 2026-01-05
+**Status:** Security hardening complete, database columns need SQL fix
 
 ---
 
-### Task 1: Create Stripe À La Carte Products
-Create these products in Stripe sandbox using MCP:
+### ⚠️ CRITICAL: Database Column Fix (User Action Required)
 
-**Photography Add-Ons:**
-| Service | Price | Notes |
-|---------|-------|-------|
-| Drone/Aerial (Add-On) | $75 | When added to photo booking |
-| Drone/Aerial (Standalone) | $150 | Without base photography |
-| 3D Floor Plan | $75 | Interactive 3D floor plan |
-| Zillow 3D Tour + Floor Plan | $150 | Virtual tour with floor plan |
-| Virtual Twilight | $15 | Per photo |
-| Real Twilight Photography | $150 | On-site twilight session |
+The build is failing during static page generation because missing database columns:
+```
+column staff.certifications does not exist
+column staff.skills does not exist
+```
 
-**Video Services:**
-| Service | Price | Notes |
-|---------|-------|-------|
-| Listing Video | $350 | Script assist; agent optional |
-| Lifestyle Listing Video | $425 | Adds 1-2 lifestyle locations |
-| Day-to-Night Video | $750 | Day-to-twilight cinematic |
-| Cinematic Video (Signature) | $900 | Premium cinematic production |
-| 3D Video Render | $250 | 3D walkthrough showcase |
+**Run this SQL in Supabase Dashboard → SQL Editor:**
+```sql
+-- Add missing columns to staff table
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS certifications TEXT[] DEFAULT '{}';
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS skills TEXT[] DEFAULT '{}';
 
-**Virtual Staging:**
-| Service | Price | Notes |
-|---------|-------|-------|
-| Core Staging (per photo) | $12 | Digital furniture & decor |
-| Premium Staging (per photo) | $25 | Premium furniture set |
-| Core Staging (Full Home) | $125 | All vacant areas staged |
+-- Add comments
+COMMENT ON COLUMN staff.certifications IS 'Array of certifications (FAA Part 107, etc.)';
+COMMENT ON COLUMN staff.skills IS 'Array of skills (drone, video, HDR, etc.)';
+```
 
-### Task 2: Create Supabase Storage Buckets
-Use Supabase MCP `apply_migration` to create storage buckets:
-- `virtual-staging` - AI-generated staging images (public)
-- `media-assets` - Photos, videos, floor plans (private, authenticated)
-- `render-cache` - Carousel/template renders (public, auto-expire)
-- `reference-files` - Client reference uploads (private)
+**After running SQL:** Trigger a new Vercel deployment (push any commit or use Vercel dashboard).
 
-### Task 3: Fix Test File TypeScript Errors
-167 TypeScript errors in test files (build passes, not blocking):
-- Update test mocks to match current interfaces
-- Fix type imports for Supabase generated types
-- Locations: `src/**/*.test.ts`, `src/**/*.spec.ts`
+---
+
+### Task 1: Apply Security Hardening Migrations
+
+Run `npx supabase db push` to apply the new security migrations:
+- `20260105_001_security_definer_hardening.sql`
+- `20260106_002_rls_and_storage_hardening.sql`
+
+These lock down SECURITY DEFINER functions and add RLS to 30+ tables.
+
+### Task 2: Delete Duplicate Vercel Project
+
+In Vercel Dashboard, delete `aerialshots_portal` (with underscore):
+- This old project has no env vars configured
+- Shows RESEND_API_KEY missing error
+- The correct project is `aerialshots-portal` (with hyphen)
+
+### Task 3: Verify Login Flow
+
+After database fix and redeploy:
+1. Test agent login at `/sign-in`
+2. Test staff login at `/sign-in/staff`
+3. Test magic link flow at `/api/auth/magic-link`
+4. Verify partner access to admin pages
 
 ---
 
@@ -763,6 +853,7 @@ RUNPOD_API_KEY=...                       # For HDR processing
 ---
 
 ### Build Status
-- **Production build**: ✅ Passes
+- **Production build**: ⚠️ Passes but SSG errors (missing columns)
 - **TypeScript errors**: 167 in test files only (not blocking build)
-- **Tests**: 2,473+ passing (some test type fixes pending)
+- **Tests**: 2,473+ passing
+- **Security migrations**: ✅ Ready to apply

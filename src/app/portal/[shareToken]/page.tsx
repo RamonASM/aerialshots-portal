@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PortalContent } from './PortalContent'
 import type { Json } from '@/lib/supabase/types'
 
@@ -10,7 +10,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { shareToken } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: shareLink } = await (supabase as any)
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PortalPage({ params }: PageProps) {
   const { shareToken } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Validate the share link
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
