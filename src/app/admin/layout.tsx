@@ -201,10 +201,10 @@ export default async function AdminLayout({
   return (
     <AdminShell
       staff={{
-        id: adminUser.id,
-        name: adminUser.name,
+        id: adminUser.id || 'unknown',
+        name: adminUser.name || userEmail.split('@')[0] || 'User',
         email: adminUser.email || userEmail,
-        role: adminUser.role,
+        role: adminUser.role || 'partner',
       }}
       badgeCounts={badgeCounts}
     >

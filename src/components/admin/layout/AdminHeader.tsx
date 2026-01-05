@@ -45,16 +45,16 @@ export function AdminHeader({
 }: AdminHeaderProps) {
   const router = useRouter()
 
-  // Get initials from name
-  const initials = staff.name
+  // Get initials from name (with null safety)
+  const initials = (staff.name || 'U')
     .split(' ')
-    .map(n => n[0])
+    .map(n => n[0] || '')
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2) || 'U'
 
-  // Format role for display
-  const roleDisplay = staff.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  // Format role for display (with null safety)
+  const roleDisplay = (staff.role || 'user').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-card/60">
