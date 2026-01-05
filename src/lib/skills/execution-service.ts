@@ -117,12 +117,13 @@ export async function createSkillExecution(
     started_at: new Date().toISOString(),
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('skill_executions')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('skill_executions' as any)
     .insert(executionData)
     .select()
     .single()
+    .returns<SkillExecution>()
 
   if (error) {
     throw new Error(`Failed to create skill execution: ${error.message}`)
@@ -147,13 +148,14 @@ export async function updateSkillExecution(
     updateData.completed_at = new Date().toISOString()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('skill_executions')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('skill_executions' as any)
     .update(updateData)
     .eq('id', executionId)
     .select()
     .single()
+    .returns<SkillExecution>()
 
   if (error) {
     throw new Error(`Failed to update skill execution: ${error.message}`)
@@ -168,12 +170,13 @@ export async function updateSkillExecution(
 export async function getSkillExecution(executionId: string): Promise<SkillExecution | null> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('skill_executions')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('skill_executions' as any)
     .select('*')
     .eq('id', executionId)
     .maybeSingle()
+    .returns<SkillExecution>()
 
   if (error) {
     throw new Error(`Failed to get skill execution: ${error.message}`)
@@ -190,9 +193,9 @@ export async function listSkillExecutions(
 ): Promise<SkillExecution[]> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
-    .from('skill_executions')
+  let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('skill_executions' as any)
     .select('*')
 
   if (filters.listing_id) {
@@ -217,7 +220,7 @@ export async function listSkillExecutions(
     query = query.limit(filters.limit)
   }
 
-  const { data, error } = await query
+  const { data, error } = await query.returns<SkillExecution[]>()
 
   if (error) {
     throw new Error(`Failed to list skill executions: ${error.message}`)
@@ -235,9 +238,9 @@ export async function getListingSkillOutputs(
 ): Promise<ListingSkillOutput[]> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
-    .from('listing_skill_outputs')
+  let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('listing_skill_outputs' as any)
     .select('*')
     .eq('listing_id', listingId)
 
@@ -251,7 +254,7 @@ export async function getListingSkillOutputs(
 
   query = query.order('created_at', { ascending: false })
 
-  const { data, error } = await query
+  const { data, error } = await query.returns<ListingSkillOutput[]>()
 
   if (error) {
     throw new Error(`Failed to get listing skill outputs: ${error.message}`)
@@ -268,14 +271,15 @@ export async function saveSkillOutput(
 ): Promise<ListingSkillOutput> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('listing_skill_outputs')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('listing_skill_outputs' as any)
     .upsert(output, {
       onConflict: 'listing_id,skill_id,output_type',
     })
     .select()
     .single()
+    .returns<ListingSkillOutput>()
 
   if (error) {
     throw new Error(`Failed to save skill output: ${error.message}`)
@@ -352,13 +356,21 @@ export async function getSkillUsageStats(
   const periodStart = options.period_start || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
   const periodEnd = options.period_end || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: usageData, error } = await (supabase as any)
-    .from('skill_usage')
+  interface SkillUsageRow {
+    skill_id: string
+    executions_count?: number
+    tokens_used?: number
+    cost_usd?: number | string
+  }
+
+  const { data: usageData, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('skill_usage' as any)
     .select('*')
     .eq('agent_id', agentId)
     .gte('period_start', periodStart)
     .lte('period_end', periodEnd)
+    .returns<SkillUsageRow[]>()
 
   if (error) {
     throw new Error(`Failed to get skill usage stats: ${error.message}`)
@@ -376,11 +388,11 @@ export async function getSkillUsageStats(
     }
     bySkill[record.skill_id].executions += record.executions_count || 0
     bySkill[record.skill_id].tokens += record.tokens_used || 0
-    bySkill[record.skill_id].cost += parseFloat(record.cost_usd || 0)
+    bySkill[record.skill_id].cost += parseFloat(String(record.cost_usd ?? 0))
 
     totalExecutions += record.executions_count || 0
     totalTokens += record.tokens_used || 0
-    totalCost += parseFloat(record.cost_usd || 0)
+    totalCost += parseFloat(String(record.cost_usd ?? 0))
   }
 
   return {

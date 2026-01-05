@@ -13,7 +13,14 @@ import { registerSkill, clearRegistry } from '../registry'
 import { listingDescriptionSkill } from './listing-description'
 import { socialCaptionSkill } from './social-caption'
 import { emailCopySkill } from './email-copy'
-import type { PropertyData, NeighborhoodData, ContentStyle } from './types'
+import type {
+  PropertyData,
+  NeighborhoodData,
+  ContentStyle,
+  ListingDescriptionOutput,
+  SocialCaptionOutput,
+  EmailCopyOutput
+} from './types'
 
 // Mock Supabase admin client
 vi.mock('@/lib/supabase/admin', () => ({
@@ -163,8 +170,9 @@ describe('Content Skills', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toBeDefined()
-      expect(result.data.description).toBeDefined()
-      expect(result.data.highlights).toBeInstanceOf(Array)
+      const data = result.data as ListingDescriptionOutput
+      expect(data.description).toBeDefined()
+      expect(data.highlights).toBeInstanceOf(Array)
     })
 
     it('should include style in output', async () => {
@@ -178,7 +186,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.style).toBe('luxury')
+      const data = result.data as ListingDescriptionOutput
+      expect(data.style).toBe('luxury')
     })
 
     it('should accept neighborhood data', async () => {
@@ -207,7 +216,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.wordCount).toBeGreaterThan(0)
+      const data = result.data as ListingDescriptionOutput
+      expect(data.wordCount).toBeGreaterThan(0)
     })
 
     it('should include execution metadata', async () => {
@@ -312,9 +322,10 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.caption).toBeDefined()
-      expect(result.data.platform).toBe('instagram')
-      expect(result.data.hashtags).toBeInstanceOf(Array)
+      const data = result.data as SocialCaptionOutput
+      expect(data.caption).toBeDefined()
+      expect(data.platform).toBe('instagram')
+      expect(data.hashtags).toBeInstanceOf(Array)
     })
 
     it('should generate a TikTok caption', async () => {
@@ -329,7 +340,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.platform).toBe('tiktok')
+      const data = result.data as SocialCaptionOutput
+      expect(data.platform).toBe('tiktok')
     })
 
     it('should generate a LinkedIn caption', async () => {
@@ -344,7 +356,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.platform).toBe('linkedin')
+      const data = result.data as SocialCaptionOutput
+      expect(data.platform).toBe('linkedin')
     })
 
     it('should calculate character count', async () => {
@@ -358,7 +371,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.characterCount).toBeGreaterThan(0)
+      const data = result.data as SocialCaptionOutput
+      expect(data.characterCount).toBeGreaterThan(0)
     })
 
     it('should handle emoji preference', async () => {
@@ -498,11 +512,12 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.subject).toBeDefined()
-      expect(result.data.previewText).toBeDefined()
-      expect(result.data.body).toBeDefined()
-      expect(result.data.callToAction).toBeDefined()
-      expect(result.data.emailType).toBe('just_listed')
+      const data = result.data as EmailCopyOutput
+      expect(data.subject).toBeDefined()
+      expect(data.previewText).toBeDefined()
+      expect(data.body).toBeDefined()
+      expect(data.callToAction).toBeDefined()
+      expect(data.emailType).toBe('just_listed')
     })
 
     it('should generate an open house email', async () => {
@@ -519,7 +534,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.emailType).toBe('open_house')
+      const data = result.data as EmailCopyOutput
+      expect(data.emailType).toBe('open_house')
     })
 
     it('should generate a price reduction email', async () => {
@@ -534,7 +550,8 @@ describe('Content Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data.emailType).toBe('price_reduction')
+      const data = result.data as EmailCopyOutput
+      expect(data.emailType).toBe('price_reduction')
     })
 
     it('should handle different recipient types', async () => {

@@ -21,7 +21,7 @@ const mockSupabase = {
   gte: vi.fn(() => mockSupabase),
   lte: vi.fn(() => mockSupabase),
   order: vi.fn(() => mockSupabase),
-  single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+  single: vi.fn(),
 }
 
 vi.mock('@/lib/supabase/server', () => ({

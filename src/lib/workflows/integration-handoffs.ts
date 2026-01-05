@@ -32,6 +32,7 @@ export async function processIntegrationHandoff(context: HandoffContext): Promis
   const supabase = await createClient()
 
   // Get listing details
+  // Note: cubicasa_status and zillow_3d_status may not be in generated types
   const { data: listing, error } = await supabase
     .from('listings')
     .select(`
@@ -43,7 +44,14 @@ export async function processIntegrationHandoff(context: HandoffContext): Promis
       zillow_3d_status
     `)
     .eq('id', listingId)
-    .single()
+    .single() as { data: {
+      id: string
+      address: string
+      agent_id: string | null
+      ops_status: string | null
+      cubicasa_status: string | null
+      zillow_3d_status: string | null
+    } | null; error: Error | null }
 
   if (error || !listing) {
     integrationLogger.warn({ listingId }, 'Listing not found for integration handoff')

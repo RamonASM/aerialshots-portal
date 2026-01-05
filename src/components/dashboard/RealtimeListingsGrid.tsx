@@ -12,7 +12,7 @@ import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 interface MediaAsset {
   id: string
   listing_id: string
-  media_url: string | null
+  aryeo_url: string | null
   type: string
 }
 
@@ -100,7 +100,7 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
 
     const { data: media } = await supabase
       .from('media_assets')
-      .select('id, listing_id, media_url, type')
+      .select('id, listing_id, aryeo_url, type')
       .eq('listing_id', listingId)
 
     const { count: leadCount } = await supabase
@@ -178,9 +178,9 @@ export function RealtimeListingsGrid({ initialListings, agentId }: RealtimeListi
             >
               {/* Image */}
               <div className="relative h-40 bg-[#0a0a0a]">
-                {heroImage?.media_url ? (
+                {heroImage?.aryeo_url ? (
                   <img
-                    src={heroImage.media_url}
+                    src={heroImage.aryeo_url}
                     alt={listing.address}
                     className="h-full w-full object-cover"
                   />

@@ -81,7 +81,8 @@ export default function NewStoryPage() {
       }
 
       // Create the story
-      const { data: story, error: createError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: story, error: createError } = await (supabase as any)
         .from('stories')
         .insert({
           agent_id: agent.id,
@@ -93,13 +94,13 @@ export default function NewStoryPage() {
           guided_answers: JSON.parse(JSON.stringify(answers)),
         })
         .select()
-        .single()
+        .single() as { data: { id: string } | null; error: Error | null }
 
       if (createError) {
         throw createError
       }
 
-      router.push(`/dashboard/storywork/${story.id}`)
+      router.push(`/dashboard/storywork/${story?.id}`)
     } catch (err) {
       console.error('Error creating story:', err)
       setError('Failed to create story. Please try again.')

@@ -3,7 +3,14 @@ import { registerSkill, clearRegistry, executeSkill } from '../index'
 import { imageAnalyzeSkill } from './analyze'
 import { imageGenerateSkill } from './generate'
 import { imageInpaintSkill } from './inpaint'
-import type { ImageAnalyzeInput, ImageGenerateInput, ImageInpaintInput } from './types'
+import type {
+  ImageAnalyzeInput,
+  ImageAnalyzeOutput,
+  ImageGenerateInput,
+  ImageGenerateOutput,
+  ImageInpaintInput,
+  ImageInpaintOutput
+} from './types'
 
 // Mock Supabase admin client
 vi.mock('@/lib/supabase/admin', () => ({
@@ -105,8 +112,9 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.roomType).toBe('living_room')
-      expect(result.data?.roomConfidence).toBe(0.95)
+      const data = result.data as ImageAnalyzeOutput
+      expect(data?.roomType).toBe('living_room')
+      expect(data?.roomConfidence).toBe(0.95)
     })
 
     it('should analyze objects in image', async () => {
@@ -132,8 +140,9 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.objects?.length).toBe(3)
-      expect(result.data?.hasFurniture).toBe(true)
+      const data = result.data as ImageAnalyzeOutput
+      expect(data?.objects?.length).toBe(3)
+      expect(data?.hasFurniture).toBe(true)
     })
 
     it('should analyze image quality', async () => {
@@ -155,8 +164,9 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.qualityScore).toBe(85)
-      expect(result.data?.qualityIssues).toHaveLength(1)
+      const data = result.data as ImageAnalyzeOutput
+      expect(data?.qualityScore).toBe(85)
+      expect(data?.qualityIssues).toHaveLength(1)
     })
 
     it('should analyze staging readiness', async () => {
@@ -183,9 +193,10 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.isEmpty).toBe(true)
-      expect(result.data?.stagingReady).toBe(true)
-      expect(result.data?.suggestedStyle).toBe('modern')
+      const data = result.data as ImageAnalyzeOutput
+      expect(data?.isEmpty).toBe(true)
+      expect(data?.stagingReady).toBe(true)
+      expect(data?.suggestedStyle).toBe('modern')
     })
 
     it('should handle API errors', async () => {
@@ -289,7 +300,8 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.provider).toBe('gemini')
+      const data = result.data as ImageGenerateOutput
+      expect(data?.provider).toBe('gemini')
     })
 
     it('should generate staging from source image', async () => {
@@ -307,7 +319,8 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.processingTimeMs).toBeDefined()
+      const data = result.data as ImageGenerateOutput
+      expect(data?.processingTimeMs).toBeDefined()
     })
 
     it('should estimate cost correctly', async () => {
@@ -381,8 +394,9 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.objectsRemoved).toContain('sofa')
-      expect(result.data?.objectsRemoved).toContain('coffee table')
+      const data = result.data as ImageInpaintOutput
+      expect(data?.objectsRemoved).toContain('sofa')
+      expect(data?.objectsRemoved).toContain('coffee table')
     })
 
     it('should remove all furniture when flag set', async () => {
@@ -402,7 +416,8 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.objectsRemoved?.length).toBeGreaterThan(0)
+      const data = result.data as ImageInpaintOutput
+      expect(data?.objectsRemoved?.length).toBeGreaterThan(0)
     })
 
     it('should return original image when no objects to remove', async () => {
@@ -420,8 +435,9 @@ describe('Image Skills', () => {
       })
 
       expect(result.success).toBe(true)
-      expect(result.data?.objectsRemoved).toHaveLength(0)
-      expect(result.data?.imageUrl).toBe('https://example.com/empty-room.jpg')
+      const data = result.data as ImageInpaintOutput
+      expect(data?.objectsRemoved).toHaveLength(0)
+      expect(data?.imageUrl).toBe('https://example.com/empty-room.jpg')
     })
 
     it('should estimate cost', async () => {
@@ -461,7 +477,8 @@ describe('Image Skills', () => {
       })
 
       expect(analyzeResult.success).toBe(true)
-      expect(analyzeResult.data?.stagingReady).toBe(true)
+      const analyzeData = analyzeResult.data as ImageAnalyzeOutput
+      expect(analyzeData?.stagingReady).toBe(true)
 
       // Step 2: Generate staging based on analysis
       mockGenerateWithGemini.mockResolvedValueOnce('Staged living room generated')
@@ -470,8 +487,8 @@ describe('Image Skills', () => {
         skillId: 'image-generate',
         input: {
           sourceImage: 'https://example.com/empty-room.jpg',
-          roomType: analyzeResult.data?.roomType,
-          style: analyzeResult.data?.suggestedStyle,
+          roomType: analyzeData?.roomType,
+          style: analyzeData?.suggestedStyle,
           prompt: 'Stage this room',
         },
         skipLogging: true,
@@ -496,7 +513,8 @@ describe('Image Skills', () => {
       })
 
       expect(inpaintResult.success).toBe(true)
-      expect(inpaintResult.data?.objectsRemoved).toContain('sofa')
+      const inpaintData = inpaintResult.data as ImageInpaintOutput
+      expect(inpaintData?.objectsRemoved).toContain('sofa')
 
       // Step 2: Verify room is now empty
       const verifyResult = {
@@ -516,7 +534,8 @@ describe('Image Skills', () => {
       })
 
       expect(analyzeResult.success).toBe(true)
-      expect(analyzeResult.data?.stagingReady).toBe(true)
+      const analyzeData = analyzeResult.data as ImageAnalyzeOutput
+      expect(analyzeData?.stagingReady).toBe(true)
     })
   })
 })

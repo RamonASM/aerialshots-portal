@@ -1,4 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import type {
+  DripCampaignRow,
+  DripCampaignStepRow,
+  DripEnrollmentRow,
+  DripCampaignWithSteps,
+  DripEnrollmentWithCampaign,
+} from '@/lib/supabase/types-custom'
 
 /**
  * Trigger types for drip campaigns
@@ -71,9 +78,9 @@ export async function createDripCampaign(params: {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaigns')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaigns' as any)
       .insert({
         name: params.name,
         trigger_type: params.trigger_type,
@@ -82,7 +89,8 @@ export async function createDripCampaign(params: {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: DripCampaign | null; error: Error | null }
+      .returns<DripCampaignRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -93,7 +101,7 @@ export async function createDripCampaign(params: {
 
     return {
       success: true,
-      campaign: data,
+      campaign: data as unknown as DripCampaign,
     }
   } catch (error) {
     console.error('[DripCampaigns] Error creating campaign:', error)
@@ -111,18 +119,19 @@ export async function getDripCampaign(campaignId: string): Promise<DripCampaign 
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaigns')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaigns' as any)
       .select('*, steps:drip_campaign_steps(*)')
       .eq('id', campaignId)
-      .single() as { data: DripCampaign | null; error: Error | null }
+      .returns<DripCampaignWithSteps[]>()
+      .single()
 
     if (error || !data) {
       return null
     }
 
-    return data
+    return data as unknown as DripCampaign
   } catch (error) {
     console.error('[DripCampaigns] Error getting campaign:', error)
     return null
@@ -143,16 +152,17 @@ export async function updateDripCampaign(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaigns')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaigns' as any)
       .update({
         ...updates,
         updated_at: new Date().toISOString(),
       })
       .eq('id', campaignId)
       .select()
-      .single() as { data: DripCampaign | null; error: Error | null }
+      .returns<DripCampaignRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -163,7 +173,7 @@ export async function updateDripCampaign(
 
     return {
       success: true,
-      campaign: data,
+      campaign: data as unknown as DripCampaign,
     }
   } catch (error) {
     console.error('[DripCampaigns] Error updating campaign:', error)
@@ -184,9 +194,9 @@ export async function deleteDripCampaign(campaignId: string): Promise<{
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('drip_campaigns')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaigns' as any)
       .delete()
       .eq('id', campaignId)
 
@@ -225,9 +235,9 @@ export async function addCampaignStep(params: {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaign_steps')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaign_steps' as any)
       .insert({
         campaign_id: params.campaign_id,
         step_order: params.step_order,
@@ -238,7 +248,8 @@ export async function addCampaignStep(params: {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: DripCampaignStep | null; error: Error | null }
+      .returns<DripCampaignStepRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -249,7 +260,7 @@ export async function addCampaignStep(params: {
 
     return {
       success: true,
-      step: data,
+      step: data as unknown as DripCampaignStep,
     }
   } catch (error) {
     console.error('[DripCampaigns] Error adding step:', error)
@@ -274,13 +285,14 @@ export async function updateCampaignStep(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaign_steps')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaign_steps' as any)
       .update(updates)
       .eq('id', stepId)
       .select()
-      .single() as { data: DripCampaignStep | null; error: Error | null }
+      .returns<DripCampaignStepRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -291,7 +303,7 @@ export async function updateCampaignStep(
 
     return {
       success: true,
-      step: data,
+      step: data as unknown as DripCampaignStep,
     }
   } catch (error) {
     console.error('[DripCampaigns] Error updating step:', error)
@@ -312,9 +324,9 @@ export async function deleteCampaignStep(stepId: string): Promise<{
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('drip_campaign_steps')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaign_steps' as any)
       .delete()
       .eq('id', stepId)
 
@@ -352,14 +364,15 @@ export async function enrollContact(params: {
 
     // Check for existing enrollment
     if (params.check_existing) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: existing } = await (supabase as any)
-        .from('drip_enrollments')
+      const { data: existing } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
         .select('id')
         .eq('campaign_id', params.campaign_id)
         .eq('contact_id', params.contact_id)
         .eq('status', 'active')
-        .limit(1) as { data: Array<{ id: string }> | null }
+        .limit(1)
+        .returns<Array<{ id: string }>>()
 
       if (existing && existing.length > 0) {
         return {
@@ -371,9 +384,9 @@ export async function enrollContact(params: {
 
     const now = new Date()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_enrollments')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .insert({
         campaign_id: params.campaign_id,
         contact_id: params.contact_id,
@@ -383,7 +396,8 @@ export async function enrollContact(params: {
         created_at: now.toISOString(),
       })
       .select()
-      .single() as { data: DripEnrollment | null; error: Error | null }
+      .returns<DripEnrollmentRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -394,7 +408,7 @@ export async function enrollContact(params: {
 
     return {
       success: true,
-      enrollment: data,
+      enrollment: data as unknown as DripEnrollment,
     }
   } catch (error) {
     console.error('[DripCampaigns] Error enrolling contact:', error)
@@ -418,9 +432,9 @@ export async function unenrollContact(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('drip_enrollments')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .update({
         status: 'unenrolled',
         unenroll_reason: options.reason,
@@ -455,9 +469,9 @@ export async function getEnrollments(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('drip_enrollments')
+    let query = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .select('*')
       .eq('campaign_id', campaignId)
 
@@ -465,16 +479,15 @@ export async function getEnrollments(
       query = query.eq('status', options.status)
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false }) as {
-      data: DripEnrollment[] | null
-      error: Error | null
-    }
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .returns<DripEnrollmentRow[]>()
 
     if (error || !data) {
       return []
     }
 
-    return data
+    return data as unknown as DripEnrollment[]
   } catch (error) {
     console.error('[DripCampaigns] Error getting enrollments:', error)
     return []
@@ -494,18 +507,15 @@ export async function processEnrollmentStep(enrollmentId: string): Promise<{
     const supabase = createAdminClient()
 
     // Get enrollment with campaign steps
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: enrollment } = await (supabase as any)
-      .from('drip_enrollments')
+    const { data: enrollment } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .select('*, campaign:drip_campaigns(*, steps:drip_campaign_steps(*))')
       .eq('id', enrollmentId)
-      .single() as {
-        data: DripEnrollment & {
-          campaign: DripCampaign & { steps: DripCampaignStep[] }
-        } | null
-      }
+      .returns<DripEnrollmentWithCampaign[]>()
+      .single()
 
-    if (!enrollment) {
+    if (!enrollment || !enrollment.campaign) {
       return {
         success: false,
         error: 'Enrollment not found.',
@@ -519,9 +529,9 @@ export async function processEnrollmentStep(enrollmentId: string): Promise<{
     // Check if this is the last step
     if (currentStep >= totalSteps) {
       // Mark as completed
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('drip_enrollments')
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
@@ -543,9 +553,9 @@ export async function processEnrollmentStep(enrollmentId: string): Promise<{
     const nextStepAt = new Date(Date.now() + delayMs)
 
     // Update enrollment
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('drip_enrollments')
+    await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .update({
         current_step: nextStep,
         next_step_at: nextStepAt.toISOString(),
@@ -575,20 +585,21 @@ export async function getDuePendingSteps(options: { limit?: number } = {}): Prom
     const supabase = createAdminClient()
     const now = new Date().toISOString()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_enrollments')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_enrollments' as any)
       .select('*')
       .eq('status', 'active')
       .lte('next_step_at', now)
       .order('next_step_at', { ascending: true })
-      .limit(limit) as { data: DripEnrollment[] | null; error: Error | null }
+      .limit(limit)
+      .returns<DripEnrollmentRow[]>()
 
     if (error || !data) {
       return []
     }
 
-    return data
+    return data as unknown as DripEnrollment[]
   } catch (error) {
     console.error('[DripCampaigns] Error getting due steps:', error)
     return []
@@ -602,21 +613,19 @@ export async function getActiveCampaigns(): Promise<DripCampaign[]> {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('drip_campaigns')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('drip_campaigns' as any)
       .select('*, steps:drip_campaign_steps(*)')
       .eq('is_active', true)
-      .order('created_at', { ascending: false }) as {
-        data: DripCampaign[] | null
-        error: Error | null
-      }
+      .order('created_at', { ascending: false })
+      .returns<DripCampaignWithSteps[]>()
 
     if (error || !data) {
       return []
     }
 
-    return data
+    return data as unknown as DripCampaign[]
   } catch (error) {
     console.error('[DripCampaigns] Error getting active campaigns:', error)
     return []

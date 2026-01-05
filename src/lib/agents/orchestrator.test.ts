@@ -26,10 +26,10 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => mockSupabase,
 }))
 
-const mockExecuteAgent = vi.fn()
-vi.mock('./executor', () => ({
-  executeAgent: (...args: unknown[]) => mockExecuteAgent(...args),
-}))
+vi.mock('./executor')
+
+import { executeAgent } from './executor'
+const mockExecuteAgent = vi.mocked(executeAgent)
 
 // Helper to create chainable mock for Supabase
 function createChainableMock(finalResult: { data: unknown; error: unknown }) {
@@ -288,8 +288,9 @@ describe('executeWorkflow', () => {
 
       mockExecuteAgent.mockResolvedValueOnce({
         success: false,
+        output: {},
         error: 'Step 1 failed',
-      })
+      } as any)
 
       const trigger: WorkflowTrigger = { event: 'test.stop' }
 
@@ -320,7 +321,7 @@ describe('executeWorkflow', () => {
       mockExecuteAgent
         .mockResolvedValueOnce({ success: true, output: {} })
         .mockResolvedValueOnce({ success: true, output: {} })
-        .mockResolvedValueOnce({ success: false, error: 'Failed' })
+        .mockResolvedValueOnce({ success: false, output: {}, error: 'Failed' } as any)
 
       const trigger: WorkflowTrigger = { event: 'listing.delivered' }
 
@@ -747,7 +748,7 @@ describe('getWorkflowsForResource', () => {
       error: null,
     })
     // Remove .single() behavior for array result
-    chain.single = undefined
+    delete (chain as any).single
     chain.order = vi.fn().mockResolvedValue({
       data: [
         { id: 'wf-1', listing_id: 'listing-123' },
@@ -768,7 +769,7 @@ describe('getWorkflowsForResource', () => {
       data: [{ id: 'wf-1', campaign_id: 'campaign-456' }],
       error: null,
     })
-    chain.single = undefined
+    delete (chain as any).single
     chain.order = vi.fn().mockResolvedValue({
       data: [{ id: 'wf-1', campaign_id: 'campaign-456' }],
       error: null,
@@ -786,7 +787,7 @@ describe('getWorkflowsForResource', () => {
       data: null,
       error: { message: 'Database error' },
     })
-    chain.single = undefined
+    delete (chain as any).single
     chain.order = vi.fn().mockResolvedValue({
       data: null,
       error: { message: 'Database error' },

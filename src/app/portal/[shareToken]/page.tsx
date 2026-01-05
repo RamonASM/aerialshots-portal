@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PortalContent } from './PortalContent'
+import type { Json } from '@/lib/supabase/types'
 
 interface PageProps {
   params: Promise<{ shareToken: string }>
@@ -11,21 +12,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { shareToken } = await params
   const supabase = await createClient()
 
-  const { data: shareLink } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shareLink } = await (supabase as any)
     .from('share_links')
     .select(`
       listing:listings(address, city, state),
       agent:agents(name)
     `)
     .eq('share_token', shareToken)
-    .single()
+    .single() as { data: { listing: { address: string; city: string; state: string } | null; agent: { name: string } | null } | null }
 
   if (!shareLink?.listing) {
     return { title: 'Media Portal' }
   }
 
-  const listing = shareLink.listing as { address: string; city: string; state: string }
-  const agent = shareLink.agent as { name: string } | null
+  const listing = shareLink.listing
+  const agent = shareLink.agent
 
   return {
     title: `Your Photos - ${listing.address}`,
@@ -39,7 +41,8 @@ export default async function PortalPage({ params }: PageProps) {
   const supabase = await createClient()
 
   // Validate the share link
-  const { data: shareLink, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shareLink, error } = await (supabase as any)
     .from('share_links')
     .select(`
       id,
@@ -61,7 +64,7 @@ export default async function PortalPage({ params }: PageProps) {
       )
     `)
     .eq('share_token', shareToken)
-    .single()
+    .single() as { data: { id: string; share_token: string; link_type: string; client_name: string | null; client_email: string | null; expires_at: string | null; is_active: boolean; access_count: number; listing: unknown; agent: unknown } | null; error: Error | null }
 
   if (error || !shareLink) {
     notFound()
@@ -77,7 +80,8 @@ export default async function PortalPage({ params }: PageProps) {
   }
 
   // Update access count
-  await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any)
     .from('share_links')
     .update({
       access_count: (shareLink.access_count || 0) + 1,
@@ -112,13 +116,14 @@ export default async function PortalPage({ params }: PageProps) {
   } | null
 
   // Fetch portal settings for branding
-  let portalSettings = null
+  let portalSettings: { branding_enabled: boolean | null; custom_domain: string | null; password_protected: boolean | null } | null = null
   if (agent) {
-    const { data: settings } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: settings } = await (supabase as any)
       .from('portal_settings')
       .select('*')
       .eq('agent_id', agent.id)
-      .single()
+      .single() as { data: { branding_enabled: boolean | null; custom_domain: string | null; password_protected: boolean | null } | null }
     portalSettings = settings
   }
 
@@ -130,11 +135,12 @@ export default async function PortalPage({ params }: PageProps) {
     .order('sort_order', { ascending: true })
 
   // Get status history for timeline
-  const { data: statusHistory } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: statusHistory } = await (supabase as any)
     .from('job_events')
     .select('*')
     .eq('listing_id', listing.id)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: true }) as { data: Array<{ id: string; event_type: string; created_at: string | null; new_value: Json }> | null }
 
   const brandColor = agent?.brand_color || '#0066FF'
   const showPoweredBy = true

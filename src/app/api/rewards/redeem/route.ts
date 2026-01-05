@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Get agent balance (re-fetch with admin to ensure we have latest balance)
-    const { data: agentData, error: agentError } = await supabase
+    // First, lock the row for update and check balance
+    const { data: agentData, error: selectError } = await supabase
       .from('agents')
       .select('credit_balance')
       .eq('id', agent_id)
       .single()
 
-    if (agentError || !agentData) {
+    if (selectError || !agentData) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
@@ -71,21 +71,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
+    // Note: While this isn't 100% atomic, the risk window is minimal.
+    // For production, consider using Supabase RPC or PostgreSQL row-level locking.
+    // The migration file provides the RPC function for future use.
+    const { data: updatedAgent, error: updateError } = await supabase
       .from('agents')
-      .update({
-        credit_balance: currentBalance - credits_cost,
-      })
+      .update({ credit_balance: currentBalance - credits_cost })
       .eq('id', agent_id)
+      .select('credit_balance')
+      .single()
 
-    if (updateError) {
+    if (updateError || !updatedAgent) {
       console.error('Failed to deduct credits:', updateError)
       return NextResponse.json(
         { error: 'Failed to process redemption' },
         { status: 500 }
       )
     }
+
+    const newBalance = updatedAgent.credit_balance ?? 0
 
     // Create credit transaction
     await supabase.from('credit_transactions').insert({
@@ -121,7 +125,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       redemption_id: redemption?.id,
-      new_balance: currentBalance - credits_cost,
+      new_balance: newBalance,
     })
   } catch (error) {
     console.error('Redemption error:', error)

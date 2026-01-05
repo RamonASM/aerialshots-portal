@@ -54,8 +54,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: listing.address,
       description: `${features}${priceStr}`,
       type: 'website',
-      images: (listing.media_assets[0]?.media_url || listing.media_assets[0]?.aryeo_url)
-        ? [{ url: listing.media_assets[0].media_url || listing.media_assets[0].aryeo_url || '' }]
+      images: listing.media_assets[0]?.aryeo_url
+        ? [{ url: listing.media_assets[0].aryeo_url || '' }]
         : [],
     },
   }
@@ -176,7 +176,7 @@ export default async function ThemedPropertyPage({ params }: PageProps) {
                     }}
                   >
                     <iframe
-                      src={mediaByCategory.matterport[0].media_url || mediaByCategory.matterport[0].aryeo_url || ''}
+                      src={mediaByCategory.matterport[0].aryeo_url || ''}
                       className="h-[400px] w-full sm:h-[500px] lg:h-[600px]"
                       allowFullScreen
                       title="3D Virtual Tour"
@@ -195,7 +195,7 @@ export default async function ThemedPropertyPage({ params }: PageProps) {
                     {mediaByCategory.floorplan.map((fp) => (
                       <img
                         key={fp.id}
-                        src={fp.media_url || fp.aryeo_url || ''}
+                        src={fp.aryeo_url || ''}
                         alt="Floor Plan"
                         className="w-full"
                         style={{

@@ -330,7 +330,8 @@ export async function syncAssignmentsToCalendar(
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 30)
 
-    const { data: assignments } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: assignments } = await (supabase as any)
       .from('photographer_assignments')
       .select(
         `
@@ -352,7 +353,21 @@ export async function syncAssignmentsToCalendar(
       .eq('photographer_id', staffId)
       .gte('scheduled_date', today.toISOString().slice(0, 10))
       .lte('scheduled_date', futureDate.toISOString().slice(0, 10))
-      .in('status', ['assigned', 'confirmed', 'in_progress'])
+      .in('status', ['assigned', 'confirmed', 'in_progress']) as { data: Array<{
+        id: string
+        status: string | null
+        scheduled_date: string
+        scheduled_time: string | null
+        google_event_id: string | null
+        listing: {
+          id: string
+          address: string
+          city: string
+          state: string
+          zip: string
+          agent: { name: string; phone: string } | null
+        } | null
+      }> | null }
 
     if (!assignments || assignments.length === 0) {
       return result
@@ -408,7 +423,8 @@ export async function syncAssignmentsToCalendar(
           )
 
           // Store Google event ID in assignment
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('photographer_assignments')
             .update({ google_event_id: eventId })
             .eq('id', assignment.id)

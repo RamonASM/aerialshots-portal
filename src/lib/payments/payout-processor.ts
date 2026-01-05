@@ -1,8 +1,23 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createTransfer, reverseTransfer } from './stripe-connect'
 import { apiLogger, formatError } from '@/lib/logger'
+import { createHash } from 'crypto'
 
 const logger = apiLogger.child({ module: 'payout-processor' })
+
+/**
+ * Type definitions for RPC functions
+ * These will be properly typed once the migration is applied
+ */
+type AcquirePayoutLockResult = {
+  acquired: boolean
+  existing_status: string
+}
+
+type CompleteJobPayoutsResult = {
+  success: boolean
+  message: string
+}
 
 /**
  * Order data needed for payout processing
@@ -79,14 +94,85 @@ interface PayoutSplits {
 }
 
 /**
+ * Transfer record for tracking successful Stripe transfers
+ */
+interface TransferRecord {
+  transferId: string
+  type: 'staff' | 'partner'
+  staffId?: string
+  partnerId?: string
+  role?: string
+}
+
+/**
+ * Generate deterministic idempotency key for a payout operation
+ */
+function generateIdempotencyKey(orderId: string, listingId: string): string {
+  return createHash('sha256')
+    .update(`payout:${orderId}:${listingId}`)
+    .digest('hex')
+    .substring(0, 32)
+}
+
+/**
+ * Generate deterministic Stripe idempotency key for a transfer
+ */
+function generateStripeIdempotencyKey(
+  orderId: string,
+  entityId: string,
+  role: string
+): string {
+  return `transfer:${orderId}:${entityId}:${role}`
+}
+
+/**
+ * Compensate failed payouts by reversing successful Stripe transfers
+ */
+async function compensateFailedPayouts(
+  successfulTransfers: TransferRecord[]
+): Promise<void> {
+  logger.warn(
+    { transferCount: successfulTransfers.length },
+    'Compensating failed payouts by reversing successful transfers'
+  )
+
+  for (const transfer of successfulTransfers) {
+    try {
+      const result = await reverseTransfer({
+        transferId: transfer.transferId,
+        reason: 'Payout transaction failed - automatic reversal',
+      })
+
+      if (result.success) {
+        logger.info(
+          { transferId: transfer.transferId, reversalId: result.reversalId },
+          'Transfer reversed successfully'
+        )
+      } else {
+        logger.error(
+          { transferId: transfer.transferId, error: result.error },
+          'Failed to reverse transfer - manual intervention required'
+        )
+      }
+    } catch (error) {
+      logger.error(
+        { transferId: transfer.transferId, ...formatError(error) },
+        'Error reversing transfer - manual intervention required'
+      )
+    }
+  }
+}
+
+/**
  * Get payout settings from database
  */
 async function getPayoutSettings(): Promise<PayoutSettings> {
   const supabase = createAdminClient()
 
-  const { data } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
     .from('payout_settings')
-    .select('key, value')
+    .select('key, value') as { data: Array<{ key: string; value: string | unknown }> | null }
 
   const settings: Record<string, string> = {}
   data?.forEach(row => {
@@ -144,11 +230,12 @@ async function getVideographerForListing(listingId: string): Promise<StaffMember
 
   // Check if there's a videographer assignment
   // Note: You may need to adjust this based on your assignment table structure
-  const { data: assignment } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: assignment } = await (supabase as any)
     .from('photographer_assignments')
     .select('photographer_id')
     .eq('listing_id', listingId)
-    .single()
+    .single() as { data: { photographer_id: string } | null }
 
   if (!assignment?.photographer_id) return null
 
@@ -229,156 +316,50 @@ function calculateSplits(params: {
 }
 
 /**
- * Record a staff payout in the database
- */
-async function recordStaffPayout(params: {
-  staffId: string
-  orderId: string
-  listingId: string
-  role: string
-  orderTotalCents: number
-  payoutAmountCents: number
-  payoutPercent: number
-  stripeTransferId?: string
-  stripeDestinationAccount?: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  errorMessage?: string
-}): Promise<string | null> {
-  const supabase = createAdminClient()
-
-  const { data, error } = await supabase
-    .from('staff_payouts')
-    .insert({
-      staff_id: params.staffId,
-      order_id: params.orderId,
-      listing_id: params.listingId,
-      role: params.role,
-      order_total_cents: params.orderTotalCents,
-      payout_amount_cents: params.payoutAmountCents,
-      payout_percent: params.payoutPercent,
-      stripe_transfer_id: params.stripeTransferId,
-      stripe_destination_account: params.stripeDestinationAccount,
-      status: params.status,
-      error_message: params.errorMessage,
-      processed_at: params.status === 'completed' ? new Date().toISOString() : null,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    logger.error({ ...formatError(error) }, 'Failed to record staff payout')
-    return null
-  }
-
-  return data?.id || null
-}
-
-/**
- * Record a partner payout in the database
- */
-async function recordPartnerPayout(params: {
-  partnerId: string
-  orderId: string
-  listingId: string
-  staffId?: string
-  orderTotalCents: number
-  payoutAmountCents: number
-  payoutPercent: number
-  stripeTransferId?: string
-  stripeDestinationAccount?: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  errorMessage?: string
-}): Promise<string | null> {
-  const supabase = createAdminClient()
-
-  const { data, error } = await supabase
-    .from('partner_payouts')
-    .insert({
-      partner_id: params.partnerId,
-      order_id: params.orderId,
-      listing_id: params.listingId,
-      staff_id: params.staffId,
-      order_total_cents: params.orderTotalCents,
-      payout_amount_cents: params.payoutAmountCents,
-      payout_percent: params.payoutPercent,
-      stripe_transfer_id: params.stripeTransferId,
-      stripe_destination_account: params.stripeDestinationAccount,
-      status: params.status,
-      error_message: params.errorMessage,
-      processed_at: params.status === 'completed' ? new Date().toISOString() : null,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    logger.error({ ...formatError(error) }, 'Failed to record partner payout')
-    return null
-  }
-
-  return data?.id || null
-}
-
-/**
- * Allocate funds to company pools
- */
-async function allocateToCompanyPools(params: {
-  orderId: string
-  listingId: string
-  pools: PayoutSplits['pools']
-}): Promise<void> {
-  const supabase = createAdminClient()
-  const { orderId, listingId, pools } = params
-
-  const entries = [
-    { pool_type: 'video_editor', ...pools.video_editor },
-    { pool_type: 'qc_fund', ...pools.qc_fund },
-    { pool_type: 'operating', ...pools.operating },
-  ].map(entry => ({
-    order_id: orderId,
-    listing_id: listingId,
-    pool_type: entry.pool_type,
-    amount_cents: entry.cents,
-    percent: entry.percent,
-    status: 'available',
-  }))
-
-  const { error } = await supabase.from('company_pool').insert(entries)
-
-  if (error) {
-    logger.error({ ...formatError(error) }, 'Failed to allocate to company pools')
-  }
-}
-
-/**
  * Process contractor payout via Stripe Connect
+ * Returns transfer record if successful, null if failed
  */
 async function processContractorPayout(params: {
   staff: StaffMember
   order: OrderForPayout
   listing: ListingForPayout
   split: { cents: number; percent: number }
-}): Promise<boolean> {
+}): Promise<{
+  success: boolean
+  transfer?: TransferRecord
+  payoutData?: Record<string, unknown>
+  error?: string
+}> {
   const { staff, order, listing, split } = params
 
   // Check if Connect is enabled
   if (!staff.stripe_connect_id || !staff.stripe_payouts_enabled) {
-    logger.warn({ staffId: staff.id }, 'Staff member not enabled for Stripe payouts')
+    const error = 'Stripe Connect not enabled'
+    logger.warn({ staffId: staff.id }, error)
 
-    // Record as failed payout
-    await recordStaffPayout({
-      staffId: staff.id,
-      orderId: order.id,
-      listingId: listing.id,
-      role: staff.role,
-      orderTotalCents: order.total_cents,
-      payoutAmountCents: split.cents,
-      payoutPercent: split.percent,
-      status: 'failed',
-      errorMessage: 'Stripe Connect not enabled',
-    })
-
-    return false
+    return {
+      success: false,
+      error,
+      payoutData: {
+        staff_id: staff.id,
+        order_id: order.id,
+        listing_id: listing.id,
+        role: staff.role,
+        order_total_cents: order.total_cents,
+        payout_amount_cents: split.cents,
+        payout_percent: split.percent,
+        status: 'failed',
+        error_message: error,
+      },
+    }
   }
+
+  // Generate deterministic idempotency key for Stripe
+  const stripeIdempotencyKey = generateStripeIdempotencyKey(
+    order.id,
+    staff.id,
+    staff.role
+  )
 
   // Create Stripe transfer
   const transferResult = await createTransfer({
@@ -387,50 +368,61 @@ async function processContractorPayout(params: {
     orderId: order.id,
     staffId: staff.id,
     description: `Payout for job at ${order.property_address || 'property'}`,
+    idempotencyKey: stripeIdempotencyKey,
   })
 
   if (!transferResult.success) {
     logger.error({ staffId: staff.id, error: transferResult.error }, 'Failed to create transfer')
 
-    await recordStaffPayout({
-      staffId: staff.id,
-      orderId: order.id,
-      listingId: listing.id,
-      role: staff.role,
-      orderTotalCents: order.total_cents,
-      payoutAmountCents: split.cents,
-      payoutPercent: split.percent,
-      status: 'failed',
-      errorMessage: transferResult.error,
-    })
-
-    return false
+    return {
+      success: false,
+      error: transferResult.error,
+      payoutData: {
+        staff_id: staff.id,
+        order_id: order.id,
+        listing_id: listing.id,
+        role: staff.role,
+        order_total_cents: order.total_cents,
+        payout_amount_cents: split.cents,
+        payout_percent: split.percent,
+        status: 'failed',
+        error_message: transferResult.error,
+      },
+    }
   }
-
-  // Record successful payout
-  await recordStaffPayout({
-    staffId: staff.id,
-    orderId: order.id,
-    listingId: listing.id,
-    role: staff.role,
-    orderTotalCents: order.total_cents,
-    payoutAmountCents: split.cents,
-    payoutPercent: split.percent,
-    stripeTransferId: transferResult.transferId,
-    stripeDestinationAccount: staff.stripe_connect_id,
-    status: 'completed',
-  })
 
   logger.info(
     { staffId: staff.id, amount: split.cents, transferId: transferResult.transferId },
-    'Staff payout completed'
+    'Staff payout transfer created'
   )
 
-  return true
+  return {
+    success: true,
+    transfer: {
+      transferId: transferResult.transferId!,
+      type: 'staff',
+      staffId: staff.id,
+      role: staff.role,
+    },
+    payoutData: {
+      staff_id: staff.id,
+      order_id: order.id,
+      listing_id: listing.id,
+      role: staff.role,
+      order_total_cents: order.total_cents,
+      payout_amount_cents: split.cents,
+      payout_percent: split.percent,
+      stripe_transfer_id: transferResult.transferId,
+      stripe_destination_account: staff.stripe_connect_id,
+      status: 'completed',
+      processed_at: new Date().toISOString(),
+    },
+  }
 }
 
 /**
  * Process partner payout via Stripe Connect
+ * Returns transfer record if successful, null if failed
  */
 async function processPartnerPayout(params: {
   partner: Partner
@@ -438,27 +430,42 @@ async function processPartnerPayout(params: {
   order: OrderForPayout
   listing: ListingForPayout
   split: { cents: number; percent: number }
-}): Promise<boolean> {
+}): Promise<{
+  success: boolean
+  transfer?: TransferRecord
+  payoutData?: Record<string, unknown>
+  error?: string
+}> {
   const { partner, photographer, order, listing, split } = params
 
   // Check if Connect is enabled
   if (!partner.stripe_connect_id || !partner.stripe_payouts_enabled) {
-    logger.warn({ partnerId: partner.id }, 'Partner not enabled for Stripe payouts')
+    const error = 'Stripe Connect not enabled'
+    logger.warn({ partnerId: partner.id }, error)
 
-    await recordPartnerPayout({
-      partnerId: partner.id,
-      orderId: order.id,
-      listingId: listing.id,
-      staffId: photographer.id,
-      orderTotalCents: order.total_cents,
-      payoutAmountCents: split.cents,
-      payoutPercent: split.percent,
-      status: 'failed',
-      errorMessage: 'Stripe Connect not enabled',
-    })
-
-    return false
+    return {
+      success: false,
+      error,
+      payoutData: {
+        partner_id: partner.id,
+        order_id: order.id,
+        listing_id: listing.id,
+        staff_id: photographer.id,
+        order_total_cents: order.total_cents,
+        payout_amount_cents: split.cents,
+        payout_percent: split.percent,
+        status: 'failed',
+        error_message: error,
+      },
+    }
   }
+
+  // Generate deterministic idempotency key for Stripe
+  const stripeIdempotencyKey = generateStripeIdempotencyKey(
+    order.id,
+    partner.id,
+    'partner'
+  )
 
   // Create Stripe transfer
   const transferResult = await createTransfer({
@@ -467,50 +474,60 @@ async function processPartnerPayout(params: {
     orderId: order.id,
     partnerId: partner.id,
     description: `Partner cut for job by ${photographer.name} at ${order.property_address || 'property'}`,
+    idempotencyKey: stripeIdempotencyKey,
   })
 
   if (!transferResult.success) {
     logger.error({ partnerId: partner.id, error: transferResult.error }, 'Failed to create partner transfer')
 
-    await recordPartnerPayout({
-      partnerId: partner.id,
-      orderId: order.id,
-      listingId: listing.id,
-      staffId: photographer.id,
-      orderTotalCents: order.total_cents,
-      payoutAmountCents: split.cents,
-      payoutPercent: split.percent,
-      status: 'failed',
-      errorMessage: transferResult.error,
-    })
-
-    return false
+    return {
+      success: false,
+      error: transferResult.error,
+      payoutData: {
+        partner_id: partner.id,
+        order_id: order.id,
+        listing_id: listing.id,
+        staff_id: photographer.id,
+        order_total_cents: order.total_cents,
+        payout_amount_cents: split.cents,
+        payout_percent: split.percent,
+        status: 'failed',
+        error_message: transferResult.error,
+      },
+    }
   }
-
-  // Record successful payout
-  await recordPartnerPayout({
-    partnerId: partner.id,
-    orderId: order.id,
-    listingId: listing.id,
-    staffId: photographer.id,
-    orderTotalCents: order.total_cents,
-    payoutAmountCents: split.cents,
-    payoutPercent: split.percent,
-    stripeTransferId: transferResult.transferId,
-    stripeDestinationAccount: partner.stripe_connect_id,
-    status: 'completed',
-  })
 
   logger.info(
     { partnerId: partner.id, amount: split.cents, transferId: transferResult.transferId },
-    'Partner payout completed'
+    'Partner payout transfer created'
   )
 
-  return true
+  return {
+    success: true,
+    transfer: {
+      transferId: transferResult.transferId!,
+      type: 'partner',
+      partnerId: partner.id,
+    },
+    payoutData: {
+      partner_id: partner.id,
+      order_id: order.id,
+      listing_id: listing.id,
+      staff_id: photographer.id,
+      order_total_cents: order.total_cents,
+      payout_amount_cents: split.cents,
+      payout_percent: split.percent,
+      stripe_transfer_id: transferResult.transferId,
+      stripe_destination_account: partner.stripe_connect_id,
+      status: 'completed',
+      processed_at: new Date().toISOString(),
+    },
+  }
 }
 
 /**
  * Main payout processor - called when QC approves a job
+ * Uses atomic transaction processing with idempotency and compensation
  */
 export async function processJobPayouts(
   order: OrderForPayout,
@@ -532,15 +549,51 @@ export async function processJobPayouts(
   logger.info({ orderId: order.id, listingId: listing.id }, 'Processing job payouts')
 
   try {
-    // Get settings
+    const supabase = createAdminClient()
+
+    // 1. Generate idempotency key
+    const idempotencyKey = generateIdempotencyKey(order.id, listing.id)
+
+    // 2. Acquire payout lock
+    const { data: lockResult } = await supabase.rpc('acquire_payout_lock' as never, {
+      p_idempotency_key: idempotencyKey,
+      p_order_id: order.id,
+    } as never) as { data: AcquirePayoutLockResult[] | null }
+
+    const lockData = lockResult?.[0]
+    if (!lockData?.acquired) {
+      const existingStatus = lockData?.existing_status || 'unknown'
+      logger.info(
+        { orderId: order.id, existingStatus },
+        'Payout already processed or in progress'
+      )
+      return {
+        success: existingStatus === 'completed',
+        photographerPaid: existingStatus === 'completed',
+        videographerPaid: existingStatus === 'completed',
+        partnerPaid: existingStatus === 'completed',
+        poolsAllocated: existingStatus === 'completed',
+        errors: existingStatus === 'failed' ? ['Previous payout attempt failed'] : [],
+      }
+    }
+
+    // 3. Get settings
     const settings = await getPayoutSettings()
 
     if (!settings.auto_payout_enabled) {
       logger.info('Auto payout disabled, skipping')
+
+      // Update idempotency record to completed
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('payout_idempotency' as any)
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('idempotency_key', idempotencyKey)
+
       return { success: true, photographerPaid, videographerPaid, partnerPaid, poolsAllocated, errors }
     }
 
-    // Get photographer
+    // 4. Get photographer
     const photographer = listing.photographer_id
       ? await getStaffById(listing.photographer_id)
       : null
@@ -548,17 +601,30 @@ export async function processJobPayouts(
     if (!photographer) {
       logger.warn({ listingId: listing.id }, 'No photographer assigned to listing')
       errors.push('No photographer assigned')
+
+      // Update idempotency to failed
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('payout_idempotency' as any)
+        .update({
+          status: 'failed',
+          error: 'No photographer assigned',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('idempotency_key', idempotencyKey)
+
+      return { success: false, photographerPaid, videographerPaid, partnerPaid, poolsAllocated, errors }
     }
 
-    // Get videographer (if different from photographer)
+    // 5. Get videographer (if different from photographer)
     const videographer = await getVideographerForListing(listing.id)
 
-    // Get partner (photographer's partner)
+    // 6. Get partner (photographer's partner)
     const partner = photographer?.partner_id
       ? await getPartnerById(photographer.partner_id)
       : null
 
-    // Calculate splits
+    // 7. Calculate splits
     const splits = calculateSplits({
       orderTotalCents: order.total_cents,
       photographer,
@@ -569,66 +635,169 @@ export async function processJobPayouts(
 
     logger.info({ splits }, 'Calculated payout splits')
 
+    // 8. Process all Stripe transfers, collecting results
+    const successfulTransfers: TransferRecord[] = []
+    const staffPayouts: Record<string, unknown>[] = []
+    const partnerPayouts: Record<string, unknown>[] = []
+
     // Process photographer payout
     if (photographer && splits.photographer) {
-      photographerPaid = await processContractorPayout({
+      const result = await processContractorPayout({
         staff: photographer,
         order,
         listing,
         split: splits.photographer,
       })
-      if (!photographerPaid) {
-        errors.push('Failed to process photographer payout')
+
+      if (result.success && result.transfer && result.payoutData) {
+        photographerPaid = true
+        successfulTransfers.push(result.transfer)
+        staffPayouts.push(result.payoutData)
+      } else {
+        errors.push(`Photographer payout failed: ${result.error}`)
       }
     }
 
     // Process videographer payout
     if (videographer && splits.videographer) {
-      videographerPaid = await processContractorPayout({
+      const result = await processContractorPayout({
         staff: videographer,
         order,
         listing,
         split: splits.videographer,
       })
-      if (!videographerPaid) {
-        errors.push('Failed to process videographer payout')
+
+      if (result.success && result.transfer && result.payoutData) {
+        videographerPaid = true
+        successfulTransfers.push(result.transfer)
+        staffPayouts.push(result.payoutData)
+      } else {
+        errors.push(`Videographer payout failed: ${result.error}`)
       }
     }
 
     // Process partner payout
     if (partner && photographer && splits.partner) {
-      partnerPaid = await processPartnerPayout({
+      const result = await processPartnerPayout({
         partner,
         photographer,
         order,
         listing,
         split: splits.partner,
       })
-      if (!partnerPaid) {
-        errors.push('Failed to process partner payout')
+
+      if (result.success && result.transfer && result.payoutData) {
+        partnerPaid = true
+        successfulTransfers.push(result.transfer)
+        partnerPayouts.push(result.payoutData)
+      } else {
+        errors.push(`Partner payout failed: ${result.error}`)
       }
     }
 
-    // Allocate to company pools
-    await allocateToCompanyPools({
-      orderId: order.id,
-      listingId: listing.id,
-      pools: splits.pools,
-    })
+    // 9. If any transfer failed, compensate successful ones
+    if (errors.length > 0) {
+      logger.error({ errors }, 'Some payouts failed, initiating compensation')
+
+      await compensateFailedPayouts(successfulTransfers)
+
+      // Update idempotency to failed
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('payout_idempotency' as any)
+        .update({
+          status: 'failed',
+          error: errors.join('; '),
+          completed_at: new Date().toISOString(),
+        })
+        .eq('idempotency_key', idempotencyKey)
+
+      return {
+        success: false,
+        photographerPaid: false,
+        videographerPaid: false,
+        partnerPaid: false,
+        poolsAllocated: false,
+        errors,
+      }
+    }
+
+    // 10. Prepare company pool data
+    const companyPoolData = [
+      {
+        order_id: order.id,
+        listing_id: listing.id,
+        pool_type: 'video_editor',
+        amount_cents: splits.pools.video_editor.cents,
+        percent: splits.pools.video_editor.percent,
+        status: 'available',
+      },
+      {
+        order_id: order.id,
+        listing_id: listing.id,
+        pool_type: 'qc_fund',
+        amount_cents: splits.pools.qc_fund.cents,
+        percent: splits.pools.qc_fund.percent,
+        status: 'available',
+      },
+      {
+        order_id: order.id,
+        listing_id: listing.id,
+        pool_type: 'operating',
+        amount_cents: splits.pools.operating.cents,
+        percent: splits.pools.operating.percent,
+        status: 'available',
+      },
+    ]
+
+    // 11. Commit all records atomically via RPC
+    const { data: commitResult } = await supabase.rpc('complete_job_payouts' as never, {
+      p_idempotency_key: idempotencyKey,
+      p_order_id: order.id,
+      p_staff_payouts: staffPayouts.length > 0 ? staffPayouts : null,
+      p_partner_payouts: partnerPayouts.length > 0 ? partnerPayouts : null,
+      p_company_pool: companyPoolData,
+    } as never) as { data: CompleteJobPayoutsResult[] | null }
+
+    const commit = commitResult?.[0]
+    if (!commit?.success) {
+      logger.error({ message: commit?.message }, 'Failed to commit payouts to database')
+
+      // Compensate Stripe transfers
+      await compensateFailedPayouts(successfulTransfers)
+
+      errors.push(`Database commit failed: ${commit?.message}`)
+      return {
+        success: false,
+        photographerPaid: false,
+        videographerPaid: false,
+        partnerPaid: false,
+        poolsAllocated: false,
+        errors,
+      }
+    }
+
     poolsAllocated = true
 
     logger.info(
-      { orderId: order.id, photographerPaid, videographerPaid, partnerPaid, poolsAllocated },
-      'Job payouts processed'
+      {
+        orderId: order.id,
+        photographerPaid,
+        videographerPaid,
+        partnerPaid,
+        poolsAllocated,
+        transferCount: successfulTransfers.length,
+      },
+      'Job payouts processed successfully'
     )
 
     return {
-      success: errors.length === 0,
+      success: true,
       photographerPaid,
       videographerPaid,
       partnerPaid,
       poolsAllocated,
-      errors,
+      errors: [],
     }
   } catch (error) {
     logger.error({ ...formatError(error) }, 'Error processing job payouts')
@@ -660,18 +829,20 @@ export async function reverseOrderPayouts(
 
   try {
     // Get staff payouts for this order
-    const { data: staffPayouts } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: staffPayouts } = await (supabase as any)
       .from('staff_payouts')
       .select('id, stripe_transfer_id, payout_amount_cents')
       .eq('order_id', orderId)
-      .eq('status', 'completed')
+      .eq('status', 'completed') as { data: Array<{ id: string; stripe_transfer_id: string | null; payout_amount_cents: number }> | null }
 
     // Get partner payouts for this order
-    const { data: partnerPayouts } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: partnerPayouts } = await (supabase as any)
       .from('partner_payouts')
       .select('id, stripe_transfer_id, payout_amount_cents')
       .eq('order_id', orderId)
-      .eq('status', 'completed')
+      .eq('status', 'completed') as { data: Array<{ id: string; stripe_transfer_id: string | null; payout_amount_cents: number }> | null }
 
     // Reverse staff payouts
     for (const payout of staffPayouts || []) {
@@ -682,7 +853,8 @@ export async function reverseOrderPayouts(
         })
 
         if (result.success) {
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('staff_payouts')
             .update({
               status: 'reversed',
@@ -707,7 +879,8 @@ export async function reverseOrderPayouts(
         })
 
         if (result.success) {
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('partner_payouts')
             .update({
               status: 'reversed',

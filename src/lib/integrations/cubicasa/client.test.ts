@@ -206,9 +206,16 @@ describe('CubicasaClient', () => {
   describe('getOrder', () => {
     it('should fetch order by ID', async () => {
       const mockOrder = {
-        id: 'order-789',
-        status: 'completed',
-        floor_plans: [{ url: 'https://example.com/fp.png' }],
+        order_id: 'order-789',
+        status: 'completed' as const,
+        address: {
+          street: '123 Main St',
+          city: 'Orlando',
+          state: 'FL',
+          postal_code: '32801',
+        },
+        property_type: 'residential',
+        created_at: '2024-01-10T00:00:00Z',
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -222,7 +229,7 @@ describe('CubicasaClient', () => {
         'https://api.cubi.casa/api/v3/orders/order-789',
         expect.any(Object)
       )
-      expect(result.id).toBe('order-789')
+      expect(result.order_id).toBe('order-789')
       expect(result.status).toBe('completed')
     })
 
@@ -240,7 +247,32 @@ describe('CubicasaClient', () => {
   describe('listOrders', () => {
     it('should list orders with default parameters', async () => {
       const mockResponse = {
-        orders: [{ id: 'order-1' }, { id: 'order-2' }],
+        orders: [
+          {
+            order_id: 'order-1',
+            status: 'pending' as const,
+            address: {
+              street: '123 Main St',
+              city: 'Orlando',
+              state: 'FL',
+              postal_code: '32801',
+            },
+            property_type: 'residential',
+            created_at: '2024-01-10T00:00:00Z',
+          },
+          {
+            order_id: 'order-2',
+            status: 'completed' as const,
+            address: {
+              street: '456 Oak Ave',
+              city: 'Tampa',
+              state: 'FL',
+              postal_code: '33601',
+            },
+            property_type: 'residential',
+            created_at: '2024-01-11T00:00:00Z',
+          },
+        ],
         total: 2,
         page: 1,
         per_page: 25,
@@ -343,8 +375,8 @@ describe('CubicasaClient', () => {
   describe('requestRedraw', () => {
     it('should request floor plan redraw', async () => {
       const mockResponse = {
-        redraw_id: 'redraw-456',
-        status: 'pending',
+        change_request_id: 'redraw-456',
+        status: 'pending' as const,
         estimated_completion: '2024-01-20T00:00:00Z',
       }
 
@@ -357,7 +389,7 @@ describe('CubicasaClient', () => {
         order_id: 'order-123',
         notes: 'Missing bedroom',
         areas_to_fix: ['bedroom', 'bathroom'],
-        priority: 'high',
+        priority: 'rush',
       })
 
       const [url, options] = mockFetch.mock.calls[0]
@@ -367,15 +399,15 @@ describe('CubicasaClient', () => {
       const body = JSON.parse(options.body)
       expect(body.notes).toBe('Missing bedroom')
       expect(body.areas_to_fix).toEqual(['bedroom', 'bathroom'])
-      expect(body.priority).toBe('high')
+      expect(body.priority).toBe('rush')
 
-      expect(result.redraw_id).toBe('redraw-456')
+      expect(result.change_request_id).toBe('redraw-456')
     })
 
     it('should use default priority if not specified', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ redraw_id: 'test', status: 'pending' }),
+        json: () => Promise.resolve({ change_request_id: 'test', status: 'pending' }),
       })
 
       await client.requestRedraw({

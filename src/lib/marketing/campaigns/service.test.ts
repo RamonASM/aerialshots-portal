@@ -68,6 +68,7 @@ describe('createCampaign', () => {
   const mockRequest: CreateCampaignRequest = {
     name: 'Welcome Campaign',
     subject: 'Welcome to Our Service',
+    type: 'newsletter',
     html_content: '<p>Hello {{name}}!</p>',
     text_content: 'Hello {{name}}!',
     recipient_filter: 'all_agents',
@@ -91,7 +92,7 @@ describe('createCampaign', () => {
   })
 
   it('should set status to scheduled when scheduled_for is provided', async () => {
-    const scheduledRequest = {
+    const scheduledRequest: CreateCampaignRequest = {
       ...mockRequest,
       scheduled_for: '2024-01-20T10:00:00Z',
     }

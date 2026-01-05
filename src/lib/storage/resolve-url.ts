@@ -6,7 +6,17 @@
 
 import type { Database } from '@/lib/supabase/types'
 
-type MediaAsset = Database['public']['Tables']['media_assets']['Row']
+type BaseMediaAsset = Database['public']['Tables']['media_assets']['Row']
+
+/**
+ * Extended media asset type with columns that may not be in generated types
+ */
+type MediaAsset = BaseMediaAsset & {
+  media_url?: string | null
+  approved_storage_path?: string | null
+  processed_storage_path?: string | null
+  migration_status?: string | null
+}
 
 /**
  * Partial type for resolveMediaUrl - allows for partial asset objects

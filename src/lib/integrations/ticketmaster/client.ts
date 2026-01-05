@@ -2,6 +2,7 @@
 // Documentation: https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
 
 import { integrationLogger, formatError } from '@/lib/logger'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 
 const logger = integrationLogger.child({ integration: 'ticketmaster' })
 
@@ -157,7 +158,14 @@ export async function searchLocalEvents(
     url.searchParams.set('sort', 'date,asc')
     url.searchParams.set('size', '20')
 
-    const response = await fetch(url.toString())
+    const response = await fetchWithTimeout(url.toString(), {
+      timeout: FETCH_TIMEOUTS.DEFAULT,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Ticketmaster API error: ${response.status} ${response.statusText}`)
+    }
+
     const data: TicketmasterResponse = await response.json()
 
     if (!data._embedded?.events) {

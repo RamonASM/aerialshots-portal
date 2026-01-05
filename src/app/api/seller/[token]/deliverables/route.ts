@@ -18,12 +18,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Validate token
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single()
+      .single() as { data: { listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -38,11 +39,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check media access permissions
-    const { data: accessControl } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: accessControl } = await (supabase as any)
       .from('seller_access_controls')
       .select('media_access_enabled, granted_at, notes')
       .eq('listing_id', shareLink.listing_id)
-      .single()
+      .single() as { data: { media_access_enabled: boolean; granted_at: string | null; notes: string | null } | null }
 
     let hasMediaAccess = accessControl?.media_access_enabled || false
     let accessReason: 'agent_granted' | 'payment' | 'none' = 'none'
@@ -98,9 +100,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('media_assets')
       .select(`
         id,
-        media_url,
+        aryeo_url,
         storage_path,
-        processed_storage_path,
         type,
         category,
         qc_status,
@@ -142,7 +143,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       media: {
         photos: photos.map(p => ({
           id: p.id,
-          url: p.processed_storage_path || resolveMediaUrl(p) || p.storage_path,
+          url: p.aryeo_url || resolveMediaUrl(p) || p.storage_path,
           category: p.category,
           sort_order: p.sort_order,
         })),

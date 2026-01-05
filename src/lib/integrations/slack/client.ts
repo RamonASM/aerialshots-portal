@@ -5,6 +5,7 @@
  */
 
 import crypto from 'crypto'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 
 // Types
 export interface SlackMessage {
@@ -101,14 +102,20 @@ export async function sendSlackMessage(message: SlackMessage): Promise<SlackResp
   }
 
   try {
-    const response = await fetch(`${SLACK_API_URL}/chat.postMessage`, {
+    const response = await fetchWithTimeout(`${SLACK_API_URL}/chat.postMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(message),
+      timeout: FETCH_TIMEOUTS.DEFAULT,
     })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return { ok: false, error: `Slack API error: ${response.status} - ${errorData.error || response.statusText}` }
+    }
 
     const data = await response.json()
     return data
@@ -479,14 +486,20 @@ export class SlackClient {
     params: Record<string, unknown>
   ): Promise<T> {
     try {
-      const response = await fetch(`${SLACK_API_URL}/${method}`, {
+      const response = await fetchWithTimeout(`${SLACK_API_URL}/${method}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.token}`,
         },
         body: JSON.stringify(params),
+        timeout: FETCH_TIMEOUTS.DEFAULT,
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        return { ok: false, error: `Slack API error: ${response.status} - ${errorData.error || response.statusText}` } as T
+      }
 
       return await response.json()
     } catch (error) {

@@ -101,11 +101,12 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     // Find the listing by Cubicasa order ID
-    const { data: listing, error: findError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: listing, error: findError } = await (supabase as any)
       .from('listings')
       .select('id, address, cubicasa_status')
       .eq('cubicasa_order_id', order_id)
-      .single()
+      .single() as { data: { id: string; address: string; cubicasa_status: string | null } | null; error: Error | null }
 
     if (findError || !listing) {
       webhookLogger.warn({ source: 'cubicasa', orderId: order_id }, 'No listing found for Cubicasa order')
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
           await supabase
             .from('media_assets')
             .update({
-              media_url: floorPlanUrl,
+              aryeo_url: floorPlanUrl,
               qc_status: 'pending',
             })
             .eq('id', existingAsset.id)
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
           // Create new floor plan asset
           await supabase.from('media_assets').insert({
             listing_id: listing.id as string,
-            media_url: floorPlanUrl,
+            aryeo_url: floorPlanUrl,
             type: 'floorplan',
             category: 'floor_plan',
             qc_status: 'pending',
@@ -189,10 +190,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the listing
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('listings')
       .update(updateData)
-      .eq('id', listing.id)
+      .eq('id', listing.id) as { error: Error | null }
 
     if (updateError) {
       webhookLogger.error({ source: 'cubicasa', listingId: listing.id, ...formatError(updateError) }, 'Error updating listing')

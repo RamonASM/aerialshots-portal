@@ -29,7 +29,7 @@ export default async function EditorQueuePage() {
   // Verify staff role
   const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, role, team_role')
+    .select('id, name, role')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
@@ -50,7 +50,6 @@ export default async function EditorQueuePage() {
       ops_status,
       is_rush,
       updated_at,
-      expected_completion,
       agent:agents(name)
     `)
     .in('ops_status', ['staged', 'awaiting_editing', 'in_editing'])

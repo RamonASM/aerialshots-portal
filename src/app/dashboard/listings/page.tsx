@@ -37,7 +37,7 @@ export default async function ListingsPage() {
   const { data: mediaData } = listingIds.length > 0
     ? await supabase
         .from('media_assets')
-        .select('id, listing_id, media_url, type')
+        .select('id, listing_id, aryeo_url, type')
         .in('listing_id', listingIds)
     : { data: [] }
 
@@ -127,7 +127,7 @@ export default async function ListingsPage() {
       <RealtimeListingsGrid
         initialListings={listings?.map(l => ({
           ...l,
-          media_assets: l.media_assets as { id: string; listing_id: string; media_url: string | null; type: string }[],
+          media_assets: l.media_assets as { id: string; listing_id: string; aryeo_url: string | null; type: string }[],
         })) || []}
         agentId={agent.id}
       />

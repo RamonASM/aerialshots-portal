@@ -12,14 +12,13 @@ import {
   getMediaStats,
   isNativeUrl,
 } from './resolve-url'
-// Test-specific type that includes all fields used in resolve-url.ts
-// This avoids dependency on generated Supabase types which may be out of sync
+// Test-specific type that matches the actual database schema + extended fields
+// This ensures compatibility with resolve-url.ts MediaAsset type
 type TestMediaAsset = {
+  // Base database fields (from media_assets table)
   id: string
   listing_id: string
-  aryeo_url: string | null
-  media_url: string | null
-  storage_bucket: string | null
+  aryeo_url: string  // Required in DB schema
   type: string
   category: string | null
   sort_order: number | null
@@ -28,28 +27,30 @@ type TestMediaAsset = {
   qc_status: string | null
   qc_notes: string | null
   created_at: string | null
-  processing_job_id: string | null
-  processed_storage_path: string | null
-  approved_storage_path: string | null
-  edit_history: unknown[]
-  qc_assigned_to: string | null
-  needs_editing: boolean
-  original_filename: string | null
-  file_size_bytes: number | null
-  image_width: number | null
-  image_height: number | null
-  migration_status: string
-  migrated_at: string | null
+  // Extended fields (may not be in generated types)
+  media_url?: string | null
+  storage_bucket?: string | null
+  processing_job_id?: string | null
+  processed_storage_path?: string | null
+  approved_storage_path?: string | null
+  edit_history?: unknown[]
+  qc_assigned_to?: string | null
+  needs_editing?: boolean
+  original_filename?: string | null
+  file_size_bytes?: number | null
+  image_width?: number | null
+  image_height?: number | null
+  migration_status?: string | null
+  migrated_at?: string | null
 }
 
 // Factory for creating test media assets
 function createAsset(overrides: Partial<TestMediaAsset> = {}): TestMediaAsset {
   return {
+    // Required base fields
     id: 'test-id',
     listing_id: 'listing-123',
-    aryeo_url: null,
-    media_url: null,
-    storage_bucket: null,
+    aryeo_url: '',  // Required string field
     type: 'photo',
     category: null,
     sort_order: null,
@@ -58,6 +59,9 @@ function createAsset(overrides: Partial<TestMediaAsset> = {}): TestMediaAsset {
     qc_status: 'pending',
     qc_notes: null,
     created_at: new Date().toISOString(),
+    // Optional extended fields
+    media_url: null,
+    storage_bucket: null,
     processing_job_id: null,
     processed_storage_path: null,
     approved_storage_path: null,
@@ -89,37 +93,38 @@ describe('Media URL Resolution', () => {
     it('should prefer media_url when available', () => {
       const asset = createAsset({
         media_url: 'https://supabase.co/native.jpg',
-        processed_storage_path: 'https://founddr.com/processed.jpg',
+        aryeo_url: 'https://aryeo.com/photo.jpg',
+        storage_path: 'path/to/photo.jpg',
       })
 
       expect(resolveMediaUrl(asset)).toBe('https://supabase.co/native.jpg')
     })
 
-    it('should use approved_storage_path when media_url is null', () => {
+    it('should use aryeo_url when media_url is null', () => {
       const asset = createAsset({
         media_url: null,
-        approved_storage_path: 'https://supabase.co/approved.jpg',
-        processed_storage_path: 'https://founddr.com/processed.jpg',
+        aryeo_url: 'https://aryeo.com/photo.jpg',
+        storage_path: 'path/to/photo.jpg',
       })
 
-      expect(resolveMediaUrl(asset)).toBe('https://supabase.co/approved.jpg')
+      expect(resolveMediaUrl(asset)).toBe('https://aryeo.com/photo.jpg')
     })
 
-    it('should use processed_storage_path as third priority', () => {
+    it('should use storage_path as third priority', () => {
       const asset = createAsset({
         media_url: null,
-        approved_storage_path: null,
-        processed_storage_path: 'https://founddr.com/processed.jpg',
+        aryeo_url: '',
+        storage_path: 'path/to/photo.jpg',
       })
 
-      expect(resolveMediaUrl(asset)).toBe('https://founddr.com/processed.jpg')
+      expect(resolveMediaUrl(asset)).toBe('path/to/photo.jpg')
     })
 
     it('should return null when no URL available', () => {
       const asset = createAsset({
         media_url: null,
-        approved_storage_path: null,
-        processed_storage_path: null,
+        aryeo_url: '',
+        storage_path: null,
       })
 
       expect(resolveMediaUrl(asset)).toBeNull()
@@ -185,6 +190,7 @@ describe('Media URL Resolution', () => {
         }),
         createAsset({
           id: '2',
+          aryeo_url: 'https://aryeo.com/2.jpg',
           processed_storage_path: 'https://proc.com/2.jpg',
           type: 'video',
           category: 'tour',
@@ -203,7 +209,7 @@ describe('Media URL Resolution', () => {
       })
       expect(result[1]).toEqual({
         id: '2',
-        url: 'https://proc.com/2.jpg',
+        url: 'https://aryeo.com/2.jpg',
         source: 'processed',
         type: 'video',
         category: 'tour',

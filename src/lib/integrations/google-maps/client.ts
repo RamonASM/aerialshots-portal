@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { integrationLogger, formatError } from '@/lib/logger'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 import type {
   Coordinates,
   DriveTimeResult,
@@ -67,12 +68,13 @@ export async function getDriveTime(
       params.append('traffic_model', 'best_guess')
     }
 
-    const response = await fetch(
-      `${GOOGLE_MAPS_API_URL}/distancematrix/json?${params}`
+    const response = await fetchWithTimeout(
+      `${GOOGLE_MAPS_API_URL}/distancematrix/json?${params}`,
+      { timeout: FETCH_TIMEOUTS.DEFAULT }
     )
 
     if (!response.ok) {
-      throw new Error(`Distance Matrix API error: ${response.status}`)
+      throw new Error(`Distance Matrix API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json() as DriveTimeMatrix
@@ -155,12 +157,13 @@ export async function getDriveTimeMatrix(
       params.append('traffic_model', 'best_guess')
     }
 
-    const response = await fetch(
-      `${GOOGLE_MAPS_API_URL}/distancematrix/json?${params}`
+    const response = await fetchWithTimeout(
+      `${GOOGLE_MAPS_API_URL}/distancematrix/json?${params}`,
+      { timeout: FETCH_TIMEOUTS.DEFAULT }
     )
 
     if (!response.ok) {
-      throw new Error(`Distance Matrix API error: ${response.status}`)
+      throw new Error(`Distance Matrix API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json() as DriveTimeMatrix
@@ -190,12 +193,13 @@ export async function geocodeAddress(
       key: apiKey,
     })
 
-    const response = await fetch(
-      `${GOOGLE_MAPS_API_URL}/geocode/json?${params}`
+    const response = await fetchWithTimeout(
+      `${GOOGLE_MAPS_API_URL}/geocode/json?${params}`,
+      { timeout: FETCH_TIMEOUTS.DEFAULT }
     )
 
     if (!response.ok) {
-      throw new Error(`Geocoding API error: ${response.status}`)
+      throw new Error(`Geocoding API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
@@ -370,7 +374,8 @@ async function getCachedDriveTime(
     const destLat = Math.round(destination.lat * 100) / 100
     const destLng = Math.round(destination.lng * 100) / 100
 
-    const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
       .from('drive_time_cache')
       .select('distance_meters, duration_seconds')
       .eq('origin_lat', originLat)
@@ -378,7 +383,7 @@ async function getCachedDriveTime(
       .eq('destination_lat', destLat)
       .eq('destination_lng', destLng)
       .gt('expires_at', new Date().toISOString())
-      .single()
+      .single() as { data: { distance_meters: number; duration_seconds: number } | null }
 
     return data
   } catch {
@@ -408,7 +413,8 @@ async function cacheDriveTime(
       Date.now() + CACHE_DURATION_HOURS * 60 * 60 * 1000
     )
 
-    await supabase.from('drive_time_cache').upsert(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('drive_time_cache').upsert(
       {
         origin_lat: originLat,
         origin_lng: originLng,

@@ -12,7 +12,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { token } = await params
   const supabase = await createClient()
 
-  const { data: shareLink } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shareLink } = await (supabase as any)
     .from('share_links')
     .select(`
       listing:listings(address, city, state),
@@ -20,14 +21,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     `)
     .eq('share_token', token)
     .eq('link_type', 'schedule')
-    .single()
+    .single() as { data: { listing: { address: string; city: string; state: string } | null; agent: { name: string } | null } | null }
 
   if (!shareLink?.listing) {
     return { title: 'Schedule Photo Shoot' }
   }
 
-  const listing = shareLink.listing as { address: string; city: string; state: string }
-  const agent = shareLink.agent as { name: string } | null
+  const listing = shareLink.listing
+  const agent = shareLink.agent
 
   return {
     title: `Schedule Photo Shoot - ${listing.address}`,
@@ -41,7 +42,8 @@ export default async function SchedulePage({ params }: PageProps) {
   const supabase = await createClient()
 
   // Validate the share link
-  const { data: shareLink, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shareLink, error } = await (supabase as any)
     .from('share_links')
     .select(`
       id,
@@ -63,7 +65,38 @@ export default async function SchedulePage({ params }: PageProps) {
     `)
     .eq('share_token', token)
     .eq('link_type', 'schedule')
-    .single()
+    .single() as {
+      data: {
+        id: string
+        share_token: string
+        link_type: string
+        client_name: string | null
+        client_email: string | null
+        expires_at: string | null
+        is_active: boolean
+        listing: {
+          id: string
+          address: string
+          city: string
+          state: string
+          zip: string
+          beds: number | null
+          baths: number | null
+          sqft: number | null
+          scheduled_at: string | null
+        } | null
+        agent: {
+          id: string
+          name: string
+          email: string
+          phone: string | null
+          logo_url: string | null
+          headshot_url: string | null
+          brand_color: string
+        } | null
+      } | null
+      error: Error | null
+    }
 
   if (error || !shareLink) {
     notFound()
@@ -81,43 +114,42 @@ export default async function SchedulePage({ params }: PageProps) {
   // Fetch portal settings for branding
   let portalSettings = null
   if (shareLink.agent) {
-    const agent = shareLink.agent as { id: string }
-    const { data: settings } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: settings } = await (supabase as any)
       .from('portal_settings')
       .select('*')
-      .eq('agent_id', agent.id)
-      .single()
+      .eq('agent_id', shareLink.agent.id)
+      .single() as { data: { branding_enabled: boolean | null; custom_domain: string | null } | null }
     portalSettings = settings
   }
 
   // Check if schedule already submitted
-  const { data: existingSchedule } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingSchedule } = await (supabase as any)
     .from('seller_schedules')
     .select('*')
     .eq('share_link_id', shareLink.id)
-    .single()
+    .single() as {
+      data: {
+        id: string
+        share_link_id: string
+        status: string
+        selected_slot: Json
+        available_slots: Json
+        submitted_at: string | null
+        confirmed_at: string | null
+        seller_name: string | null
+        seller_email: string | null
+        seller_phone: string | null
+      } | null
+    }
 
-  const listing = shareLink.listing as {
-    id: string
-    address: string
-    city: string
-    state: string
-    zip: string
-    beds: number | null
-    baths: number | null
-    sqft: number | null
-    scheduled_at: string | null
+  const listing = shareLink.listing
+  const agent = shareLink.agent
+
+  if (!listing) {
+    notFound()
   }
-
-  const agent = shareLink.agent as {
-    id: string
-    name: string
-    email: string
-    phone: string | null
-    logo_url: string | null
-    headshot_url: string | null
-    brand_color: string
-  } | null
 
   const brandColor = agent?.brand_color || '#0066FF'
 

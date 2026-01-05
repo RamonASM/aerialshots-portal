@@ -10,7 +10,6 @@ import type { Json } from '@/lib/supabase/types'
 interface MediaAsset {
   id: string
   aryeo_url: string | null
-  media_url: string | null
   type: string
   category: string | null
   sort_order: number | null
@@ -123,7 +122,7 @@ export function PortalContent({
 
   const handleDownload = async (asset: MediaAsset) => {
     const link = document.createElement('a')
-    link.href = asset.media_url || asset.aryeo_url || ''
+    link.href = asset.aryeo_url || ''
     link.download = `${listing.address}-${asset.category || 'photo'}.jpg`
     link.target = '_blank'
     document.body.appendChild(link)
@@ -387,7 +386,7 @@ export function PortalContent({
             Download
           </button>
           <img
-            src={selectedImage.media_url || selectedImage.aryeo_url || ''}
+            src={selectedImage.aryeo_url || ''}
             alt=""
             className="max-w-full max-h-[90vh] object-contain"
             onClick={(e) => e.stopPropagation()}
@@ -467,7 +466,7 @@ function MediaSection({
               onClick={() => onImageClick(asset)}
             >
               <img
-                src={asset.media_url || asset.aryeo_url || ''}
+                src={asset.aryeo_url || ''}
                 alt=""
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
               />
@@ -492,10 +491,10 @@ function MediaSection({
       {videos.map((asset) => (
         <div key={asset.id} className="mt-4">
           <video
-            src={asset.media_url || asset.aryeo_url || ''}
+            src={asset.aryeo_url || ''}
             controls
             className="w-full rounded-lg"
-            poster={images[0]?.media_url || images[0]?.aryeo_url || undefined}
+            poster={images[0]?.aryeo_url || undefined}
           />
         </div>
       ))}
@@ -504,7 +503,7 @@ function MediaSection({
       {iframes.map((asset) => (
         <div key={asset.id} className="mt-4 aspect-video rounded-lg overflow-hidden">
           <iframe
-            src={asset.media_url || asset.aryeo_url || ''}
+            src={asset.aryeo_url || ''}
             className="w-full h-full"
             allowFullScreen
           />

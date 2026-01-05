@@ -359,7 +359,7 @@ describe('Loyalty Service', () => {
   describe('awardPointsForOrder', () => {
     it('should award 1 point per dollar spent', async () => {
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
       mockFrom.mockReturnValue(insertChain)
 
@@ -386,7 +386,7 @@ describe('Loyalty Service', () => {
 
     it('should floor fractional points', async () => {
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
       mockFrom.mockReturnValue(insertChain)
 
@@ -408,7 +408,7 @@ describe('Loyalty Service', () => {
 
     it('should set expiration date 365 days in future', async () => {
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
       mockFrom.mockReturnValue(insertChain)
 
@@ -427,7 +427,7 @@ describe('Loyalty Service', () => {
   describe('awardBonusPoints', () => {
     it('should award bonus points with description', async () => {
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
       mockFrom.mockReturnValue(insertChain)
 
@@ -447,7 +447,7 @@ describe('Loyalty Service', () => {
 
     it('should use default source if not provided', async () => {
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
       mockFrom.mockReturnValue(insertChain)
 
@@ -490,7 +490,7 @@ describe('Loyalty Service', () => {
       }
 
       const insertChain = {
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
 
       mockFrom.mockImplementation((table: string) => {
@@ -563,7 +563,7 @@ describe('Loyalty Service', () => {
       }
 
       const selectChain = createChainableMock({ data: mockPunchCard, error: null })
-      const insertChain = createChainableMock({ error: null })
+      const insertChain = createChainableMock({ data: null, error: null })
       const updateChain = createChainableMock({ data: updatedCard, error: null })
 
       let punchCardsCallCount = 0
@@ -600,7 +600,7 @@ describe('Loyalty Service', () => {
 
       const selectEmptyChain = createChainableMock({ data: null, error: null })
       const insertCardChain = createChainableMock({ data: { ...mockPunchCard, punches_earned: 0 }, error: null })
-      const insertPunchChain = createChainableMock({ error: null })
+      const insertPunchChain = createChainableMock({ data: null, error: null })
       const updateChain = createChainableMock({ data: newCard, error: null })
 
       let punchCardsCallCount = 0
@@ -649,7 +649,7 @@ describe('Loyalty Service', () => {
       }
 
       const selectChain = createChainableMock({ data: almostCompleteCard, error: null })
-      const insertChain = createChainableMock({ error: null })
+      const insertChain = createChainableMock({ data: null, error: null })
       const updateChain = createChainableMock({ data: completedCard, error: null })
 
       let punchCardsCallCount = 0
@@ -672,7 +672,7 @@ describe('Loyalty Service', () => {
 
   describe('usePunchCardReward', () => {
     it('should mark reward as used', async () => {
-      const createChainableMock = (finalResult: { error: unknown }) => {
+      const createChainableMock = (finalResult: { data: unknown; error: unknown }) => {
         const chain: Record<string, ReturnType<typeof vi.fn>> = {}
         chain.update = vi.fn().mockReturnValue(chain)
         chain.eq = vi.fn().mockReturnValue(chain)
@@ -688,7 +688,7 @@ describe('Loyalty Service', () => {
         return chain
       }
 
-      const updateChain = createChainableMock({ error: null })
+      const updateChain = createChainableMock({ data: null, error: null })
       mockFrom.mockReturnValue(updateChain)
 
       const result = await usePunchCardReward('card-1', 'order-789')
@@ -702,7 +702,7 @@ describe('Loyalty Service', () => {
     })
 
     it('should return false on error', async () => {
-      const createChainableMock = (finalResult: { error: unknown }) => {
+      const createChainableMock = (finalResult: { data: unknown; error: unknown }) => {
         const chain: Record<string, ReturnType<typeof vi.fn>> = {}
         chain.update = vi.fn().mockReturnValue(chain)
         let eqCallCount = 0
@@ -716,7 +716,7 @@ describe('Loyalty Service', () => {
         return chain
       }
 
-      const updateChain = createChainableMock({ error: new Error('Not found') })
+      const updateChain = createChainableMock({ data: null, error: new Error('Not found') })
       mockFrom.mockReturnValue(updateChain)
 
       const result = await usePunchCardReward('card-invalid', 'order-789')

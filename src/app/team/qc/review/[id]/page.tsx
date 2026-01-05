@@ -77,7 +77,7 @@ export default async function QCReviewPage({ params }: PageProps) {
   // Verify staff role
   const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, role, team_role')
+    .select('id, name, role')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
@@ -87,7 +87,7 @@ export default async function QCReviewPage({ params }: PageProps) {
   }
 
   // Allow QC specialists and admins
-  if (staff.team_role !== 'qc_specialist' && staff.role !== 'admin') {
+  if (staff.role !== 'qc_specialist' && staff.role !== 'qc' && staff.role !== 'admin') {
     redirect('/team/qc')
   }
 
@@ -122,9 +122,7 @@ export default async function QCReviewPage({ params }: PageProps) {
       id,
       listing_id,
       aryeo_url,
-      media_url,
       storage_path,
-      processed_storage_path,
       type,
       category,
       qc_status,

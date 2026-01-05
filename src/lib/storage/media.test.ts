@@ -13,12 +13,20 @@ const mockRemove = vi.fn()
 const mockGetPublicUrl = vi.fn()
 const mockCreateSignedUrl = vi.fn()
 const mockList = vi.fn()
+const mockDownload = vi.fn()
+const mockMove = vi.fn()
+const mockCopy = vi.fn()
+const mockCreateSignedUrls = vi.fn()
 const mockFrom = vi.fn(() => ({
   upload: mockUpload,
   remove: mockRemove,
   getPublicUrl: mockGetPublicUrl,
   createSignedUrl: mockCreateSignedUrl,
+  createSignedUrls: mockCreateSignedUrls,
   list: mockList,
+  download: mockDownload,
+  move: mockMove,
+  copy: mockCopy,
 }))
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -468,19 +476,29 @@ describe('Media Storage Service', () => {
 
     describe('listByListing', () => {
       it('should list all media for a listing', async () => {
-        const mockList = vi.fn().mockResolvedValueOnce({
+        const mockListLocal = vi.fn().mockResolvedValueOnce({
           data: [
             { name: 'photo1.jpg', metadata: { size: 1024 } },
             { name: 'photo2.jpg', metadata: { size: 2048 } },
           ],
           error: null,
         })
-        mockFrom.mockReturnValueOnce({ list: mockList })
+        mockFrom.mockReturnValueOnce({
+          upload: mockUpload,
+          remove: mockRemove,
+          getPublicUrl: mockGetPublicUrl,
+          createSignedUrl: mockCreateSignedUrl,
+          createSignedUrls: mockCreateSignedUrls,
+          list: mockListLocal,
+          download: mockDownload,
+          move: mockMove,
+          copy: mockCopy,
+        })
 
         const result = await service.listByListing('lst_123', 'photo')
 
         expect(result.length).toBe(2)
-        expect(mockList).toHaveBeenCalledWith('lst_123/photos')
+        expect(mockListLocal).toHaveBeenCalledWith('lst_123/photos')
       })
     })
 

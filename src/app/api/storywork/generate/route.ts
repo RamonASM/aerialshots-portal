@@ -42,12 +42,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the story
-    const { data: story, error: storyError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: story, error: storyError } = await (supabase as any)
       .from('stories')
       .select('*')
       .eq('id', storyId)
       .eq('agent_id', agent.id)
-      .single()
+      .single() as { data: { id: string; agent_id: string; story_type: string; guided_answers: Record<string, string>; status: string; title: string } | null; error: Error | null }
 
     if (storyError || !story) {
       return NextResponse.json({ error: 'Story not found' }, { status: 404 })
@@ -84,7 +85,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the story
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('stories')
       .update({
         generated_content: JSON.parse(JSON.stringify(content)),

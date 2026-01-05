@@ -28,13 +28,15 @@ export default async function PayrollPage() {
   }
 
   // Get pay periods (most recent first)
-  const { data: payPeriods } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: payPeriods } = await (supabase as any)
     .from('pay_periods')
     .select('*')
-    .order('start_date', { ascending: false })
+    .order('start_date', { ascending: false }) as { data: import('@/lib/supabase/types').PayPeriodRow[] | null }
 
   // Get hourly staff members
-  const { data: hourlyStaff } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: hourlyStaff } = await (supabase as any)
     .from('staff')
     .select(`
       id,
@@ -46,7 +48,7 @@ export default async function PayrollPage() {
     `)
     .eq('payout_type', 'hourly')
     .eq('is_active', true)
-    .order('name')
+    .order('name') as { data: Array<{ id: string; name: string; email: string; role: string; hourly_rate: number; payout_type: string }> | null }
 
   return (
     <PayrollClient

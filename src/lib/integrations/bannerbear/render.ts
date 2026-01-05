@@ -48,8 +48,8 @@ export async function renderSlide(options: RenderSlideOptions): Promise<Bannerbe
   } = options
 
   const modifications = buildSlideModifications(
-    slide.headline,
-    slide.body,
+    slide.headline || '',
+    slide.body || '',
     backgroundImageUrl,
     agentLogoUrl,
     brandColor,

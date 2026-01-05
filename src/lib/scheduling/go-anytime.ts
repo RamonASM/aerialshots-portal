@@ -55,6 +55,14 @@ export interface DateRangeFilter {
   to?: Date
 }
 
+interface ScheduleRow {
+  id: string
+  is_anytime: boolean
+  claimed_by: string | null
+  anytime_start_date: string
+  anytime_end_date: string
+}
+
 const MAX_DATE_RANGE_DAYS = 14
 const MIN_DATE_RANGE_DAYS = 2
 
@@ -134,9 +142,9 @@ export async function createAnytimeBooking(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('seller_schedules')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .insert({
         listing_id,
         is_anytime: true,
@@ -148,7 +156,8 @@ export async function createAnytimeBooking(
         priority: priority || 'normal',
       })
       .select()
-      .single() as { data: AnytimeBooking | null; error: Error | null }
+      .single()
+      .returns<AnytimeBooking>()
 
     if (error || !data) {
       return {
@@ -180,9 +189,9 @@ export async function getAnytimeSchedules(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('seller_schedules')
+    let query = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select('*, listing:listings(address)')
       .eq('territory_id', territoryId)
       .eq('is_anytime', true)
@@ -197,10 +206,7 @@ export async function getAnytimeSchedules(
       query = query.lte('anytime_end_date', dateFilter.to.toISOString().split('T')[0])
     }
 
-    const { data, error } = await query as {
-      data: AnytimeBooking[] | null
-      error: Error | null
-    }
+    const { data, error } = await query.returns<AnytimeBooking[]>()
 
     if (error || !data) {
       return []
@@ -225,21 +231,13 @@ export async function claimAnytimeSlot(
     const supabase = createAdminClient()
 
     // First, check if the schedule is available
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: schedule, error: fetchError } = await (supabase as any)
-      .from('seller_schedules')
+    const { data: schedule, error: fetchError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select('id, is_anytime, claimed_by, anytime_start_date, anytime_end_date')
       .eq('id', scheduleId)
-      .single() as {
-        data: {
-          id: string
-          is_anytime: boolean
-          claimed_by: string | null
-          anytime_start_date: string
-          anytime_end_date: string
-        } | null
-        error: Error | null
-      }
+      .single()
+      .returns<ScheduleRow>()
 
     if (fetchError || !schedule) {
       return {
@@ -265,9 +263,9 @@ export async function claimAnytimeSlot(
     }
 
     // Claim the slot
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
-      .from('seller_schedules')
+    const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .update({
         claimed_by: photographerId,
         claimed_at: new Date().toISOString(),
@@ -307,12 +305,13 @@ export async function releaseAnytimeSlot(
     const supabase = createAdminClient()
 
     // Verify the photographer owns this claim
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: schedule, error: fetchError } = await (supabase as any)
-      .from('seller_schedules')
+    const { data: schedule, error: fetchError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select('id, claimed_by')
       .eq('id', scheduleId)
-      .single() as { data: { id: string; claimed_by: string | null } | null; error: Error | null }
+      .single()
+      .returns<{ id: string; claimed_by: string | null }>()
 
     if (fetchError || !schedule) {
       return {
@@ -329,9 +328,9 @@ export async function releaseAnytimeSlot(
     }
 
     // Release the claim
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
-      .from('seller_schedules')
+    const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .update({
         claimed_by: null,
         claimed_at: null,
@@ -366,16 +365,14 @@ export async function getPhotographerAnytimeQueue(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('seller_schedules')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select('*, listing:listings(address)')
       .eq('claimed_by', photographerId)
       .eq('is_anytime', true)
-      .order('scheduled_date', { ascending: true }) as {
-        data: AnytimeBooking[] | null
-        error: Error | null
-      }
+      .order('scheduled_date', { ascending: true })
+      .returns<AnytimeBooking[]>()
 
     if (error || !data) {
       return []

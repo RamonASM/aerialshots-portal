@@ -3,6 +3,7 @@
 
 import { PLACE_CATEGORIES, type PlaceCategory, type NearbyPlace } from '@/lib/utils/category-info'
 import { integrationLogger, formatError } from '@/lib/logger'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 
 const logger = integrationLogger.child({ integration: 'google-places' })
 
@@ -124,7 +125,7 @@ export async function searchNearbyPlaces(
       rankPreference: 'DISTANCE',
     }
 
-    const response = await fetch(`${PLACES_API_BASE}/places:searchNearby`, {
+    const response = await fetchWithTimeout(`${PLACES_API_BASE}/places:searchNearby`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -132,7 +133,12 @@ export async function searchNearbyPlaces(
         'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.shortFormattedAddress,places.location,places.rating,places.userRatingCount,places.priceLevel,places.types,places.primaryType,places.currentOpeningHours,places.regularOpeningHours,places.photos,places.businessStatus',
       },
       body: JSON.stringify(requestBody),
+      timeout: FETCH_TIMEOUTS.DEFAULT,
     })
+
+    if (!response.ok) {
+      throw new Error(`Google Places API error: ${response.status} ${response.statusText}`)
+    }
 
     const data: NearbySearchResponse = await response.json()
 

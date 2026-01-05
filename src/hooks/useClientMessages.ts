@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/types'
+import type { ClientMessageRow } from '@/lib/supabase/types-custom'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
-type ClientMessage = Database['public']['Tables']['client_messages']['Row']
+type ClientMessage = ClientMessageRow
 
 interface UseClientMessagesOptions {
   listingId: string

@@ -98,12 +98,13 @@ export default async function DashboardPage() {
 
   let unreadMessagesCount = 0
   if (listingIds.length > 0) {
-    const { count } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (supabase as any)
       .from('client_messages')
       .select('*', { count: 'exact', head: true })
       .in('listing_id', listingIds)
       .eq('sender_type', 'seller')
-      .is('read_at', null)
+      .is('read_at', null) as { count: number | null }
     unreadMessagesCount = count ?? 0
   }
 

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * TOS version information
@@ -24,6 +25,20 @@ export interface TosAcceptance {
   ip_address?: string
   user_agent?: string
   accepted_at: string
+}
+
+/**
+ * Database row types (subset of TosVersion)
+ */
+interface TosVersionRow {
+  version: string
+}
+
+/**
+ * Database row types (subset of TosAcceptance)
+ */
+interface TosAcceptanceRow {
+  tos_version: string
 }
 
 /**
@@ -62,26 +77,28 @@ export async function getTosVersion(version?: string): Promise<TosVersion | null
 
     if (version) {
       // Get specific version
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('tos_versions')
+      const { data, error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('tos_versions' as any)
         .select('*')
         .eq('version', version)
-        .single() as { data: TosVersion | null; error: Error | null }
+        .single()
+        .returns<TosVersion>()
 
       if (error || !data) return null
       return data
     }
 
     // Get current (most recent) version
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('tos_versions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('tos_versions' as any)
       .select('*')
       .lte('effective_date', new Date().toISOString().split('T')[0])
       .order('effective_date', { ascending: false })
       .limit(1)
-      .single() as { data: TosVersion | null; error: Error | null }
+      .single()
+      .returns<TosVersion>()
 
     if (error || !data) return null
     return data
@@ -104,14 +121,15 @@ export async function checkTosAcceptance(params: {
     const supabase = createAdminClient()
 
     // Get current TOS version
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: currentTos } = await (supabase as any)
-      .from('tos_versions')
+    const { data: currentTos } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('tos_versions' as any)
       .select('version')
       .lte('effective_date', new Date().toISOString().split('T')[0])
       .order('effective_date', { ascending: false })
       .limit(1)
-      .single() as { data: { version: string } | null }
+      .single()
+      .returns<TosVersionRow>()
 
     if (!currentTos) {
       // No TOS version exists, allow access
@@ -119,15 +137,16 @@ export async function checkTosAcceptance(params: {
     }
 
     // Check user's acceptance
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: acceptance } = await (supabase as any)
-      .from('tos_acceptances')
+    const { data: acceptance } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('tos_acceptances' as any)
       .select('tos_version')
       .eq('user_email', user_email)
       .eq('listing_id', listing_id)
       .order('accepted_at', { ascending: false })
       .limit(1)
-      .single() as { data: { tos_version: string } | null }
+      .single()
+      .returns<TosAcceptanceRow>()
 
     if (!acceptance) {
       return false
@@ -161,14 +180,15 @@ export async function acceptTos(params: {
     const supabase = createAdminClient()
 
     // Get current TOS version
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: currentTos } = await (supabase as any)
-      .from('tos_versions')
+    const { data: currentTos } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('tos_versions' as any)
       .select('version')
       .lte('effective_date', new Date().toISOString().split('T')[0])
       .order('effective_date', { ascending: false })
       .limit(1)
-      .single() as { data: { version: string } | null }
+      .single()
+      .returns<TosVersionRow>()
 
     if (!currentTos) {
       return {
@@ -178,9 +198,9 @@ export async function acceptTos(params: {
     }
 
     // Record acceptance
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('tos_acceptances')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('tos_acceptances' as any)
       .insert({
         user_email,
         user_name,
@@ -191,7 +211,8 @@ export async function acceptTos(params: {
         accepted_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: TosAcceptance | null; error: Error | null }
+      .single()
+      .returns<TosAcceptance>()
 
     if (error || !data) {
       return {
@@ -220,15 +241,13 @@ export async function getUserTosHistory(userEmail: string): Promise<TosAcceptanc
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('tos_acceptances')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('tos_acceptances' as any)
       .select('*')
       .eq('user_email', userEmail)
-      .order('accepted_at', { ascending: false }) as {
-        data: TosAcceptance[] | null
-        error: Error | null
-      }
+      .order('accepted_at', { ascending: false })
+      .returns<TosAcceptance[]>()
 
     if (error || !data) {
       return []
@@ -248,15 +267,13 @@ export async function getListingTosAcceptances(listingId: string): Promise<TosAc
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('tos_acceptances')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('tos_acceptances' as any)
       .select('*')
       .eq('listing_id', listingId)
-      .order('accepted_at', { ascending: false }) as {
-        data: TosAcceptance[] | null
-        error: Error | null
-      }
+      .order('accepted_at', { ascending: false })
+      .returns<TosAcceptance[]>()
 
     if (error || !data) {
       return []

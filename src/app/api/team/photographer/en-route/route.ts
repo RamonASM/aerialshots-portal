@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity
-    await supabase.from('portal_activity_log').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('portal_activity_log').insert({
       staff_id: staff.id,
       activity_type: 'photographer_en_route',
       entity_type: 'listing',

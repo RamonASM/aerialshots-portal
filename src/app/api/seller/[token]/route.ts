@@ -17,7 +17,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Find the share link by token - must be 'seller' type
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select(`
         id,
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       `)
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single()
+      .single() as { data: { id: string; listing_id: string; link_type: string; client_name: string | null; client_email: string | null; expires_at: string | null; is_active: boolean; access_count: number } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 })
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update access count and last accessed
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('share_links')
       .update({
         access_count: (shareLink.access_count || 0) + 1,
@@ -117,11 +119,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check media access permissions
-    const { data: accessControl } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: accessControl } = await (supabase as any)
       .from('seller_access_controls')
       .select('media_access_enabled, granted_at')
       .eq('listing_id', listing.id)
-      .single()
+      .single() as { data: { media_access_enabled: boolean; granted_at: string | null } | null }
 
     let hasMediaAccess = accessControl?.media_access_enabled || false
 
@@ -137,13 +140,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get pending reschedule requests
-    const { data: rescheduleRequests } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rescheduleRequests } = await (supabase as any)
       .from('reschedule_requests')
       .select('id, status, requested_slots, created_at')
       .eq('listing_id', listing.id)
       .eq('share_link_id', shareLink.id)
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(5) as { data: Array<{ id: string; status: string; requested_slots: unknown; created_at: string }> | null }
 
     // Determine overall status for UI
     let portalStatus: 'scheduled' | 'en_route' | 'on_site' | 'shooting' | 'processing' | 'delivered' = 'scheduled'

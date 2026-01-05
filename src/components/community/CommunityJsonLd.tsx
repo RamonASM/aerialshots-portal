@@ -1,7 +1,7 @@
-import type { Tables } from '@/lib/supabase/types'
+import type { Community } from '@/lib/queries/communities'
 
 interface CommunityJsonLdProps {
-  community: Tables<'communities'>
+  community: Community
 }
 
 export function CommunityJsonLd({ community }: CommunityJsonLdProps) {

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { integrationLogger, formatError } from '@/lib/logger'
+import { generateWithGemini as callGeminiAPI } from './providers/gemini'
 
 const logger = integrationLogger.child({ integration: 'virtual-staging' })
 
@@ -325,6 +326,75 @@ export async function generateStagedImage(request: StagingRequest): Promise<{
 }
 
 /**
+ * Generate staged image using Gemini and upload to Supabase Storage
+ */
+async function generateWithGeminiProvider(
+  imageUrl: string,
+  prompt: string,
+  roomType: RoomType,
+  style: StagingStyleId
+): Promise<string | null> {
+  try {
+    // Call Gemini API to generate staged image
+    logger.info({ imageUrl, roomType, style }, 'Generating staged image with Gemini')
+
+    const result = await callGeminiAPI({
+      imageUrl,
+      prompt,
+      roomType,
+      style,
+    })
+
+    // Check if generation was successful
+    if (!result.success || !result.imageBase64) {
+      logger.error({
+        status: result.status,
+        error: result.error
+      }, 'Gemini staging failed')
+      return null
+    }
+
+    // Convert base64 to buffer for upload
+    const imageBuffer = Buffer.from(result.imageBase64, 'base64')
+
+    // Generate unique filename
+    const timestamp = Date.now()
+    const randomId = Math.random().toString(36).substring(2, 8)
+    const filename = `staged_${roomType}_${style}_${timestamp}_${randomId}.jpg`
+    const path = `virtual-staging/${filename}`
+
+    // Upload to Supabase Storage
+    const supabase = createAdminClient()
+    const { data, error } = await supabase.storage
+      .from('virtual-staging')
+      .upload(path, imageBuffer, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      })
+
+    if (error) {
+      logger.error({ ...formatError(error), path }, 'Failed to upload staged image to Supabase')
+      return null
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('virtual-staging')
+      .getPublicUrl(path)
+
+    logger.info({
+      publicUrl,
+      processingTime: result.processingTime
+    }, 'Staged image generated and uploaded successfully')
+
+    return publicUrl
+  } catch (error) {
+    logger.error({ ...formatError(error) }, 'Error in Gemini staging process')
+    return null
+  }
+}
+
+/**
  * Process image with AI provider
  */
 async function processWithAIProvider(
@@ -345,21 +415,22 @@ async function processWithAIProvider(
 
   switch (provider) {
     case 'gemini':
-      // Would call Google Gemini API
-      // return await generateWithGemini(params.imageUrl, prompt)
-      return `https://storage.example.com/staged/${Date.now()}.jpg`
+      return await generateWithGeminiProvider(params.imageUrl, prompt, params.roomType, params.style)
 
     case 'stable_diffusion':
       // Would call Stable Diffusion with ControlNet
-      return `https://storage.example.com/staged/${Date.now()}.jpg`
+      logger.warn({ provider }, 'Stable Diffusion provider not yet implemented')
+      return null
 
     case 'reimagine_home':
       // Would call REimagineHome API
-      return `https://storage.example.com/staged/${Date.now()}.jpg`
+      logger.warn({ provider }, 'REimagineHome provider not yet implemented')
+      return null
 
     case 'apply_design':
       // Would call Apply Design API
-      return `https://storage.example.com/staged/${Date.now()}.jpg`
+      logger.warn({ provider }, 'Apply Design provider not yet implemented')
+      return null
 
     default:
       return null

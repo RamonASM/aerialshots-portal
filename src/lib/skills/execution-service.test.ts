@@ -22,8 +22,8 @@ import {
   type SkillUsageStats,
 } from './execution-service'
 
-// Mock Supabase
-const mockSupabase = {
+// Mock Supabase - the query builder returns a thenable object at the end of the chain
+const mockSupabase: any = {
   from: vi.fn(() => mockSupabase),
   select: vi.fn(() => mockSupabase),
   insert: vi.fn(() => mockSupabase),
@@ -38,6 +38,7 @@ const mockSupabase = {
   limit: vi.fn(() => mockSupabase),
   single: vi.fn(() => mockSupabase),
   maybeSingle: vi.fn(() => mockSupabase),
+  returns: vi.fn(),
 }
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -75,7 +76,7 @@ describe('Skill Execution Service', () => {
         created_at: new Date().toISOString(),
       }
 
-      mockSupabase.single.mockResolvedValueOnce({ data: mockExecution, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockExecution, error: null })
 
       const result = await createSkillExecution(input)
 
@@ -103,7 +104,7 @@ describe('Skill Execution Service', () => {
         created_at: new Date().toISOString(),
       }
 
-      mockSupabase.single.mockResolvedValueOnce({ data: mockExecution, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockExecution, error: null })
 
       const result = await createSkillExecution(input, { startImmediately: true })
 
@@ -122,7 +123,7 @@ describe('Skill Execution Service', () => {
         },
       }
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { ...input, id: 'exec-789', status: 'pending' },
         error: null,
       })
@@ -142,7 +143,7 @@ describe('Skill Execution Service', () => {
       const executionId = 'exec-123'
       const output = { description: 'A beautiful 3-bedroom home...' }
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: {
           id: executionId,
           status: 'completed',
@@ -168,7 +169,7 @@ describe('Skill Execution Service', () => {
       const executionId = 'exec-456'
       const errorMessage = 'API rate limit exceeded'
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: {
           id: executionId,
           status: 'failed',
@@ -190,7 +191,7 @@ describe('Skill Execution Service', () => {
     it('should track tokens and cost', async () => {
       const executionId = 'exec-789'
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: {
           id: executionId,
           status: 'completed',
@@ -227,7 +228,7 @@ describe('Skill Execution Service', () => {
         created_at: '2024-01-01T10:00:00Z',
       }
 
-      mockSupabase.maybeSingle.mockResolvedValueOnce({ data: mockExecution, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockExecution, error: null })
 
       const result = await getSkillExecution('exec-123')
 
@@ -237,7 +238,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should return null for non-existent execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: null, error: null })
 
       const result = await getSkillExecution('non-existent')
 
@@ -270,7 +271,7 @@ describe('Skill Execution Service', () => {
         },
       ]
 
-      mockSupabase.order.mockResolvedValueOnce({ data: mockExecutions, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockExecutions, error: null })
 
       const result = await listSkillExecutions({ listing_id: 'listing-123' })
 
@@ -291,7 +292,7 @@ describe('Skill Execution Service', () => {
         },
       ]
 
-      mockSupabase.order.mockResolvedValueOnce({ data: mockExecutions, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockExecutions, error: null })
 
       const result = await listSkillExecutions({ status: 'running' })
 
@@ -300,7 +301,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should filter by skill_id', async () => {
-      mockSupabase.order.mockResolvedValueOnce({ data: [], error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: [], error: null })
 
       await listSkillExecutions({ skill_id: 'image-staging' })
 
@@ -311,7 +312,7 @@ describe('Skill Execution Service', () => {
       // Mock the chain properly for limit
       mockSupabase.limit.mockReturnValueOnce(mockSupabase)
       mockSupabase.order.mockReturnValueOnce(mockSupabase)
-      mockSupabase.limit.mockResolvedValueOnce({ data: [], error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: [], error: null })
 
       await listSkillExecutions({ limit: 10 })
 
@@ -348,7 +349,7 @@ describe('Skill Execution Service', () => {
         },
       ]
 
-      mockSupabase.order.mockResolvedValueOnce({ data: mockOutputs, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockOutputs, error: null })
 
       const result = await getListingSkillOutputs('listing-123')
 
@@ -357,7 +358,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should filter outputs by skill_id', async () => {
-      mockSupabase.order.mockResolvedValueOnce({ data: [], error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: [], error: null })
 
       await getListingSkillOutputs('listing-123', { skill_id: 'video-slideshow' })
 
@@ -365,7 +366,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should filter outputs by output_type', async () => {
-      mockSupabase.order.mockResolvedValueOnce({ data: [], error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: [], error: null })
 
       await getListingSkillOutputs('listing-123', { output_type: 'description' })
 
@@ -384,7 +385,7 @@ describe('Skill Execution Service', () => {
         execution_id: 'exec-123',
       }
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { ...output, id: 'output-new', created_at: new Date().toISOString() },
         error: null,
       })
@@ -404,7 +405,7 @@ describe('Skill Execution Service', () => {
         status: 'completed',
       }
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { ...output, id: 'output-existing', updated_at: new Date().toISOString() },
         error: null,
       })
@@ -424,7 +425,7 @@ describe('Skill Execution Service', () => {
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       }
 
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { ...output, id: 'output-temp' },
         error: null,
       })
@@ -437,11 +438,11 @@ describe('Skill Execution Service', () => {
 
   describe('Cancel Execution', () => {
     it('should cancel pending execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-123', status: 'pending' },
         error: null,
       })
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-123', status: 'cancelled' },
         error: null,
       })
@@ -453,11 +454,11 @@ describe('Skill Execution Service', () => {
     })
 
     it('should cancel running execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-456', status: 'running' },
         error: null,
       })
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-456', status: 'cancelled' },
         error: null,
       })
@@ -468,7 +469,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should not cancel completed execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-789', status: 'completed' },
         error: null,
       })
@@ -480,7 +481,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should return error for non-existent execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: null, error: null })
 
       const result = await cancelSkillExecution('non-existent')
 
@@ -503,8 +504,8 @@ describe('Skill Execution Service', () => {
         created_at: '2024-01-01T10:00:00Z',
       }
 
-      mockSupabase.maybeSingle.mockResolvedValueOnce({ data: originalExecution, error: null })
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({ data: originalExecution, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({
         data: {
           id: 'exec-retry',
           skill_id: 'image-staging',
@@ -523,7 +524,7 @@ describe('Skill Execution Service', () => {
     })
 
     it('should not retry completed execution', async () => {
-      mockSupabase.maybeSingle.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({
         data: { id: 'exec-completed', status: 'completed' },
         error: null,
       })
@@ -547,8 +548,8 @@ describe('Skill Execution Service', () => {
         created_at: '2024-01-01T10:00:00Z',
       }
 
-      mockSupabase.maybeSingle.mockResolvedValueOnce({ data: originalExecution, error: null })
-      mockSupabase.single.mockResolvedValueOnce({
+      mockSupabase.returns.mockResolvedValueOnce({ data: originalExecution, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({
         data: {
           id: 'exec-retry-2',
           metadata: { retry_of: 'exec-original', retry_count: 2 },
@@ -580,7 +581,7 @@ describe('Skill Execution Service', () => {
         },
       ]
 
-      mockSupabase.lte.mockResolvedValueOnce({ data: mockUsageRecords, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockUsageRecords, error: null })
 
       const result = await getSkillUsageStats('agent-123', {
         period_start: '2024-01-01',
@@ -602,7 +603,7 @@ describe('Skill Execution Service', () => {
         },
       ]
 
-      mockSupabase.lte.mockResolvedValueOnce({ data: mockUsageRecords, error: null })
+      mockSupabase.returns.mockResolvedValueOnce({ data: mockUsageRecords, error: null })
 
       const result = await getSkillUsageStats('agent-123')
 

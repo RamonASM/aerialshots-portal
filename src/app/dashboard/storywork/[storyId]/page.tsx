@@ -56,18 +56,19 @@ export default function StoryDetailPage({
 
   useEffect(() => {
     async function loadStory() {
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
         .from('stories')
         .select('*')
         .eq('id', storyId)
-        .single()
+        .single() as { data: Story | null; error: Error | null }
 
       if (error || !data) {
         router.push('/dashboard/storywork')
         return
       }
 
-      setStory(data as unknown as Story)
+      setStory(data)
       setLoading(false)
     }
 

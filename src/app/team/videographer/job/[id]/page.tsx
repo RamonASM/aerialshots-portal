@@ -116,7 +116,7 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
   // Get media assets
   const { data: mediaAssets } = await supabase
     .from('media_assets')
-    .select('id, media_url, type, category')
+    .select('id, aryeo_url, type, category')
     .eq('listing_id', id)
     .in('type', ['video', 'photo'])
     .order('created_at', { ascending: false })
@@ -313,7 +313,7 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
                       className="aspect-square overflow-hidden rounded-lg"
                     >
                       <img
-                        src={photo.media_url || ''}
+                        src={photo.aryeo_url || ''}
                         alt=""
                         className="h-full w-full object-cover"
                       />
@@ -341,7 +341,7 @@ export default async function VideoJobDetailPage({ params }: PageProps) {
                       className="aspect-video overflow-hidden rounded-lg bg-neutral-900"
                     >
                       <video
-                        src={video.media_url || ''}
+                        src={video.aryeo_url || ''}
                         className="h-full w-full object-cover"
                         controls
                       />

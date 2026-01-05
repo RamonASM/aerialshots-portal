@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, getIdentifier, createRateLimitResponse } from '@/lib/rate-limit'
+import { getCurrentUser } from '@/lib/auth/clerk'
 
 export const dynamic = 'force-dynamic'
 
@@ -215,7 +216,39 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
     const supabase = createAdminClient()
+
+    // If listing ID provided, verify ownership or staff access
+    if (listingId) {
+      const { data: listing } = await supabase
+        .from('listings')
+        .select('id, agent_id')
+        .eq('id', listingId)
+        .single()
+
+      if (!listing) {
+        return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+      }
+
+      // Verify ownership: staff can access all, agents can only access their own
+      if (!isStaff && (user.userTable !== 'agents' || listing.agent_id !== user.userId)) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    }
+
+    // For bookingToken access, allow if user is staff
+    // (Booking tokens are temporary and used during booking flow before listing is created)
+    if (bookingToken && !isStaff) {
+      // Non-staff users can only access via listingId after booking is complete
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabase as any)
@@ -284,13 +317,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    const user = await getCurrentUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
     const supabase = createAdminClient()
 
-    // Get file record
+    // Get file record with listing info for ownership check
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: file, error: fetchError } = await (supabase as any)
       .from('booking_reference_files')
-      .select('storage_path, storage_bucket')
+      .select('storage_path, storage_bucket, listing_id, uploaded_by_email')
       .eq('id', fileId)
       .single()
 
@@ -299,6 +339,33 @@ export async function DELETE(request: NextRequest) {
         { error: 'File not found' },
         { status: 404 }
       )
+    }
+
+    // Verify ownership: staff can delete all, agents can only delete their own listing files, or files they uploaded
+    if (!isStaff) {
+      let hasAccess = false
+
+      // Check if user uploaded the file
+      if (file.uploaded_by_email === user.email) {
+        hasAccess = true
+      }
+
+      // Check if user owns the listing
+      if (file.listing_id && user.userTable === 'agents') {
+        const { data: listing } = await supabase
+          .from('listings')
+          .select('agent_id')
+          .eq('id', file.listing_id)
+          .single()
+
+        if (listing && listing.agent_id === user.userId) {
+          hasAccess = true
+        }
+      }
+
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
     // Delete from storage

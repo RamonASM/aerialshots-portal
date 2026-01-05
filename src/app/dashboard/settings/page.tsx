@@ -24,11 +24,12 @@ async function getAgentWithConnections(email: string) {
   }
 
   // Get Instagram connection
-  const { data: instagramConnection } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: instagramConnection } = await (supabase as any)
     .from('instagram_connections')
     .select('id, username, status, token_expires_at, created_at')
     .eq('agent_id', agent.id)
-    .single()
+    .single() as { data: { id: string; username: string | null; status: string; token_expires_at: string | null; created_at: string } | null }
 
   return {
     agent,

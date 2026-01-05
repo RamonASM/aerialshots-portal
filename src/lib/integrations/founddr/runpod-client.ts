@@ -6,6 +6,7 @@
  */
 
 import { apiLogger, formatError } from '@/lib/logger'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 
 interface RunPodConfig {
   endpointId: string
@@ -139,7 +140,7 @@ export class RunPodFoundDRClient {
   async processHDRAsync(request: ProcessHDRRequest): Promise<{ jobId: string }> {
     const url = `https://api.runpod.ai/v2/${this.config.endpointId}/run`
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
@@ -155,7 +156,12 @@ export class RunPodFoundDRClient {
           },
         },
       }),
+      timeout: FETCH_TIMEOUTS.DEFAULT,
     })
+
+    if (!response.ok) {
+      throw new Error(`RunPod API error: ${response.status} ${response.statusText}`)
+    }
 
     const result = await response.json()
 
@@ -173,11 +179,16 @@ export class RunPodFoundDRClient {
   async getJobStatus(jobId: string): Promise<ProcessHDRResponse> {
     const url = `https://api.runpod.ai/v2/${this.config.endpointId}/status/${jobId}`
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
       },
+      timeout: FETCH_TIMEOUTS.QUICK,
     })
+
+    if (!response.ok) {
+      throw new Error(`RunPod API error: ${response.status} ${response.statusText}`)
+    }
 
     return response.json()
   }
@@ -215,7 +226,7 @@ export class RunPodFoundDRClient {
   async processHDRFromURLs(urls: string[], options?: ProcessHDRRequest['options']): Promise<ProcessHDRResponse> {
     const url = `https://api.runpod.ai/v2/${this.config.endpointId}/runsync`
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
@@ -230,7 +241,12 @@ export class RunPodFoundDRClient {
           },
         },
       }),
+      timeout: this.config.timeout,
     })
+
+    if (!response.ok) {
+      throw new Error(`RunPod API error: ${response.status} ${response.statusText}`)
+    }
 
     return response.json()
   }

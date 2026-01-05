@@ -40,11 +40,12 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Check for idempotency
-    const { data: existingEvent } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingEvent } = await (supabase as any)
       .from('processed_events')
       .select('event_id')
       .eq('event_id', event.id)
-      .single()
+      .single() as { data: { event_id: string } | null }
 
     if (existingEvent) {
       webhookLogger.info({ eventId: event.id }, 'Event already processed, skipping')
@@ -52,7 +53,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Record event
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('processed_events')
       .insert({
         event_id: event.id,
@@ -79,25 +81,27 @@ export async function POST(request: NextRequest) {
 
         if (!entityType || !entityId) {
           // Lookup from database if not in metadata
-          const supabase = createAdminClient()
+          const adminClient = createAdminClient()
 
           // Try staff first
-          const { data: staff } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: staff } = await (adminClient as any)
             .from('staff')
             .select('id')
             .eq('stripe_connect_id', account.id)
-            .single()
+            .single() as { data: { id: string } | null }
 
           if (staff) {
             entityType = 'staff'
             entityId = staff.id
           } else {
             // Try partners
-            const { data: partner } = await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: partner } = await (adminClient as any)
               .from('partners')
               .select('id')
               .eq('stripe_connect_id', account.id)
-              .single()
+              .single() as { data: { id: string } | null }
 
             if (partner) {
               entityType = 'partner'
@@ -133,10 +137,11 @@ export async function POST(request: NextRequest) {
 
         webhookLogger.info({ accountId }, 'Account deauthorized')
 
-        const supabase = createAdminClient()
+        const adminClient = createAdminClient()
 
         // Update staff if exists
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (adminClient as any)
           .from('staff')
           .update({
             stripe_connect_status: 'not_started',
@@ -145,7 +150,8 @@ export async function POST(request: NextRequest) {
           .eq('stripe_connect_id', accountId)
 
         // Update partners if exists
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (adminClient as any)
           .from('partners')
           .update({
             stripe_connect_status: 'not_started',

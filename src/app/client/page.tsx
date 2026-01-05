@@ -31,7 +31,8 @@ export default async function ClientDashboardPage() {
 
   // Get media from delivered orders (via share links)
   const clientEmail = client?.email
-  const { data: shareLinks } = clientEmail ? await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: shareLinks } = clientEmail ? await (supabase as any)
     .from('share_links')
     .select(`
       id,
@@ -47,7 +48,7 @@ export default async function ClientDashboardPage() {
     `)
     .eq('client_email', clientEmail)
     .order('created_at', { ascending: false })
-    .limit(5) : { data: null }
+    .limit(5) as { data: Array<{ id: string; share_token: string; created_at: string; listing: { id: string; address: string; city: string; ops_status: string; delivered_at: string | null } | null }> | null } : { data: null }
 
   interface BookingRecord { id: string; status: string; property_address: string; property_city: string; property_state: string; created_at: string }
   interface ShareLinkRecord { id: string; share_token: string; created_at: string; listing?: { id?: string; address?: string; city?: string; ops_status?: string; delivered_at?: string } }

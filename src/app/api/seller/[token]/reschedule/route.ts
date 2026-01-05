@@ -30,12 +30,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Validate token
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('id, listing_id, client_name, client_email, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single()
+      .single() as { data: { id: string; listing_id: string; client_name: string | null; client_email: string | null; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -70,13 +71,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .single()
 
     // Check if already has pending reschedule request
-    const { data: existingRequest } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingRequest } = await (supabase as any)
       .from('reschedule_requests')
       .select('id')
       .eq('listing_id', shareLink.listing_id)
       .eq('share_link_id', shareLink.id)
       .eq('status', 'pending')
-      .single()
+      .single() as { data: { id: string } | null }
 
     if (existingRequest) {
       return NextResponse.json({
@@ -93,7 +95,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Create reschedule request
-    const { data: rescheduleRequest, error: insertError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rescheduleRequest, error: insertError } = await (supabase as any)
       .from('reschedule_requests')
       .insert({
         listing_id: shareLink.listing_id,
@@ -107,9 +110,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         status: 'pending',
       })
       .select()
-      .single()
+      .single() as { data: { id: string; status: string; requested_slots: unknown[]; created_at: string } | null; error: Error | null }
 
-    if (insertError) {
+    if (insertError || !rescheduleRequest) {
       console.error('Reschedule insert error:', insertError)
       return NextResponse.json({ error: 'Failed to submit reschedule request' }, { status: 500 })
     }
@@ -170,12 +173,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Validate token
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('id, listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single()
+      .single() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -186,26 +190,28 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Find pending reschedule request
-    const { data: pendingRequest } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pendingRequest } = await (supabase as any)
       .from('reschedule_requests')
       .select('id')
       .eq('listing_id', shareLink.listing_id)
       .eq('share_link_id', shareLink.id)
       .eq('status', 'pending')
-      .single()
+      .single() as { data: { id: string } | null }
 
     if (!pendingRequest) {
       return NextResponse.json({ error: 'No pending reschedule request found' }, { status: 404 })
     }
 
     // Cancel the request
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('reschedule_requests')
       .update({
         status: 'cancelled',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', pendingRequest.id)
+      .eq('id', pendingRequest.id) as { error: Error | null }
 
     if (updateError) {
       console.error('Reschedule cancel error:', updateError)

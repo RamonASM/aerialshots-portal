@@ -26,7 +26,7 @@ export default async function QCRejectedPage() {
   // Verify staff role
   const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, role, team_role')
+    .select('id, name, role')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
@@ -44,7 +44,6 @@ export default async function QCRejectedPage() {
       id,
       listing_id,
       aryeo_url,
-      media_url,
       qc_status,
       qc_notes,
       created_at,
@@ -158,7 +157,7 @@ export default async function QCRejectedPage() {
                     className="relative aspect-square rounded-lg overflow-hidden border-2 border-red-300"
                   >
                     <img
-                      src={asset.media_url || asset.aryeo_url || ''}
+                      src={asset.aryeo_url || ''}
                       alt=""
                       className="h-full w-full object-cover opacity-75"
                     />

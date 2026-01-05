@@ -96,11 +96,12 @@ export default async function OrderDetailPage({
   // Get client messages if order has a listing
   let clientMessages: any[] = []
   if (order.listing_id) {
-    const { data: messages } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: messages } = await (supabase as any)
       .from('client_messages')
       .select('*')
       .eq('listing_id', order.listing_id)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }) as { data: any[] | null }
     clientMessages = messages || []
   }
 

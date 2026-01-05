@@ -39,7 +39,8 @@ export async function createCampaign(
   // Note: Some columns may not be in generated types yet - casting to bypass strict type checking
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: campaign, error } = await (supabase as any)
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .insert({
       name: request.name,
       subject: request.subject,
@@ -219,7 +220,8 @@ export async function sendCampaign(options: SendCampaignOptions): Promise<{
 
   // Get campaign
   const { data: campaign, error: campaignError } = await supabase
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .select('*')
     .eq('id', options.campaignId)
     .single()
@@ -240,7 +242,8 @@ export async function sendCampaign(options: SendCampaignOptions): Promise<{
 
   // Update campaign status to sending
   await supabase
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .update({ status: 'sending', sent_at: new Date().toISOString() })
     .eq('id', options.campaignId)
 
@@ -249,7 +252,7 @@ export async function sendCampaign(options: SendCampaignOptions): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const campaignData = campaign as any
   const recipients = await getCampaignRecipients(
-    campaign.recipient_filter as RecipientFilter,
+    campaignData.recipient_filter as RecipientFilter,
     campaignData.recipient_segment_id,
     campaignData.recipient_list
   )
@@ -269,7 +272,8 @@ export async function sendCampaign(options: SendCampaignOptions): Promise<{
 
     // Update progress
     await supabase
-      .from('marketing_campaigns')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
       .update({
         sent_count: sentCount,
         updated_at: new Date().toISOString(),
@@ -285,7 +289,8 @@ export async function sendCampaign(options: SendCampaignOptions): Promise<{
   // Update final status
   // Note: 'failed' is not in the schema status enum, use 'cancelled' as fallback
   await supabase
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .update({
       status: failedCount === recipients.length ? 'cancelled' : 'sent',
       sent_count: sentCount,
@@ -449,7 +454,8 @@ export async function scheduleCampaign(
   const supabase = createAdminClient()
 
   await supabase
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .update({
       status: 'scheduled',
       scheduled_for: scheduledFor,
@@ -467,7 +473,8 @@ export async function cancelCampaign(campaignId: string): Promise<void> {
   const supabase = createAdminClient()
 
   await supabase
-    .from('marketing_campaigns')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('marketing_campaigns' as any)
     .update({
       status: 'cancelled',
       updated_at: new Date().toISOString(),

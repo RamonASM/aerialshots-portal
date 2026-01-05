@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Get staff member
     const { data: staff } = await supabase
       .from('staff')
-      .select('id, home_lat, home_lng')
+      .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
       .single()
@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
     const routeDate = date || new Date().toISOString().slice(0, 10)
 
     // Check if we have a saved route for this date
-    const { data: existingRoute } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingRoute } = await (supabase as any)
       .from('daily_routes')
       .select(
         `
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       )
       .eq('staff_id', staff.id)
       .eq('route_date', routeDate)
-      .single()
+      .single() as { data: { route_stops: unknown[] } | null }
 
     if (existingRoute) {
       return NextResponse.json({
@@ -66,7 +67,8 @@ export async function GET(request: NextRequest) {
     }
 
     // No saved route - get assignments for this date
-    const { data: assignments } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: assignments } = await (supabase as any)
       .from('photographer_assignments')
       .select(
         `
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return assignments without optimization (needs POST to optimize)
-    const stops = assignments.map((a) => {
+    const stops = assignments.map((a: { id: string; scheduled_time: string; status: string; listing: unknown }) => {
       const listing = a.listing as {
         id: string
         address: string
@@ -153,10 +155,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff member with home location
+    // Get staff member
     const { data: staff } = await supabase
       .from('staff')
-      .select('id, home_lat, home_lng')
+      .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
       .single()
@@ -173,29 +175,26 @@ export async function POST(request: NextRequest) {
 
     const routeDate = date || new Date().toISOString().slice(0, 10)
 
-    // Determine start location
-    let startLocation: Coordinates
-
-    if (startAddress) {
-      const geocoded = await geocodeAddress(startAddress)
-      if (!geocoded) {
-        return NextResponse.json(
-          { error: 'Could not geocode start address' },
-          { status: 400 }
-        )
-      }
-      startLocation = geocoded
-    } else if (staff.home_lat && staff.home_lng) {
-      startLocation = { lat: staff.home_lat, lng: staff.home_lng }
-    } else {
+    // Determine start location (startAddress required)
+    if (!startAddress) {
       return NextResponse.json(
-        { error: 'No start location provided and no home address on file' },
+        { error: 'Start address is required' },
         { status: 400 }
       )
     }
 
+    const geocoded = await geocodeAddress(startAddress)
+    if (!geocoded) {
+      return NextResponse.json(
+        { error: 'Could not geocode start address' },
+        { status: 400 }
+      )
+    }
+    const startLocation: Coordinates = geocoded
+
     // Get assignments for this date
-    const { data: assignments } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: assignments } = await (supabase as any)
       .from('photographer_assignments')
       .select(
         `
@@ -217,7 +216,7 @@ export async function POST(request: NextRequest) {
       )
       .eq('photographer_id', staff.id)
       .eq('scheduled_date', routeDate)
-      .in('status', ['assigned', 'confirmed'])
+      .in('status', ['assigned', 'confirmed']) as { data: Array<{ id: string; scheduled_date: string; scheduled_time: string; status: string; listing: unknown }> | null }
 
     if (!assignments || assignments.length === 0) {
       return NextResponse.json(
@@ -293,7 +292,8 @@ export async function POST(request: NextRequest) {
     )
 
     // Save the optimized route
-    const { data: dailyRoute, error: routeError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: dailyRoute, error: routeError } = await (supabase as any)
       .from('daily_routes')
       .upsert(
         {
@@ -314,14 +314,15 @@ export async function POST(request: NextRequest) {
         }
       )
       .select()
-      .single()
+      .single() as { data: { id: string } | null; error: Error | null }
 
-    if (routeError) {
-      throw routeError
+    if (routeError || !dailyRoute) {
+      throw routeError || new Error('Failed to save route')
     }
 
     // Delete existing stops for this route
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('route_stops')
       .delete()
       .eq('route_id', dailyRoute.id)
@@ -340,7 +341,8 @@ export async function POST(request: NextRequest) {
       dwell_time_minutes: stop.dwellTimeMinutes,
     }))
 
-    await supabase.from('route_stops').insert(routeStops)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('route_stops').insert(routeStops)
 
     // Calculate drive time from start to first stop
     let driveToFirstStop = null

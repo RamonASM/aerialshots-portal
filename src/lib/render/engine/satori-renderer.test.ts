@@ -289,7 +289,7 @@ describe('renderWithSatori', () => {
     slug: 'test-template',
     version: '1.0.0',
     name: 'Test Template',
-    category: 'listing',
+    category: 'listing_marketing',
     canvas: {
       width: 1080,
       height: 1350,

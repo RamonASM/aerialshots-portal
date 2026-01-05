@@ -16,12 +16,11 @@ import { StripeConnectCard } from '@/components/team/StripeConnectCard'
 
 /**
  * Check if staff has photographer access
- * Supports: role = 'photographer', team_role = 'photographer', or role = 'admin'
+ * Supports: role = 'photographer' or role = 'admin'
  */
-function hasPhotographerAccess(staff: { role: string | null; team_role: string | null }): boolean {
+function hasPhotographerAccess(staff: { role: string | null }): boolean {
   if (staff.role === 'admin') return true
   if (staff.role === 'photographer') return true
-  if (staff.team_role === 'photographer') return true
   return false
 }
 
@@ -47,17 +46,28 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
   }
 
   // Get staff member with payout info
-  const { data: staff } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: staff } = await (supabase as any)
     .from('staff')
-    .select('id, name, email, phone, role, team_role, skills, certifications, payout_type, default_payout_percent')
+    .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
     .eq('email', user.email!)
-    .single()
+    .single() as { data: {
+      id: string
+      name: string
+      email: string
+      phone: string | null
+      role: string | null
+      skills: string[] | null
+      certifications: string[] | null
+      payout_type: string | null
+      default_payout_percent: number | null
+    } | null }
 
   if (!staff || !hasPhotographerAccess(staff)) {
     redirect('/staff-login')
   }
 
-  const displayRole = staff.team_role || staff.role || 'photographer'
+  const displayRole = staff.role || 'photographer'
   const skills = staff.skills || []
   const certifications = staff.certifications || []
   const connectSuccess = params.connect === 'success'

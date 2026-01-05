@@ -38,11 +38,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the assignment belongs to this staff member
-    const { data: assignment } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: assignment } = await (supabase as any)
       .from('photographer_assignments')
       .select('id, photographer_id, status, listing_id')
       .eq('id', assignmentId)
-      .single()
+      .single() as { data: { id: string; photographer_id: string; status: string; listing_id: string } | null }
 
     if (!assignment) {
       return NextResponse.json(
@@ -62,7 +63,8 @@ export async function POST(request: NextRequest) {
 
     if (type === 'checkin') {
       // Check in - start the job
-      const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
         .from('photographer_assignments')
         .update({
           status: 'in_progress',
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
           check_in_lat: lat,
           check_in_lng: lng,
         })
-        .eq('id', assignmentId)
+        .eq('id', assignmentId) as { error: Error | null }
 
       if (updateError) {
         throw updateError
@@ -110,7 +112,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Log activity
-      await supabase.from('portal_activity_log').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('portal_activity_log').insert({
         staff_id: staff.id,
         activity_type: 'job_check_in',
         entity_type: 'photographer_assignment',
@@ -125,7 +128,8 @@ export async function POST(request: NextRequest) {
       })
     } else if (type === 'checkout') {
       // Check out - complete the job
-      const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
         .from('photographer_assignments')
         .update({
           status: 'completed',
@@ -133,7 +137,7 @@ export async function POST(request: NextRequest) {
           check_out_lat: lat,
           check_out_lng: lng,
         })
-        .eq('id', assignmentId)
+        .eq('id', assignmentId) as { error: Error | null }
 
       if (updateError) {
         throw updateError
@@ -173,7 +177,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Log activity
-      await supabase.from('portal_activity_log').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('portal_activity_log').insert({
         staff_id: staff.id,
         activity_type: 'job_check_out',
         entity_type: 'photographer_assignment',

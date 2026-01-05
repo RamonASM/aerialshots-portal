@@ -40,6 +40,12 @@ const STATUS_CONFIGS: Record<AnyIntegrationStatus, StatusConfig> = {
     bgColor: 'bg-amber-500/10',
     icon: Loader2,
   },
+  completed: {
+    label: 'Completed',
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    icon: CheckCircle,
+  },
   delivered: {
     label: 'Delivered',
     color: 'text-green-400',
@@ -51,6 +57,18 @@ const STATUS_CONFIGS: Record<AnyIntegrationStatus, StatusConfig> = {
     color: 'text-red-400',
     bgColor: 'bg-red-500/10',
     icon: XCircle,
+  },
+  skipped: {
+    label: 'Skipped',
+    color: 'text-neutral-500',
+    bgColor: 'bg-neutral-500/5',
+    icon: MinusCircle,
+  },
+  not_ordered: {
+    label: 'Not Ordered',
+    color: 'text-neutral-500',
+    bgColor: 'bg-neutral-500/5',
+    icon: MinusCircle,
   },
   not_applicable: {
     label: 'N/A',

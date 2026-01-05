@@ -66,11 +66,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   // Fetch published communities for dynamic pages
-  const { data: communities } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: communities } = await (supabase as any)
     .from('communities')
     .select('slug, updated_at')
     .eq('is_published', true)
-    .order('updated_at', { ascending: false })
+    .order('updated_at', { ascending: false }) as { data: Array<{ slug: string; updated_at: string | null }> | null }
 
   const communityPages: MetadataRoute.Sitemap = (communities || []).map((community) => ({
     url: `${SITE_URL}/community/${community.slug}`,

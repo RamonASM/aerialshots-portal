@@ -44,7 +44,8 @@ export default async function PhotographerDashboard() {
   const todayEnd = endOfDay(today).toISOString()
 
   // Get today's assignments
-  const { data: assignments } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: assignments } = await (supabase as any)
     .from('photographer_assignments')
     .select(`
       id,
@@ -67,24 +68,43 @@ export default async function PhotographerDashboard() {
     .eq('photographer_id', staff.id)
     .gte('scheduled_time', todayStart)
     .lte('scheduled_time', todayEnd)
-    .order('scheduled_time', { ascending: true })
+    .order('scheduled_time', { ascending: true }) as { data: Array<{
+      id: string
+      status: string | null
+      scheduled_time: string | null
+      notes: string | null
+      listing: {
+        id: string
+        address: string
+        city: string | null
+        state: string | null
+        zip: string | null
+        lat: number | null
+        lng: number | null
+        sqft: number | null
+        ops_status: string | null
+        agent: { name: string; phone: string | null } | null
+      } | null
+    }> | null }
 
   // Get stats for the week
   const weekStart = new Date()
   weekStart.setDate(weekStart.getDate() - weekStart.getDay())
 
-  const { count: weekCompletedCount } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: weekCompletedCount } = await (supabase as any)
     .from('photographer_assignments')
     .select('id', { count: 'exact', head: true })
     .eq('photographer_id', staff.id)
     .eq('status', 'completed')
-    .gte('scheduled_time', weekStart.toISOString())
+    .gte('scheduled_time', weekStart.toISOString()) as { count: number | null }
 
-  const { count: weekTotalCount } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: weekTotalCount } = await (supabase as any)
     .from('photographer_assignments')
     .select('id', { count: 'exact', head: true })
     .eq('photographer_id', staff.id)
-    .gte('scheduled_time', weekStart.toISOString())
+    .gte('scheduled_time', weekStart.toISOString()) as { count: number | null }
 
   // Transform assignments for display
   const todaysJobs = assignments?.map((a) => {

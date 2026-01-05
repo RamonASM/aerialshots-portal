@@ -55,7 +55,8 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
   try {
     // Check if there's already an active entry
     const { data: activeEntry } = await supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .select('id')
       .eq('staff_id', staffId)
       .eq('status', 'active')
@@ -69,11 +70,12 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
     }
 
     // Get staff's hourly rate
+    // Note: hourly_rate column may not be in generated types
     const { data: staff } = await supabase
       .from('staff')
       .select('hourly_rate')
       .eq('id', staffId)
-      .single()
+      .single() as { data: { hourly_rate: number | null } | null }
 
     if (!staff?.hourly_rate) {
       return {
@@ -87,7 +89,8 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
 
     // Create time entry
     const { data: entry, error } = await supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .insert({
         staff_id: staffId,
         clock_in: new Date().toISOString(),
@@ -99,6 +102,7 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
       })
       .select()
       .single()
+      .returns<TimeEntry>()
 
     if (error) {
       throw error
@@ -130,7 +134,8 @@ export async function clockOut(
   try {
     // Find active entry
     let query = supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .select('*')
       .eq('staff_id', staffId)
       .eq('status', 'active')
@@ -139,7 +144,7 @@ export async function clockOut(
       query = query.eq('id', entryId)
     }
 
-    const { data: activeEntry, error: findError } = await query.single()
+    const { data: activeEntry, error: findError } = await query.single() as { data: TimeEntry | null; error: Error | null }
 
     if (findError || !activeEntry) {
       return {
@@ -160,7 +165,8 @@ export async function clockOut(
 
     // Update entry
     const { data: updatedEntry, error: updateError } = await supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .update({
         clock_out: clockOut.toISOString(),
         duration_minutes: workMinutes,
@@ -172,6 +178,7 @@ export async function clockOut(
       .eq('id', activeEntry.id)
       .select()
       .single()
+      .returns<TimeEntry>()
 
     if (updateError) {
       throw updateError
@@ -199,11 +206,13 @@ export async function getActiveEntry(staffId: string): Promise<TimeEntry | null>
   const supabase = createAdminClient()
 
   const { data } = await supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .eq('status', 'active')
     .single()
+    .returns<TimeEntry>()
 
   return data
 }
@@ -219,7 +228,8 @@ export async function getTimeEntries(
   const supabase = createAdminClient()
 
   let query = supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .order('clock_in', { ascending: false })
@@ -232,7 +242,7 @@ export async function getTimeEntries(
     query = query.lte('clock_in', endDate)
   }
 
-  const { data, error } = await query
+  const { data, error } = await query as { data: TimeEntry[] | null; error: Error | null }
 
   if (error) {
     console.error('[TimeTracking] Error fetching entries:', error)
@@ -253,12 +263,14 @@ export async function getCurrentPayPeriod(): Promise<PayPeriod | null> {
 
   // Check for existing open period
   const { data: existingPeriod } = await supabase
-    .from('pay_periods')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('pay_periods' as any)
     .select('*')
     .lte('start_date', todayStr)
     .gte('end_date', todayStr)
     .eq('status', 'open')
     .single()
+    .returns<PayPeriod>()
 
   if (existingPeriod) {
     return existingPeriod
@@ -295,7 +307,8 @@ export async function getCurrentPayPeriod(): Promise<PayPeriod | null> {
 
   // Create the pay period if it doesn't exist
   const { data: newPeriod, error } = await supabase
-    .from('pay_periods')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('pay_periods' as any)
     .upsert(
       {
         start_date: startStr,
@@ -306,6 +319,7 @@ export async function getCurrentPayPeriod(): Promise<PayPeriod | null> {
     )
     .select()
     .single()
+    .returns<PayPeriod>()
 
   if (error) {
     console.error('[TimeTracking] Error creating pay period:', error)
@@ -330,10 +344,12 @@ export async function getTimesheetForPeriod(
 
   // Get pay period
   const { data: period } = await supabase
-    .from('pay_periods')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('pay_periods' as any)
     .select('*')
     .eq('id', periodId)
     .single()
+    .returns<PayPeriod>()
 
   if (!period) {
     return { entries: [], totalMinutes: 0, totalPayCents: 0 }
@@ -341,13 +357,15 @@ export async function getTimesheetForPeriod(
 
   // Get entries for this period
   const { data: entries } = await supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .gte('clock_in', period.start_date)
     .lte('clock_in', period.end_date + 'T23:59:59.999Z')
     .neq('status', 'active')
     .order('clock_in', { ascending: true })
+    .returns<TimeEntry[]>()
 
   const totalMinutes = entries?.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) || 0
   const totalPayCents = entries?.reduce((sum, e) => sum + (e.total_pay_cents || 0), 0) || 0
@@ -370,10 +388,12 @@ export async function closePayPeriod(
   try {
     // Get period
     const { data: period } = await supabase
-      .from('pay_periods')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('pay_periods' as any)
       .select('*')
       .eq('id', periodId)
       .single()
+      .returns<PayPeriod>()
 
     if (!period) {
       return { success: false, error: 'Pay period not found' }
@@ -385,11 +405,13 @@ export async function closePayPeriod(
 
     // Calculate totals from all completed entries in this period
     const { data: entries } = await supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .select('duration_minutes, total_pay_cents')
       .gte('clock_in', period.start_date)
       .lte('clock_in', period.end_date + 'T23:59:59.999Z')
       .eq('status', 'completed')
+      .returns<Array<{ duration_minutes: number | null; total_pay_cents: number | null }>>()
 
     const totalMinutes = entries?.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) || 0
     const totalPayCents = entries?.reduce((sum, e) => sum + (e.total_pay_cents || 0), 0) || 0
@@ -397,7 +419,8 @@ export async function closePayPeriod(
 
     // Update period
     const { error: updateError } = await supabase
-      .from('pay_periods')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('pay_periods' as any)
       .update({
         status: 'closed',
         total_hours: totalHours,
@@ -411,7 +434,8 @@ export async function closePayPeriod(
 
     // Mark all entries as approved
     await supabase
-      .from('time_entries')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
       .update({ status: 'approved' })
       .gte('clock_in', period.start_date)
       .lte('clock_in', period.end_date + 'T23:59:59.999Z')
@@ -457,27 +481,33 @@ export async function getTodaySummary(staffId: string): Promise<{
 
   // Get active entry
   const { data: activeEntry } = await supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .eq('status', 'active')
     .single()
+    .returns<TimeEntry>()
 
   // Get today's completed entries
   const { data: todayEntries } = await supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('duration_minutes, total_pay_cents')
     .eq('staff_id', staffId)
     .gte('clock_in', todayStr)
     .neq('status', 'active')
+    .returns<Array<{ duration_minutes: number | null; total_pay_cents: number | null }>>()
 
   // Get week's completed entries
   const { data: weekEntries } = await supabase
-    .from('time_entries')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('time_entries' as any)
     .select('duration_minutes, total_pay_cents')
     .eq('staff_id', staffId)
     .gte('clock_in', weekStr)
     .neq('status', 'active')
+    .returns<Array<{ duration_minutes: number | null; total_pay_cents: number | null }>>()
 
   const todayMinutes = todayEntries?.reduce((sum, e) => sum + (e.duration_minutes || 0), 0) || 0
   const todayPayCents = todayEntries?.reduce((sum, e) => sum + (e.total_pay_cents || 0), 0) || 0

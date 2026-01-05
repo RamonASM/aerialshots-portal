@@ -2,8 +2,9 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_REVALIDATION, CACHE_TAGS } from '@/lib/utils/cache'
 import type { Tables } from '@/lib/supabase/types'
+import type { CommunityRow } from '@/lib/supabase/types-custom'
 
-export type Community = Tables<'communities'>
+export type Community = CommunityRow
 
 /**
  * Get a community by its slug
@@ -13,12 +14,13 @@ export const getCommunityBySlug = unstable_cache(
   async (slug: string): Promise<Community | null> => {
     const supabase = createAdminClient()
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('communities')
       .select('*')
       .eq('slug', slug)
       .eq('is_published', true)
-      .single()
+      .single() as { data: CommunityRow | null; error: Error | null }
 
     if (error) {
       console.error('Error fetching community:', error)
@@ -41,11 +43,12 @@ export const getAllCommunities = unstable_cache(
   async (): Promise<Community[]> => {
     const supabase = createAdminClient()
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('communities')
       .select('*')
       .eq('is_published', true)
-      .order('name', { ascending: true })
+      .order('name', { ascending: true }) as { data: CommunityRow[] | null; error: Error | null }
 
     if (error) {
       console.error('Error fetching communities:', error)

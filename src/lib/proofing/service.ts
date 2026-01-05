@@ -1,6 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { nanoid } from 'nanoid'
 import { sendProofingShareEmail } from '@/lib/email/resend'
+import type {
+  ProofingSessionRow,
+  ProofingSelectionRow,
+  ProofingCommentRow,
+  ProofingShareRow,
+} from '@/lib/supabase/types-custom'
 
 export interface ProofingSession {
   id: string
@@ -141,9 +147,9 @@ export async function createProofingSession(
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + (expires_in_days || DEFAULT_EXPIRY_DAYS))
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_sessions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
       .insert({
         listing_id,
         agent_id,
@@ -154,7 +160,8 @@ export async function createProofingSession(
         photo_ids,
       })
       .select()
-      .single() as { data: ProofingSession | null; error: Error | null }
+      .returns<ProofingSessionRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -165,7 +172,7 @@ export async function createProofingSession(
 
     return {
       success: true,
-      session: data,
+      session: data as unknown as ProofingSession,
     }
   } catch (error) {
     console.error('[Proofing] Error creating session:', error)
@@ -183,12 +190,13 @@ export async function getProofingSession(token: string): Promise<ProofingSession
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_sessions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
       .select('*, photos:listing_media(*)')
       .eq('token', token)
-      .single() as { data: ProofingSession | null; error: Error | null }
+      .returns<Array<ProofingSessionRow & { photos?: unknown[] }>>()
+      .single()
 
     if (error || !data) {
       return null
@@ -199,7 +207,7 @@ export async function getProofingSession(token: string): Promise<ProofingSession
       return null
     }
 
-    return data
+    return data as unknown as ProofingSession
   } catch (error) {
     console.error('[Proofing] Error getting session:', error)
     return null
@@ -221,12 +229,13 @@ export async function selectPhoto(
 
     // Check for duplicate if requested
     if (check_duplicate) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: existing } = await (supabase as any)
-        .from('proofing_selections')
+      const { data: existing } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
         .select('id, photo_id')
         .eq('session_id', sessionId)
-        .eq('photo_id', photoId) as { data: Array<{ id: string }> | null }
+        .eq('photo_id', photoId)
+        .returns<Array<{ id: string; photo_id: string }>>()
 
       if (existing && existing.length > 0) {
         return {
@@ -238,19 +247,20 @@ export async function selectPhoto(
 
     // Check limit if requested
     if (enforce_limit) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: session } = await (supabase as any)
-        .from('proofing_sessions')
+      const { data: session } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
         .select('max_selections')
         .eq('id', sessionId)
-        .single() as { data: { max_selections: number | null } | null }
+        .returns<Array<{ max_selections: number | null }>>()
+        .single()
 
       if (session?.max_selections) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { count } = await (supabase as any)
-          .from('proofing_selections')
+        const { count } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
           .select('id', { count: 'exact', head: true })
-          .eq('session_id', sessionId) as { count: number | null }
+          .eq('session_id', sessionId)
 
         if ((count || 0) >= session.max_selections) {
           return {
@@ -264,18 +274,18 @@ export async function selectPhoto(
     // Get next selection order if not provided
     let order = selection_order
     if (order === undefined) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count } = await (supabase as any)
-        .from('proofing_selections')
+      const { count } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
         .select('id', { count: 'exact', head: true })
-        .eq('session_id', sessionId) as { count: number | null }
+        .eq('session_id', sessionId)
       order = (count || 0) + 1
     }
 
     // Insert selection
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_selections')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
       .insert({
         session_id: sessionId,
         photo_id: photoId,
@@ -284,7 +294,8 @@ export async function selectPhoto(
         selected_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: PhotoSelection | null; error: Error | null }
+      .returns<ProofingSelectionRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -295,7 +306,7 @@ export async function selectPhoto(
 
     return {
       success: true,
-      selection: data,
+      selection: data as unknown as PhotoSelection,
     }
   } catch (error) {
     console.error('[Proofing] Error selecting photo:', error)
@@ -319,18 +330,18 @@ export async function deselectPhoto(
 
     // Delete comments first if requested
     if (options.delete_comments) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('proofing_comments')
+      await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_comments' as any)
         .delete()
         .eq('session_id', sessionId)
         .eq('photo_id', photoId)
     }
 
     // Delete selection
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('proofing_selections')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
       .delete()
       .eq('session_id', sessionId)
       .eq('photo_id', photoId)
@@ -380,9 +391,9 @@ export async function addPhotoComment(params: AddCommentParams): Promise<AddComm
 
     const is_pinned = pin_x !== undefined && pin_y !== undefined
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_comments')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_comments' as any)
       .insert({
         session_id,
         photo_id,
@@ -395,7 +406,8 @@ export async function addPhotoComment(params: AddCommentParams): Promise<AddComm
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: PhotoComment | null; error: Error | null }
+      .returns<ProofingCommentRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -406,7 +418,7 @@ export async function addPhotoComment(params: AddCommentParams): Promise<AddComm
 
     return {
       success: true,
-      comment: data,
+      comment: data as unknown as PhotoComment,
     }
   } catch (error) {
     console.error('[Proofing] Error adding comment:', error)
@@ -427,9 +439,9 @@ export async function deletePhotoComment(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('proofing_comments')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_comments' as any)
       .delete()
       .eq('id', commentId)
       .eq('session_id', sessionId)
@@ -466,21 +478,19 @@ export async function getSessionSelections(
       query = `*, photo:listing_media(*), comments:proofing_comments(*)`
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_selections')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
       .select(query)
       .eq('session_id', sessionId)
-      .order('selection_order', { ascending: true }) as {
-        data: PhotoSelection[] | null
-        error: Error | null
-      }
+      .order('selection_order', { ascending: true })
+      .returns<Array<ProofingSelectionRow & { photo?: unknown; comments?: unknown[] }>>()
 
     if (error || !data) {
       return []
     }
 
-    return data
+    return data as unknown as PhotoSelection[]
   } catch (error) {
     console.error('[Proofing] Error getting selections:', error)
     return []
@@ -498,12 +508,13 @@ export async function finalizeSession(
     const supabase = createAdminClient()
 
     // Check current status first
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: current } = await (supabase as any)
-      .from('proofing_sessions')
+    const { data: current } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
       .select('status')
       .eq('id', sessionId)
-      .single() as { data: { status: string } | null }
+      .returns<Array<{ status: string }>>()
+      .single()
 
     if (current?.status === 'finalized') {
       return {
@@ -514,11 +525,11 @@ export async function finalizeSession(
 
     // Check selections requirement if needed
     if (options.require_selections) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count } = await (supabase as any)
-        .from('proofing_selections')
+      const { count } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
         .select('id', { count: 'exact', head: true })
-        .eq('session_id', sessionId) as { count: number | null }
+        .eq('session_id', sessionId)
 
       if (!count || count === 0) {
         return {
@@ -529,16 +540,17 @@ export async function finalizeSession(
     }
 
     // Update session status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_sessions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
       .update({
         status: 'finalized',
         finalized_at: new Date().toISOString(),
       })
       .eq('id', sessionId)
       .select()
-      .single() as { data: ProofingSession | null; error: Error | null }
+      .returns<ProofingSessionRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -549,7 +561,7 @@ export async function finalizeSession(
 
     return {
       success: true,
-      session: data,
+      session: data as unknown as ProofingSession,
     }
   } catch (error) {
     console.error('[Proofing] Error finalizing session:', error)
@@ -572,9 +584,9 @@ export async function shareSessionWithSeller(
     const supabase = createAdminClient()
     const shareToken = nanoid(24)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('proofing_shares')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_shares' as any)
       .insert({
         session_id,
         seller_email,
@@ -585,10 +597,8 @@ export async function shareSessionWithSeller(
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as {
-        data: { share_token: string } | null
-        error: Error | null
-      }
+      .returns<ProofingShareRow[]>()
+      .single()
 
     if (error || !data) {
       return {
@@ -614,7 +624,7 @@ export async function shareSessionWithSeller(
             agent:agents(name)
           `)
           .eq('id', session_id)
-          .single()
+          .single() as { data: { id: string; listing: { address: string; city: string; state: string } | null; agent: { name: string } | null } | null }
 
         const propertyAddress = sessionData?.listing
           ? `${sessionData.listing.address}, ${sessionData.listing.city}, ${sessionData.listing.state}`
@@ -664,26 +674,28 @@ export async function getSessionStats(sessionId: string): Promise<{
     const supabase = createAdminClient()
 
     // Get session photo count
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: session } = await (supabase as any)
-      .from('proofing_sessions')
+    const { data: session } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_sessions' as any)
       .select('photo_ids')
       .eq('id', sessionId)
-      .single() as { data: { photo_ids: string[] } | null }
+      .returns<Array<{ photo_ids: string[] }>>()
+      .single()
 
     // Get selection counts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: selections } = await (supabase as any)
-      .from('proofing_selections')
+    const { data: selections } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_selections' as any)
       .select('id, is_favorite')
-      .eq('session_id', sessionId) as { data: Array<{ id: string; is_favorite: boolean }> | null }
+      .eq('session_id', sessionId)
+      .returns<Array<{ id: string; is_favorite: boolean }>>()
 
     // Get comment count
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count: commentCount } = await (supabase as any)
-      .from('proofing_comments')
+    const { count: commentCount } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('proofing_comments' as any)
       .select('id', { count: 'exact', head: true })
-      .eq('session_id', sessionId) as { count: number | null }
+      .eq('session_id', sessionId)
 
     return {
       total_photos: session?.photo_ids?.length || 0,

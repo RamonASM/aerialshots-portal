@@ -26,11 +26,12 @@ export default async function StoryworkPage() {
   }
 
   // Get stories for this agent
-  const { data: stories } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stories } = await (supabase as any)
     .from('stories')
     .select('*')
     .eq('agent_id', agent.id)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false }) as { data: Array<{ id: string; status: string; title: string; story_type: string; created_at: string; generated_content?: Record<string, unknown> }> | null }
 
   const draftStories = stories?.filter((s) => s.status === 'draft') || []
   const completedStories = stories?.filter((s) => s.status === 'completed') || []

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { randomUUID } from 'crypto'
-import type { ShareLinkType, ShareLinkInsert } from '@/lib/supabase/types'
+import type { ShareLinkType, ShareLinkInsert, ShareLinkRow } from '@/lib/supabase/types'
+import { getCurrentUser } from '@/lib/auth/clerk'
 
 /**
  * POST /api/share-links
@@ -9,14 +10,13 @@ import type { ShareLinkType, ShareLinkInsert } from '@/lib/supabase/types'
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const user = await getCurrentUser()
 
-    // Verify authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
+    const supabase = await createClient()
     const body = await request.json()
     const {
       listing_id,
@@ -41,23 +41,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    // Get agent to verify access
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('id')
-      .eq('email', user.email!)
-      .single()
+    if (!listing.agent_id) {
+      return NextResponse.json({ error: 'Listing has no assigned agent' }, { status: 400 })
+    }
 
-    // Allow if user is agent owner or staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
 
-    if (!agent && !staff) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    // Verify ownership: staff can create links for any listing, agents only for their own
+    if (!isStaff) {
+      if (user.userTable !== 'agents' || user.userId !== listing.agent_id) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
     // Generate unique share token
@@ -71,20 +65,20 @@ export async function POST(request: NextRequest) {
     const shareLink: ShareLinkInsert = {
       listing_id,
       agent_id: listing.agent_id,
-      client_email: client_email || null,
-      client_name: client_name || null,
+      client_email: client_email || undefined,
+      client_name: client_name || undefined,
       share_token,
       link_type,
       expires_at: expires_at.toISOString(),
       is_active: true,
-      access_count: 0,
     }
 
-    const { data: createdLink, error: createError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: createdLink, error: createError } = await (supabase as any)
       .from('share_links')
       .insert(shareLink)
       .select()
-      .single()
+      .single() as { data: ShareLinkRow | null; error: Error | null }
 
     if (createError) {
       console.error('Error creating share link:', createError)
@@ -117,40 +111,23 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const user = await getCurrentUser()
 
-    // Verify authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
+
+    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const listing_id = searchParams.get('listing_id')
     const agent_id = searchParams.get('agent_id')
     const include_expired = searchParams.get('include_expired') === 'true'
 
-    // Get agent to verify access
-    const { data: agent } = await supabase
-      .from('agents')
-      .select('id')
-      .eq('email', user.email!)
-      .single()
-
-    // Allow if user is agent owner or staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!agent && !staff) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // Build query
-    let query = supabase
+    // Build query - using as any since share_links isn't in generated types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('share_links')
       .select(`
         *,
@@ -167,9 +144,9 @@ export async function GET(request: NextRequest) {
     // Filter by agent if provided (or use current agent)
     if (agent_id) {
       query = query.eq('agent_id', agent_id)
-    } else if (agent && !staff) {
+    } else if (!isStaff && user.userTable === 'agents') {
       // Non-staff agents can only see their own links
-      query = query.eq('agent_id', agent.id)
+      query = query.eq('agent_id', user.userId)
     }
 
     // Filter expired links unless explicitly included
@@ -177,7 +154,7 @@ export async function GET(request: NextRequest) {
       query = query.gte('expires_at', new Date().toISOString())
     }
 
-    const { data: links, error: listError } = await query
+    const { data: links, error: listError } = await query as { data: Array<ShareLinkRow & { listing: { id: string; address: string; city: string; state: string } | null }> | null; error: Error | null }
 
     if (listError) {
       console.error('Error fetching share links:', listError)

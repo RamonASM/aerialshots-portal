@@ -16,12 +16,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Validate token
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('id, listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single()
+      .single() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -68,7 +69,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get seller schedule if exists (additional scheduling info)
-    const { data: sellerSchedule } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: sellerSchedule } = await (supabase as any)
       .from('seller_schedules')
       .select(`
         status,
@@ -76,16 +78,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         notes
       `)
       .eq('share_link_id', shareLink.id)
-      .single()
+      .single() as { data: { status: string; selected_slot: unknown; notes: string | null } | null }
 
     // Get any pending reschedule requests
-    const { data: rescheduleRequests } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rescheduleRequests } = await (supabase as any)
       .from('reschedule_requests')
       .select('id, status, requested_slots, reason, created_at, handled_at')
       .eq('listing_id', shareLink.listing_id)
       .eq('share_link_id', shareLink.id)
       .order('created_at', { ascending: false })
-      .limit(1)
+      .limit(1) as { data: Array<{ id: string; status: string; requested_slots: unknown; reason: string | null; created_at: string; handled_at: string | null }> | null }
 
     // Prep instructions for seller
     const prepInstructions = [

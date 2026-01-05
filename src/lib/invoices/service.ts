@@ -94,16 +94,13 @@ export async function getUnpaidInvoices(agentId: string): Promise<Invoice[]> {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('invoices')
       .select('*')
       .eq('agent_id', agentId)
       .in('status', ['pending', 'overdue'])
-      .order('due_date', { ascending: true }) as {
-        data: Invoice[] | null
-        error: Error | null
-      }
+      .order('due_date', { ascending: true })
+      .returns<Invoice[]>()
 
     if (error || !data) {
       return []
@@ -123,12 +120,12 @@ export async function getInvoiceById(invoiceId: string): Promise<Invoice | null>
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('invoices')
       .select('*, agent:agents(*)')
       .eq('id', invoiceId)
-      .single() as { data: Invoice | null; error: Error | null }
+      .single()
+      .returns<Invoice>()
 
     if (error || !data) {
       return null
@@ -209,11 +206,11 @@ export async function createBulkPaymentIntent(params: {
     const supabase = createAdminClient()
 
     // Get invoices
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: invoices } = await (supabase as any)
+    const { data: invoices } = await supabase
       .from('invoices')
       .select('*')
-      .in('id', invoice_ids) as { data: Invoice[] | null }
+      .in('id', invoice_ids)
+      .returns<Invoice[]>()
 
     if (!invoices || invoices.length === 0) {
       return {
@@ -296,8 +293,7 @@ export async function markInvoicesPaid(params: {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('invoices')
       .update({
         status: 'paid',
@@ -306,7 +302,8 @@ export async function markInvoicesPaid(params: {
         payment_method,
       })
       .in('id', invoice_ids)
-      .select('id') as { data: Array<{ id: string }> | null; error: Error | null }
+      .select('id')
+      .returns<Array<{ id: string }>>()
 
     if (error) {
       return {
@@ -343,8 +340,7 @@ export async function getInvoiceHistory(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
+    let query = supabase
       .from('invoices')
       .select('*', { count: 'exact' })
       .eq('agent_id', agentId)
@@ -363,11 +359,7 @@ export async function getInvoiceHistory(
       query = query.lte('created_at', date_to)
     }
 
-    const { data, count, error } = await query as {
-      data: Invoice[] | null
-      count: number | null
-      error: Error | null
-    }
+    const { data, count, error } = await query.returns<Invoice[]>()
 
     if (error || !data) {
       return { invoices: [], total_count: 0 }
@@ -439,14 +431,12 @@ export async function getInvoiceSummary(agentId: string): Promise<{
     const supabase = createAdminClient()
 
     // Get unpaid invoices
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: unpaid } = await (supabase as any)
+    const { data: unpaid } = await supabase
       .from('invoices')
       .select('amount, status')
       .eq('agent_id', agentId)
-      .in('status', ['pending', 'overdue']) as {
-        data: Array<{ amount: number; status: string }> | null
-      }
+      .in('status', ['pending', 'overdue'])
+      .returns<Array<{ amount: number; status: string }>>()
 
     const unpaidInvoices = unpaid || []
     const overdueInvoices = unpaidInvoices.filter((inv) => inv.status === 'overdue')
@@ -456,21 +446,21 @@ export async function getInvoiceSummary(agentId: string): Promise<{
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const yearStart = new Date(now.getFullYear(), 0, 1).toISOString()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: paidThisMonth } = await (supabase as any)
+    const { data: paidThisMonth } = await supabase
       .from('invoices')
       .select('amount')
       .eq('agent_id', agentId)
       .eq('status', 'paid')
-      .gte('paid_at', monthStart) as { data: Array<{ amount: number }> | null }
+      .gte('paid_at', monthStart)
+      .returns<Array<{ amount: number }>>()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: paidThisYear } = await (supabase as any)
+    const { data: paidThisYear } = await supabase
       .from('invoices')
       .select('amount')
       .eq('agent_id', agentId)
       .eq('status', 'paid')
-      .gte('paid_at', yearStart) as { data: Array<{ amount: number }> | null }
+      .gte('paid_at', yearStart)
+      .returns<Array<{ amount: number }>>()
 
     return {
       unpaid_count: unpaidInvoices.length,

@@ -16,7 +16,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = await createClient()
 
     // Find the share link by token
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select(`
         *,
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         agent:agents(id, name, email, logo_url, headshot_url, brand_color)
       `)
       .eq('share_token', token)
-      .single()
+      .single() as { data: Record<string, unknown> | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 })
@@ -41,15 +42,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check expiration
-    if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+    if (shareLink.expires_at && new Date(shareLink.expires_at as string) < new Date()) {
       return NextResponse.json({ error: 'This link has expired' }, { status: 410 })
     }
 
     // Update access count and last accessed timestamp
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('share_links')
       .update({
-        access_count: (shareLink.access_count || 0) + 1,
+        access_count: ((shareLink.access_count as number) || 0) + 1,
         last_accessed_at: new Date().toISOString(),
       })
       .eq('id', shareLink.id)
@@ -57,11 +59,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Fetch portal settings for white-label customization
     let portalSettings = null
     if (shareLink.agent_id) {
-      const { data: settings } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: settings } = await (supabase as any)
         .from('portal_settings')
         .select('*')
         .eq('agent_id', shareLink.agent_id)
-        .single()
+        .single() as { data: Record<string, unknown> | null }
       portalSettings = settings
     }
 
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const { data: assets } = await supabase
         .from('media_assets')
         .select('*')
-        .eq('listing_id', shareLink.listing_id)
+        .eq('listing_id', shareLink.listing_id as string)
         .order('sort_order', { ascending: true })
       mediaAssets = assets
     }
@@ -79,11 +82,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // For schedule links, fetch seller schedule if exists
     let sellerSchedule = null
     if (shareLink.link_type === 'schedule') {
-      const { data: schedule } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: schedule } = await (supabase as any)
         .from('seller_schedules')
         .select('*')
         .eq('share_link_id', shareLink.id)
-        .single()
+        .single() as { data: Record<string, unknown> | null }
       sellerSchedule = schedule
     }
 
@@ -126,11 +130,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Find the share link
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('id, agent_id')
       .eq('share_token', token)
-      .single()
+      .single() as { data: { id: string; agent_id: string } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Share link not found' }, { status: 404 })
@@ -156,10 +161,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Deactivate the link (soft delete)
-    const { error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (supabase as any)
       .from('share_links')
       .update({ is_active: false })
-      .eq('id', shareLink.id)
+      .eq('id', shareLink.id) as { error: Error | null }
 
     if (updateError) {
       console.error('Error revoking share link:', updateError)
@@ -196,11 +202,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { extend_days, is_active, client_email, client_name } = body
 
     // Find the share link
-    const { data: shareLink, error: linkError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: shareLink, error: linkError } = await (supabase as any)
       .from('share_links')
       .select('id, agent_id, expires_at')
       .eq('share_token', token)
-      .single()
+      .single() as { data: { id: string; agent_id: string; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Share link not found' }, { status: 404 })
@@ -249,12 +256,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
     }
 
-    const { data: updatedLink, error: updateError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: updatedLink, error: updateError } = await (supabase as any)
       .from('share_links')
       .update(updates)
       .eq('id', shareLink.id)
       .select()
-      .single()
+      .single() as { data: Record<string, unknown> | null; error: Error | null }
 
     if (updateError) {
       console.error('Error updating share link:', updateError)

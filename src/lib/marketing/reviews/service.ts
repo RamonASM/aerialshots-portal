@@ -62,12 +62,13 @@ export interface ReviewRequestSettings {
 export async function getReviewSettings(): Promise<ReviewRequestSettings | null> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('review_request_settings')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_request_settings' as any)
     .select('*')
     .limit(1)
     .single()
+    .returns<ReviewRequestSettings>()
 
   if (error) {
     console.error('Error fetching review settings:', error)
@@ -86,9 +87,9 @@ export async function getDefaultTemplate(
 ): Promise<ReviewRequestTemplate | null> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('review_request_templates')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_request_templates' as any)
     .select('*')
     .or(`platform.eq.${platform},platform.eq.all`)
     .eq('channel', channel)
@@ -96,6 +97,7 @@ export async function getDefaultTemplate(
     .order('is_default', { ascending: false })
     .limit(1)
     .single()
+    .returns<ReviewRequestTemplate>()
 
   if (error && error.code !== 'PGRST116') {
     console.error('Error fetching review template:', error)
@@ -118,9 +120,9 @@ export async function canRequestReview(agentId: string): Promise<boolean> {
   monthStart.setDate(1)
   monthStart.setHours(0, 0, 0, 0)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { count: monthlyCount } = await (supabase as any)
-    .from('review_requests')
+  const { count: monthlyCount } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .select('*', { count: 'exact', head: true })
     .eq('agent_id', agentId)
     .gte('created_at', monthStart.toISOString())
@@ -133,14 +135,15 @@ export async function canRequestReview(agentId: string): Promise<boolean> {
   const minDate = new Date()
   minDate.setDate(minDate.getDate() - settings.min_days_between_requests)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: recentRequest } = await (supabase as any)
-    .from('review_requests')
+  const { data: recentRequest } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .select('id')
     .eq('agent_id', agentId)
     .gte('created_at', minDate.toISOString())
     .limit(1)
     .single()
+    .returns<{ id: string }>()
 
   if (recentRequest) {
     return false
@@ -206,20 +209,21 @@ export async function scheduleReviewRequest(
     scheduledFor.setHours(startHour, 0, 0, 0)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('review_requests')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .insert({
       agent_id: agentId,
       listing_id: listingId,
       order_id: orderId,
       platform: settings.primary_platform,
       review_url: reviewUrl,
-      status: 'pending',
+      status: 'pending' as ReviewRequest['status'],
       scheduled_for: scheduledFor.toISOString(),
     })
     .select()
     .single()
+    .returns<ReviewRequest>()
 
   if (error) {
     console.error('Error scheduling review request:', error)
@@ -240,9 +244,9 @@ export type ReviewRequestWithAgent = ReviewRequest & {
 export async function getPendingRequests(): Promise<ReviewRequestWithAgent[]> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
-    .from('review_requests')
+  const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .select(`
       *,
       agent:agents(id, name, email, phone)
@@ -251,6 +255,7 @@ export async function getPendingRequests(): Promise<ReviewRequestWithAgent[]> {
     .lte('scheduled_for', new Date().toISOString())
     .order('scheduled_for', { ascending: true })
     .limit(50)
+    .returns<ReviewRequestWithAgent[]>()
 
   if (error) {
     console.error('Error fetching pending review requests:', error)
@@ -333,11 +338,11 @@ export async function sendReviewRequest(
   }
 
   // Update request status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
-    .from('review_requests')
+  await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .update({
-      status: emailSent || smsSent ? 'sent' : 'bounced',
+      status: (emailSent || smsSent ? 'sent' : 'bounced') as ReviewRequest['status'],
       sent_at: new Date().toISOString(),
       email_sent: emailSent,
       sms_sent: smsSent,
@@ -354,12 +359,13 @@ export async function sendReviewRequest(
 export async function trackReviewClick(trackingToken: string): Promise<string | null> {
   const supabase = createAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: request, error } = await (supabase as any)
-    .from('review_requests')
+  const { data: request, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .select('id, review_url, status')
     .eq('tracking_token', trackingToken)
     .single()
+    .returns<{ id: string; review_url: string; status: ReviewRequest['status'] }>()
 
   if (error || !request) {
     return null
@@ -367,11 +373,11 @@ export async function trackReviewClick(trackingToken: string): Promise<string | 
 
   // Update click status if not already clicked
   if (request.status === 'sent') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('review_requests')
+    await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
       .update({
-        status: 'clicked',
+        status: 'clicked' as ReviewRequest['status'],
         clicked_at: new Date().toISOString(),
       })
       .eq('id', request.id)
@@ -397,17 +403,18 @@ export async function getReviewStats(): Promise<{
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
-    .from('review_requests')
+  const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('review_requests' as any)
     .select('status')
     .gte('created_at', thirtyDaysAgo.toISOString())
+    .returns<Array<{ status: ReviewRequest['status'] }>>()
 
   const requests = data || []
   const total = requests.length
-  const sent = requests.filter((r: ReviewRequest) => ['sent', 'clicked', 'completed'].includes(r.status)).length
-  const clicked = requests.filter((r: ReviewRequest) => ['clicked', 'completed'].includes(r.status)).length
-  const completed = requests.filter((r: ReviewRequest) => r.status === 'completed').length
+  const sent = requests.filter((r) => ['sent', 'clicked', 'completed'].includes(r.status)).length
+  const clicked = requests.filter((r) => ['clicked', 'completed'].includes(r.status)).length
+  const completed = requests.filter((r) => r.status === 'completed').length
 
   return {
     total,

@@ -106,7 +106,17 @@ describe('Post-Delivery Workflow', () => {
         },
       })
 
-      const input = await step.inputMapper(context)
+      if (!step.inputMapper) {
+        throw new Error('inputMapper is undefined')
+      }
+
+      const input = await step.inputMapper(context) as {
+        listingId: string
+        photos: string[]
+        videoType: string
+        aspectRatio: string
+        transition: string
+      }
 
       expect(input.listingId).toBe('listing-123')
       expect(input.photos).toHaveLength(4)
@@ -164,7 +174,23 @@ describe('Post-Delivery Workflow', () => {
         },
       })
 
-      const input = await step.inputMapper(context)
+      if (!step.inputMapper) {
+        throw new Error('inputMapper is undefined')
+      }
+
+      const input = await step.inputMapper(context) as {
+        listingId: string
+        property: {
+          address: string
+          city: string
+          beds: number
+          baths: number
+          sqft: number
+          price: number
+        }
+        contentTypes: string[]
+        descriptionStyles: string[]
+      }
 
       expect(input.listingId).toBe('listing-456')
       expect(input.property.address).toBe('123 Main St')
@@ -265,7 +291,15 @@ describe('Post-Delivery Workflow', () => {
         },
       })
 
-      const input = await step.inputMapper(context)
+      if (!step.inputMapper) {
+        throw new Error('inputMapper is undefined')
+      }
+
+      const input = await step.inputMapper(context) as {
+        videoUrls: { slideshow: string }
+        generatedDescriptions: { professional: string }
+        socialCaptions: { instagram: string }
+      }
 
       expect(input.videoUrls).toBeDefined()
       expect(input.videoUrls.slideshow).toBe('https://cdn.example.com/video.mp4')

@@ -2,7 +2,85 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2026-01-04
+
+### Added - Stripe Product Catalog
+
+Created Stripe products and prices in sandbox for all listing packages and content retainers.
+
+#### Listing Packages (One-time purchases with tiered pricing)
+
+| Package | Product ID | Sqft Tiers |
+|---------|------------|------------|
+| Essentials | `prod_TjMikkxmcAc8H8` | $315 / $375 / $425 / $485 / $580 |
+| Signature | `prod_TjMiTFr3nKCG8x` | $449 / $529 / $579 / $619 / $700 |
+| Premier | `prod_TjMjD33Gcz6obK` | $649 / $729 / $819 / $899 / $1,100 |
+
+#### Content Retainers (Monthly subscriptions)
+
+| Retainer | Product ID | Monthly Price |
+|----------|------------|---------------|
+| Momentum | `prod_TjMk6ERlIB5LPT` | $1,488 |
+| Dominance | `prod_TjMkTth8d40mGM` | $2,500 |
+
+#### Pending: À La Carte Services
+
+The following services need Stripe products created (run `syncAllToStripe()` or create manually):
+- Photography Add-Ons: Drone ($75/$150), 3D Floor Plan ($75), Zillow 3D Tour ($150), Virtual Twilight ($15), Real Twilight ($150)
+- Video Services: Listing Video ($350), Lifestyle Video ($425), Day-to-Night ($750), Cinematic Signature ($900), 3D Video Render ($250)
+- Virtual Staging: Core per photo ($12), Premium per photo ($25), Core Full Home ($125)
+
+### Fixed - Supabase MCP Configuration
+
+Updated global MCP plugin configuration to point to correct ASM Portal project.
+
+#### Changes
+- Updated `~/.claude/plugins/.../supabase/.mcp.json` with `?project_ref=awoabqaszgeqdlvcevmd`
+- Added verification instructions to CLAUDE.md for checking correct project connection
+- **Note:** Requires Claude Code restart to take effect
+
+#### Project Reference
+```
+Correct: awoabqaszgeqdlvcevmd (ASM Portal)
+Wrong:   slomugiwblohzcwtueav (Coach/Production OS)
+```
+
+---
+
 ## [Unreleased] - 2026-01-02
+
+### Added - Gemini AI Virtual Staging Integration
+
+Implemented actual Gemini AI integration for virtual staging to replace mock URL generation.
+
+#### Implementation Details
+- **Gemini Provider**: Integrated Google Generative AI (gemini-2.0-flash-exp model)
+- **Image Generation**: Real AI-powered staging with photorealistic furniture placement
+- **Storage Integration**: Automatic upload to Supabase Storage (`virtual-staging` bucket)
+- **Error Handling**: Comprehensive error handling for API failures, upload failures, and configuration issues
+- **Logging**: Structured logging for debugging and monitoring
+
+#### Files Modified
+- `src/lib/integrations/virtual-staging/client.ts` - Added `generateWithGeminiProvider()` function
+- `src/lib/integrations/virtual-staging/providers/gemini.ts` - Already existed with Gemini API client
+
+#### Files Added
+- `src/lib/integrations/virtual-staging/__tests__/gemini-integration.test.ts` - Test coverage
+- `VIRTUAL_STAGING_IMPLEMENTATION.md` - Complete implementation documentation
+
+#### Technical Features
+- Converts Gemini base64 response to buffer for Supabase upload
+- Generates unique filenames: `staged_{roomType}_{style}_{timestamp}_{randomId}.jpg`
+- Returns public URLs for staged images
+- Supports all styling parameters (room type, style, furniture items, placement hints)
+- Handles API key configuration errors gracefully
+
+#### Environment Requirements
+```bash
+GOOGLE_AI_API_KEY=your_gemini_api_key  # Required for staging to work
+```
+
+See `VIRTUAL_STAGING_IMPLEMENTATION.md` for complete documentation.
 
 ### Changed - Luxury Marketing Site Redesign
 

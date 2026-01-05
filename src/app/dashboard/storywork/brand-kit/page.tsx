@@ -68,12 +68,13 @@ export default function BrandKitPage() {
       }
 
       // Try to get existing brand kit
-      const { data: existingKit } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingKit } = await (supabase as any)
         .from('brand_kits')
         .select('*')
         .eq('agent_id', agent.id)
         .eq('is_default', true)
-        .single()
+        .single() as { data: { name: string | null; primary_color: string | null; secondary_color: string | null; font_family: string | null; logo_url: string | null } | null }
 
       if (existingKit) {
         setBrandKit({
@@ -127,16 +128,18 @@ export default function BrandKitPage() {
       }
 
       // Check if brand kit exists
-      const { data: existingKit } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existingKit } = await (supabase as any)
         .from('brand_kits')
         .select('id')
         .eq('agent_id', agent.id)
         .eq('is_default', true)
-        .single()
+        .single() as { data: { id: string } | null }
 
       if (existingKit) {
         // Update
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('brand_kits')
           .update({
             name: brandKit.name,
@@ -150,7 +153,8 @@ export default function BrandKitPage() {
           .eq('id', existingKit.id)
       } else {
         // Create
-        await supabase.from('brand_kits').insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from('brand_kits').insert({
           agent_id: agent.id,
           name: brandKit.name,
           primary_color: brandKit.primary_color,

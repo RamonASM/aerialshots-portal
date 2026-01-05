@@ -72,12 +72,12 @@ export async function generateMarketingKit(
     const supabase = createAdminClient()
 
     // Get listing data
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: listing, error: listingError } = await (supabase as any)
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('*, agent:agents(name, phone, email, logo_url, brand_color)')
       .eq('id', listingId)
-      .single() as { data: ListingData | null; error: Error | null }
+      .single()
+      .returns<ListingData>()
 
     if (listingError || !listing) {
       return {
@@ -95,15 +95,16 @@ export async function generateMarketingKit(
     }
 
     // Create marketing kit record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: kit, error: kitError } = await (supabase as any)
-      .from('marketing_kits')
+    const { data: kit, error: kitError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_kits' as any)
       .insert({
         listing_id: listingId,
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: MarketingKit | null; error: Error | null }
+      .single()
+      .returns<MarketingKit>()
 
     if (kitError || !kit) {
       return {
@@ -172,19 +173,20 @@ export async function generateSocialPost(params: {
       created_at: new Date().toISOString(),
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('marketing_assets')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .insert({
         listing_id: params.listing_id,
-        type: 'social_post',
+        type: 'social_post' as AssetType,
         url: asset.url,
         platform: asset.platform,
         dimensions: asset.dimensions,
         created_at: asset.created_at,
       })
       .select()
-      .single() as { data: MarketingAsset | null; error: Error | null }
+      .single()
+      .returns<MarketingAsset>()
 
     if (error || !data) {
       return {
@@ -240,12 +242,12 @@ export async function generatePropertyFlyer(params: {
       created_at: new Date().toISOString(),
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('marketing_assets')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .insert({
         listing_id: params.listing_id,
-        type: 'flyer',
+        type: 'flyer' as AssetType,
         url: asset.url,
         format: asset.format,
         template: asset.template,
@@ -253,7 +255,8 @@ export async function generatePropertyFlyer(params: {
         created_at: asset.created_at,
       })
       .select()
-      .single() as { data: MarketingAsset | null; error: Error | null }
+      .single()
+      .returns<MarketingAsset>()
 
     if (error || !data) {
       return {
@@ -303,19 +306,20 @@ export async function generateInstagramStory(params: {
       created_at: new Date().toISOString(),
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('marketing_assets')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .insert({
         listing_id: params.listing_id,
-        type: 'instagram_story',
+        type: 'instagram_story' as AssetType,
         url: asset.url,
         format: asset.format,
         dimensions: asset.dimensions,
         created_at: asset.created_at,
       })
       .select()
-      .single() as { data: MarketingAsset | null; error: Error | null }
+      .single()
+      .returns<MarketingAsset>()
 
     if (error || !data) {
       return {
@@ -344,14 +348,15 @@ export async function getMarketingKit(listingId: string): Promise<MarketingKit |
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('marketing_kits')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_kits' as any)
       .select('*, assets:marketing_assets(*)')
       .eq('listing_id', listingId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single() as { data: MarketingKit | null; error: Error | null }
+      .single()
+      .returns<MarketingKit>()
 
     if (error || !data) {
       return null
@@ -376,12 +381,13 @@ export async function regenerateAsset(assetId: string): Promise<{
     const supabase = createAdminClient()
 
     // Get current asset
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: currentAsset, error: getError } = await (supabase as any)
-      .from('marketing_assets')
+    const { data: currentAsset, error: getError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .select('*')
       .eq('id', assetId)
-      .single() as { data: MarketingAsset | null; error: Error | null }
+      .single()
+      .returns<MarketingAsset>()
 
     if (getError || !currentAsset) {
       return {
@@ -393,16 +399,17 @@ export async function regenerateAsset(assetId: string): Promise<{
     // Regenerate (in real implementation, would call Bannerbear)
     const newUrl = `https://cdn.example.com/regenerated-${Date.now()}.png`
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('marketing_assets')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .update({
         url: newUrl,
         regenerated_at: new Date().toISOString(),
       })
       .eq('id', assetId)
       .select()
-      .single() as { data: MarketingAsset | null; error: Error | null }
+      .single()
+      .returns<MarketingAsset>()
 
     if (error || !data) {
       return {
@@ -435,16 +442,16 @@ export async function deleteMarketingKit(kitId: string): Promise<{
     const supabase = createAdminClient()
 
     // Delete assets first
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('marketing_assets')
+    await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_assets' as any)
       .delete()
       .eq('kit_id', kitId)
 
     // Delete kit
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('marketing_kits')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('marketing_kits' as any)
       .delete()
       .eq('id', kitId)
 

@@ -36,7 +36,7 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
   // Verify staff role
   const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, role, team_role')
+    .select('id, name, role')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
@@ -45,8 +45,8 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
     redirect('/staff-login')
   }
 
-  // Allow editors and admins
-  if (staff.team_role !== 'editor' && staff.role !== 'admin') {
+  // Allow editors and admins (editor is a role in the staff table)
+  if (staff.role !== 'editor' && staff.role !== 'admin') {
     redirect('/team/editor')
   }
 
@@ -65,7 +65,6 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
       ops_status,
       is_rush,
       scheduled_at,
-      expected_completion,
       agent:agents(id, name, email, phone)
     `)
     .eq('id', id)
@@ -81,12 +80,10 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
     .select(`
       id,
       aryeo_url,
-      media_url,
       storage_path,
       type,
       category,
       qc_status,
-      processing_job_id,
       sort_order
     `)
     .eq('listing_id', id)
@@ -207,11 +204,11 @@ export default async function EditorJobDetailPage({ params }: PageProps) {
         isRush={listing.is_rush ?? false}
         photos={photos.map(p => ({
           id: p.id,
-          url: p.media_url || p.aryeo_url || '',
+          url: p.aryeo_url || '',
           storagePath: p.storage_path,
           category: p.category,
           qcStatus: p.qc_status,
-          processingJobId: p.processing_job_id,
+          processingJobId: latestJob?.id || null,
         }))}
         initialProcessingJob={latestJob as ProcessingJob | null}
       />

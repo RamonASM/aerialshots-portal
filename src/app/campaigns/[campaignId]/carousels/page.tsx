@@ -55,12 +55,13 @@ async function getCampaignWithCarousels(campaignId: string) {
 async function checkInstagramConnection(agentId: string) {
   const supabase = createAdminClient()
 
-  const { data } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
     .from('instagram_connections')
     .select('id, status, token_expires_at')
     .eq('agent_id', agentId)
     .eq('status', 'active')
-    .single()
+    .single() as { data: { id: string; status: string; token_expires_at: string | null } | null }
 
   if (!data) return false
 

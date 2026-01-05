@@ -16,13 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff record
-    const { data: staff } = await supabase
+    // Get staff record with payout info
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: staff } = await (supabase as any)
       .from('staff')
       .select('id, payout_type')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .single() as { data: { id: string; payout_type: string | null } | null }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })

@@ -4,6 +4,8 @@
  * Folder monitoring and auto-upload for edited photos from Dropbox
  */
 
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
+
 // Types
 export interface DropboxFile {
   id: string
@@ -80,13 +82,14 @@ export async function listFolderContents(
 
     const body = isFirstRequest ? { path } : { cursor }
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(body),
+      timeout: FETCH_TIMEOUTS.DEFAULT,
     })
 
     if (!response.ok) {
@@ -101,7 +104,7 @@ export async function listFolderContents(
       if (errorData.error?.path?.['.tag'] === 'not_found') {
         throw new Error(`Folder not found: ${path}`)
       }
-      throw new Error(`Dropbox API error: ${response.status}`)
+      throw new Error(`Dropbox API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
@@ -140,17 +143,18 @@ export async function detectNewPhotos(
   accessToken: string,
   lastCursor: string
 ): Promise<DetectNewPhotosResult> {
-  const response = await fetch(`${DROPBOX_API_URL}/files/list_folder/continue`, {
+  const response = await fetchWithTimeout(`${DROPBOX_API_URL}/files/list_folder/continue`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ cursor: lastCursor }),
+    timeout: FETCH_TIMEOUTS.DEFAULT,
   })
 
   if (!response.ok) {
-    throw new Error(`Dropbox API error: ${response.status}`)
+    throw new Error(`Dropbox API error: ${response.status} ${response.statusText}`)
   }
 
   const data = await response.json()
@@ -175,16 +179,17 @@ export async function downloadFile(
   accessToken: string,
   path: string
 ): Promise<DownloadResult> {
-  const response = await fetch(`${DROPBOX_CONTENT_URL}/files/download`, {
+  const response = await fetchWithTimeout(`${DROPBOX_CONTENT_URL}/files/download`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Dropbox-API-Arg': JSON.stringify({ path }),
     },
+    timeout: FETCH_TIMEOUTS.UPLOAD, // Use longer timeout for file downloads
   })
 
   if (!response.ok) {
-    throw new Error(`Download failed: ${response.status}`)
+    throw new Error(`Download failed: ${response.status} ${response.statusText}`)
   }
 
   const blob = await response.blob()

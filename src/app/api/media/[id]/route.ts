@@ -6,9 +6,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { MediaStorageService } from '@/lib/storage/media'
 import { resolveMediaUrl, getMediaUrlSource } from '@/lib/storage/resolve-url'
+import { getCurrentUser } from '@/lib/auth/clerk'
+import { checkRateLimit, getIdentifier, createRateLimitResponse } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,18 +22,50 @@ interface RouteParams {
  * Get a single media asset
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  // Apply rate limiting
+  const identifier = getIdentifier(request)
+  const rateLimitResult = await checkRateLimit(identifier, 'default')
+
+  if (!rateLimitResult.success) {
+    return createRateLimitResponse(rateLimitResult)
+  }
+
   try {
     const { id } = await params
+
+    // Require authentication
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
     const supabase = createAdminClient()
 
+    // Get asset with listing info to verify ownership
     const { data: asset, error } = await supabase
       .from('media_assets')
-      .select('*')
+      .select(`
+        *,
+        listing:listings!inner(id, agent_id)
+      `)
       .eq('id', id)
       .single()
 
     if (error || !asset) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+    }
+
+    // Verify ownership: staff can access all, agents can only access their own listings
+    if (!isStaff) {
+      if (user.userTable !== 'agents') {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+
+      const listing = asset.listing as unknown as { id: string; agent_id: string }
+      if (listing.agent_id !== user.userId) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
     return NextResponse.json({
@@ -65,17 +98,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     // Verify authentication
-    const supabaseClient = await createClient()
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
-
+    const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Check if staff
-    const isStaff = user.email?.endsWith('@aerialshots.media') || false
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
     if (!isStaff) {
       return NextResponse.json(
         { error: 'Only staff can update media' },
@@ -134,17 +163,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     // Verify authentication
-    const supabaseClient = await createClient()
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
-
+    const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Check if staff
-    const isStaff = user.email?.endsWith('@aerialshots.media') || false
+    const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
     if (!isStaff) {
       return NextResponse.json(
         { error: 'Only staff can delete media' },

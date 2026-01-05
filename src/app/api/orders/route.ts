@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
     const subtotalCents = totalCents || 0
 
     // Create order and listing atomically via RPC
-    const { data, error } = await supabase.rpc('create_order_and_listing', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc('create_order_and_listing', {
       p_agent_id: agentId || null,
       p_service_type: serviceType,
       p_package_key: packageKey,
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
       p_payment_intent_id: paymentIntentId,
       p_payment_status: 'pending',
       p_special_instructions: specialInstructions
-    })
+    }) as { data: { order: { id: string; status: string; total_cents: number }; listing: { id: string } } | null; error: Error | null }
 
     if (error || !data) {
       apiLogger.error({ ...formatError(error) }, 'Atomic order creation error')

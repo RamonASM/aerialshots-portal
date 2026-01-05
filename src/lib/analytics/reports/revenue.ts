@@ -264,7 +264,7 @@ export async function getRevenueByPhotographer(
 
     const { data: staff } = await supabase
       .from('staff')
-      .select('id, name, email, team_role')
+      .select('id, name, email, role')
       .in('id', photographerIds.length > 0 ? photographerIds : ['none'])
 
     // Create lookup maps
@@ -347,7 +347,7 @@ export async function getRevenueByPhotographer(
         photographer_id: photographerId,
         photographer_name: staffInfo?.name || 'Unassigned',
         photographer_email: staffInfo?.email || '',
-        team_role: staffInfo?.team_role || 'unknown',
+        team_role: staffInfo?.role || 'unknown',
         total_revenue_cents: data.total_cents,
         total_revenue: centsToDollars(data.total_cents),
         order_count: data.order_count,

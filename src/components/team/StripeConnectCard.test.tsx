@@ -72,10 +72,12 @@ describe('StripeConnectCard', () => {
           }),
         })
 
-      // Mock window.location.href
-      const originalLocation = window.location
-      delete (window as any).location
-      window.location = { ...originalLocation, href: '' } as any
+      // Mock window.location.assign
+      const mockAssign = vi.fn()
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { ...window.location, assign: mockAssign },
+      })
 
       render(<StripeConnectCard staffId="staff-123" />)
 
@@ -90,9 +92,6 @@ describe('StripeConnectCard', () => {
           method: 'POST',
         })
       })
-
-      // Restore
-      window.location = originalLocation
     })
   })
 
@@ -261,10 +260,12 @@ describe('StripeConnectCard', () => {
           }),
         })
 
-      // Mock window.location.href
-      const originalLocation = window.location
-      delete (window as any).location
-      window.location = { ...originalLocation, href: '' } as any
+      // Mock window.location.assign
+      const mockAssign = vi.fn()
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { ...window.location, assign: mockAssign },
+      })
 
       render(<StripeConnectCard staffId="staff-123" onSetup={onSetup} />)
 
@@ -277,9 +278,6 @@ describe('StripeConnectCard', () => {
       await waitFor(() => {
         expect(onSetup).toHaveBeenCalledWith('acct_123')
       })
-
-      // Restore
-      window.location = originalLocation
     })
   })
 })

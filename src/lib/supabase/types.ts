@@ -198,9 +198,9 @@ export type Database = {
         Row: {
           aryeo_customer_id: string | null
           auth_user_id: string | null
-          clerk_user_id: string | null
           bio: string | null
           brand_color: string | null
+          clerk_user_id: string | null
           created_at: string | null
           credit_balance: number | null
           email: string
@@ -221,9 +221,9 @@ export type Database = {
         Insert: {
           aryeo_customer_id?: string | null
           auth_user_id?: string | null
-          clerk_user_id?: string | null
           bio?: string | null
           brand_color?: string | null
+          clerk_user_id?: string | null
           created_at?: string | null
           credit_balance?: number | null
           email: string
@@ -244,9 +244,9 @@ export type Database = {
         Update: {
           aryeo_customer_id?: string | null
           auth_user_id?: string | null
-          clerk_user_id?: string | null
           bio?: string | null
           brand_color?: string | null
+          clerk_user_id?: string | null
           created_at?: string | null
           credit_balance?: number | null
           email?: string
@@ -778,95 +778,7 @@ export type Database = {
           storage_key?: string
           uploaded_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "booking_reference_files_booking_session_id_fkey"
-            columns: ["booking_session_id"]
-            isOneToOne: false
-            referencedRelation: "booking_sessions"
-            referencedColumns: ["session_id"]
-          },
-        ]
-      }
-      booking_sessions: {
-        Row: {
-          converted_at: string | null
-          created_at: string | null
-          current_step: number
-          email: string | null
-          form_data: Json
-          id: string
-          is_abandoned: boolean
-          is_converted: boolean
-          last_activity_at: string
-          package_key: string | null
-          pricing_snapshot: Json | null
-          property_address: string | null
-          property_city: string | null
-          scheduled_date: string | null
-          session_id: string
-          updated_at: string | null
-          user_id: string | null
-          utm_campaign: string | null
-          utm_medium: string | null
-          utm_source: string | null
-          abandoned_at: string | null
-        }
-        Insert: {
-          converted_at?: string | null
-          created_at?: string | null
-          current_step: number
-          email?: string | null
-          form_data?: Json
-          id?: string
-          is_abandoned?: boolean
-          is_converted?: boolean
-          last_activity_at?: string
-          package_key?: string | null
-          pricing_snapshot?: Json | null
-          property_address?: string | null
-          property_city?: string | null
-          scheduled_date?: string | null
-          session_id: string
-          updated_at?: string | null
-          user_id?: string | null
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          abandoned_at?: string | null
-        }
-        Update: {
-          converted_at?: string | null
-          created_at?: string | null
-          current_step?: number
-          email?: string | null
-          form_data?: Json
-          id?: string
-          is_abandoned?: boolean
-          is_converted?: boolean
-          last_activity_at?: string
-          package_key?: string | null
-          pricing_snapshot?: Json | null
-          property_address?: string | null
-          property_city?: string | null
-          scheduled_date?: string | null
-          session_id?: string
-          updated_at?: string | null
-          user_id?: string | null
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          abandoned_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       business_settings: {
         Row: {
@@ -1939,7 +1851,6 @@ export type Database = {
           baths: number | null
           beds: number | null
           city: string | null
-          client_id: string | null
           created_at: string | null
           delivered_at: string | null
           dom: number | null
@@ -1959,30 +1870,6 @@ export type Database = {
           template_id: string | null
           updated_at: string | null
           zip: string | null
-          // From enterprise upgrade migration - integration tracking
-          fotello_job_id: string | null
-          fotello_status: string | null
-          cubicasa_order_id: string | null
-          cubicasa_status: string | null
-          zillow_3d_id: string | null
-          zillow_3d_status: string | null
-          integration_error_message: string | null
-          last_integration_check: string | null
-          // From enterprise upgrade migration - SLA tracking
-          expected_completion: string | null
-          sla_status: string | null
-          stage_entered_at: string | null
-          // From editor workflow migration
-          editor_id: string | null
-          editing_started_at: string | null
-          editing_completed_at: string | null
-          // From enterprise features phase1 migration - airspace
-          airspace_qualified: boolean | null
-          airspace_status: string | null
-          airspace_checked_at: string | null
-          airspace_result: unknown | null
-          front_facing_direction: string | null
-          optimal_shoot_times: unknown | null
         }
         Insert: {
           address: string
@@ -1992,7 +1879,6 @@ export type Database = {
           baths?: number | null
           beds?: number | null
           city?: string | null
-          client_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           dom?: number | null
@@ -2012,26 +1898,6 @@ export type Database = {
           template_id?: string | null
           updated_at?: string | null
           zip?: string | null
-          fotello_job_id?: string | null
-          fotello_status?: string | null
-          cubicasa_order_id?: string | null
-          cubicasa_status?: string | null
-          zillow_3d_id?: string | null
-          zillow_3d_status?: string | null
-          integration_error_message?: string | null
-          last_integration_check?: string | null
-          expected_completion?: string | null
-          sla_status?: string | null
-          stage_entered_at?: string | null
-          editor_id?: string | null
-          editing_started_at?: string | null
-          editing_completed_at?: string | null
-          airspace_qualified?: boolean | null
-          airspace_status?: string | null
-          airspace_checked_at?: string | null
-          airspace_result?: unknown | null
-          front_facing_direction?: string | null
-          optimal_shoot_times?: unknown | null
         }
         Update: {
           address?: string
@@ -2041,7 +1907,6 @@ export type Database = {
           baths?: number | null
           beds?: number | null
           city?: string | null
-          client_id?: string | null
           created_at?: string | null
           delivered_at?: string | null
           dom?: number | null
@@ -2061,26 +1926,6 @@ export type Database = {
           template_id?: string | null
           updated_at?: string | null
           zip?: string | null
-          fotello_job_id?: string | null
-          fotello_status?: string | null
-          cubicasa_order_id?: string | null
-          cubicasa_status?: string | null
-          zillow_3d_id?: string | null
-          zillow_3d_status?: string | null
-          integration_error_message?: string | null
-          last_integration_check?: string | null
-          expected_completion?: string | null
-          sla_status?: string | null
-          stage_entered_at?: string | null
-          editor_id?: string | null
-          editing_started_at?: string | null
-          editing_completed_at?: string | null
-          airspace_qualified?: boolean | null
-          airspace_status?: string | null
-          airspace_checked_at?: string | null
-          airspace_result?: unknown | null
-          front_facing_direction?: string | null
-          optimal_shoot_times?: unknown | null
         }
         Relationships: [
           {
@@ -2115,7 +1960,7 @@ export type Database = {
       }
       media_assets: {
         Row: {
-          aryeo_url: string | null
+          aryeo_url: string
           category: string | null
           created_at: string | null
           id: string
@@ -2126,25 +1971,9 @@ export type Database = {
           storage_path: string | null
           tip_text: string | null
           type: string
-          // From founddr integration migration
-          processing_job_id: string | null
-          processed_storage_path: string | null
-          approved_storage_path: string | null
-          edit_history: unknown | null
-          qc_assigned_to: string | null
-          needs_editing: boolean | null
-          original_filename: string | null
-          file_size_bytes: number | null
-          image_width: number | null
-          image_height: number | null
-          // From native media storage migration
-          media_url: string | null
-          storage_bucket: string | null
-          migration_status: string | null
-          migrated_at: string | null
         }
         Insert: {
-          aryeo_url?: string | null
+          aryeo_url: string
           category?: string | null
           created_at?: string | null
           id?: string
@@ -2155,23 +1984,9 @@ export type Database = {
           storage_path?: string | null
           tip_text?: string | null
           type: string
-          processing_job_id?: string | null
-          processed_storage_path?: string | null
-          approved_storage_path?: string | null
-          edit_history?: unknown | null
-          qc_assigned_to?: string | null
-          needs_editing?: boolean | null
-          original_filename?: string | null
-          file_size_bytes?: number | null
-          image_width?: number | null
-          image_height?: number | null
-          media_url?: string | null
-          storage_bucket?: string | null
-          migration_status?: string | null
-          migrated_at?: string | null
         }
         Update: {
-          aryeo_url?: string | null
+          aryeo_url?: string
           category?: string | null
           created_at?: string | null
           id?: string
@@ -2182,20 +1997,6 @@ export type Database = {
           storage_path?: string | null
           tip_text?: string | null
           type?: string
-          processing_job_id?: string | null
-          processed_storage_path?: string | null
-          approved_storage_path?: string | null
-          edit_history?: unknown | null
-          qc_assigned_to?: string | null
-          needs_editing?: boolean | null
-          original_filename?: string | null
-          file_size_bytes?: number | null
-          image_width?: number | null
-          image_height?: number | null
-          media_url?: string | null
-          storage_bucket?: string | null
-          migration_status?: string | null
-          migrated_at?: string | null
         }
         Relationships: [
           {
@@ -2626,6 +2427,57 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          charges_enabled: boolean | null
+          clerk_user_id: string | null
+          company_name: string | null
+          created_at: string | null
+          default_profit_percent: number | null
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          payout_schedule: string | null
+          payouts_enabled: boolean | null
+          phone: string | null
+          stripe_connect_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          charges_enabled?: boolean | null
+          clerk_user_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          default_profit_percent?: number | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          payout_schedule?: string | null
+          payouts_enabled?: boolean | null
+          phone?: string | null
+          stripe_connect_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          charges_enabled?: boolean | null
+          clerk_user_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          default_profit_percent?: number | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          payout_schedule?: string | null
+          payouts_enabled?: boolean | null
+          phone?: string | null
+          stripe_connect_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payment_portions: {
         Row: {
           amount_cents: number
@@ -3000,6 +2852,73 @@ export type Database = {
           },
         ]
       }
+      sellers: {
+        Row: {
+          access_level: string | null
+          agent_id: string
+          clerk_user_id: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          listing_id: string | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: string | null
+          agent_id: string
+          clerk_user_id?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          listing_id?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: string | null
+          agent_id?: string
+          clerk_user_id?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          listing_id?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sellers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agent_activity_summary"
+            referencedColumns: ["agent_id"]
+          },
+          {
+            foreignKeyName: "sellers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sellers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_territories: {
         Row: {
           cities: string[] | null
@@ -3139,6 +3058,7 @@ export type Database = {
           clerk_user_id: string | null
           created_at: string | null
           email: string
+          enabled_skills: string[] | null
           id: string
           is_active: boolean | null
           name: string
@@ -3146,29 +3066,13 @@ export type Database = {
           role: string
           timezone: string | null
           weekly_report_enabled: boolean | null
-          stripe_connect_id: string | null
-          stripe_connect_status: string | null
-          payout_type: string | null
-          default_payout_percent: number | null
-          hourly_rate: number | null
-          partner_id: string | null
-          stripe_payouts_enabled: boolean | null
-          stripe_onboarding_completed_at: string | null
-          roles: string[] | null
-          team_role: string | null
-          // From smart assignment migration
-          skills: string[] | null
-          enabled_skills: string[] | null
-          home_lat: number | null
-          home_lng: number | null
-          max_daily_jobs: number | null
-          certifications: string[] | null
         }
         Insert: {
           auth_user_id?: string | null
           clerk_user_id?: string | null
           created_at?: string | null
           email: string
+          enabled_skills?: string[] | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -3176,28 +3080,13 @@ export type Database = {
           role: string
           timezone?: string | null
           weekly_report_enabled?: boolean | null
-          stripe_connect_id?: string | null
-          stripe_connect_status?: string | null
-          payout_type?: string | null
-          default_payout_percent?: number | null
-          hourly_rate?: number | null
-          partner_id?: string | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_onboarding_completed_at?: string | null
-          roles?: string[] | null
-          team_role?: string | null
-          skills?: string[] | null
-          enabled_skills?: string[] | null
-          home_lat?: number | null
-          home_lng?: number | null
-          max_daily_jobs?: number | null
-          certifications?: string[] | null
         }
         Update: {
           auth_user_id?: string | null
           clerk_user_id?: string | null
           created_at?: string | null
           email?: string
+          enabled_skills?: string[] | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -3205,22 +3094,6 @@ export type Database = {
           role?: string
           timezone?: string | null
           weekly_report_enabled?: boolean | null
-          stripe_connect_id?: string | null
-          stripe_connect_status?: string | null
-          payout_type?: string | null
-          default_payout_percent?: number | null
-          hourly_rate?: number | null
-          partner_id?: string | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_onboarding_completed_at?: string | null
-          roles?: string[] | null
-          team_role?: string | null
-          skills?: string[] | null
-          enabled_skills?: string[] | null
-          home_lat?: number | null
-          home_lng?: number | null
-          max_daily_jobs?: number | null
-          certifications?: string[] | null
         }
         Relationships: []
       }
@@ -3748,1361 +3621,6 @@ export type Database = {
         }
         Relationships: []
       }
-      share_links: {
-        Row: {
-          id: string
-          listing_id: string
-          agent_id: string | null
-          client_email: string | null
-          client_name: string | null
-          share_token: string
-          link_type: string | null
-          expires_at: string | null
-          access_count: number | null
-          last_accessed_at: string | null
-          is_active: boolean | null
-          created_at: string | null
-          media_access_enabled: boolean | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          agent_id?: string | null
-          client_email?: string | null
-          client_name?: string | null
-          share_token: string
-          link_type?: string | null
-          expires_at?: string | null
-          access_count?: number | null
-          last_accessed_at?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          media_access_enabled?: boolean | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          agent_id?: string | null
-          client_email?: string | null
-          client_name?: string | null
-          share_token?: string
-          link_type?: string | null
-          expires_at?: string | null
-          access_count?: number | null
-          last_accessed_at?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          media_access_enabled?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "share_links_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "share_links_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      seller_schedules: {
-        Row: {
-          id: string
-          listing_id: string
-          share_link_id: string | null
-          seller_name: string | null
-          seller_email: string | null
-          seller_phone: string | null
-          available_slots: Json
-          selected_slot: Json | null
-          status: string | null
-          notes: string | null
-          submitted_at: string | null
-          confirmed_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          share_link_id?: string | null
-          seller_name?: string | null
-          seller_email?: string | null
-          seller_phone?: string | null
-          available_slots?: Json
-          selected_slot?: Json | null
-          status?: string | null
-          notes?: string | null
-          submitted_at?: string | null
-          confirmed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          share_link_id?: string | null
-          seller_name?: string | null
-          seller_email?: string | null
-          seller_phone?: string | null
-          available_slots?: Json
-          selected_slot?: Json | null
-          status?: string | null
-          notes?: string | null
-          submitted_at?: string | null
-          confirmed_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      reschedule_requests: {
-        Row: {
-          id: string
-          listing_id: string
-          order_id: string | null
-          requested_by: string | null
-          requested_by_type: string | null
-          original_date: string | null
-          new_date: string | null
-          requested_slots: Json | null
-          reason: string | null
-          status: string | null
-          approved_by: string | null
-          approved_at: string | null
-          handled_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          order_id?: string | null
-          requested_by?: string | null
-          requested_by_type?: string | null
-          original_date?: string | null
-          new_date?: string | null
-          requested_slots?: Json | null
-          reason?: string | null
-          status?: string | null
-          approved_by?: string | null
-          approved_at?: string | null
-          handled_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          order_id?: string | null
-          requested_by?: string | null
-          requested_by_type?: string | null
-          original_date?: string | null
-          new_date?: string | null
-          requested_slots?: Json | null
-          reason?: string | null
-          status?: string | null
-          approved_by?: string | null
-          approved_at?: string | null
-          handled_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      photographer_assignments: {
-        Row: {
-          id: string
-          listing_id: string
-          photographer_id: string
-          status: string | null
-          scheduled_at: string | null
-          scheduled_date: string | null
-          scheduled_time: string | null
-          completed_at: string | null
-          notes: string | null
-          google_event_id: string | null
-          location_lat: number | null
-          location_lng: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          photographer_id: string
-          status?: string | null
-          scheduled_at?: string | null
-          scheduled_date?: string | null
-          scheduled_time?: string | null
-          completed_at?: string | null
-          notes?: string | null
-          google_event_id?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          photographer_id?: string
-          status?: string | null
-          scheduled_at?: string | null
-          scheduled_date?: string | null
-          scheduled_time?: string | null
-          completed_at?: string | null
-          notes?: string | null
-          google_event_id?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "photographer_assignments_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      time_entries: {
-        Row: {
-          id: string
-          staff_id: string
-          clock_in: string
-          clock_out: string | null
-          duration_minutes: number | null
-          break_minutes: number | null
-          hourly_rate: number
-          total_pay_cents: number | null
-          status: string | null
-          pay_period_id: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          staff_id: string
-          clock_in: string
-          clock_out?: string | null
-          duration_minutes?: number | null
-          break_minutes?: number | null
-          hourly_rate: number
-          total_pay_cents?: number | null
-          status?: string | null
-          pay_period_id?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          staff_id?: string
-          clock_in?: string
-          clock_out?: string | null
-          duration_minutes?: number | null
-          break_minutes?: number | null
-          hourly_rate?: number
-          total_pay_cents?: number | null
-          status?: string | null
-          pay_period_id?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      pay_periods: {
-        Row: {
-          id: string
-          start_date: string
-          end_date: string
-          status: string | null
-          total_hours: number | null
-          total_pay_cents: number | null
-          paid_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          start_date: string
-          end_date: string
-          status?: string | null
-          total_hours?: number | null
-          total_pay_cents?: number | null
-          paid_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          start_date?: string
-          end_date?: string
-          status?: string | null
-          total_hours?: number | null
-          total_pay_cents?: number | null
-          paid_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      partners: {
-        Row: {
-          id: string
-          name: string
-          email: string
-          user_id: string | null
-          clerk_user_id: string | null
-          stripe_connect_id: string | null
-          stripe_connect_status: string | null
-          stripe_payouts_enabled: boolean | null
-          stripe_onboarding_completed_at: string | null
-          default_profit_percent: number | null
-          payout_schedule: string | null
-          is_active: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          email: string
-          user_id?: string | null
-          clerk_user_id?: string | null
-          stripe_connect_id?: string | null
-          stripe_connect_status?: string | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_onboarding_completed_at?: string | null
-          default_profit_percent?: number | null
-          payout_schedule?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          email?: string
-          user_id?: string | null
-          clerk_user_id?: string | null
-          stripe_connect_id?: string | null
-          stripe_connect_status?: string | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_onboarding_completed_at?: string | null
-          default_profit_percent?: number | null
-          payout_schedule?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      staff_payouts: {
-        Row: {
-          id: string
-          staff_id: string
-          order_id: string
-          listing_id: string | null
-          role: string
-          order_total_cents: number
-          payout_amount_cents: number
-          payout_percent: number
-          stripe_transfer_id: string | null
-          stripe_destination_account: string | null
-          status: string | null
-          error_message: string | null
-          reversed_at: string | null
-          reversal_reason: string | null
-          created_at: string | null
-          processed_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          staff_id: string
-          order_id: string
-          listing_id?: string | null
-          role: string
-          order_total_cents: number
-          payout_amount_cents: number
-          payout_percent: number
-          stripe_transfer_id?: string | null
-          stripe_destination_account?: string | null
-          status?: string | null
-          error_message?: string | null
-          reversed_at?: string | null
-          reversal_reason?: string | null
-          created_at?: string | null
-          processed_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          staff_id?: string
-          order_id?: string
-          listing_id?: string | null
-          role?: string
-          order_total_cents?: number
-          payout_amount_cents?: number
-          payout_percent?: number
-          stripe_transfer_id?: string | null
-          stripe_destination_account?: string | null
-          status?: string | null
-          error_message?: string | null
-          reversed_at?: string | null
-          reversal_reason?: string | null
-          created_at?: string | null
-          processed_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      partner_payouts: {
-        Row: {
-          id: string
-          partner_id: string
-          order_id: string
-          listing_id: string | null
-          staff_id: string | null
-          order_total_cents: number
-          payout_amount_cents: number
-          payout_percent: number
-          stripe_transfer_id: string | null
-          stripe_destination_account: string | null
-          status: string | null
-          error_message: string | null
-          reversed_at: string | null
-          reversal_reason: string | null
-          created_at: string | null
-          processed_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          partner_id: string
-          order_id: string
-          listing_id?: string | null
-          staff_id?: string | null
-          order_total_cents: number
-          payout_amount_cents: number
-          payout_percent: number
-          stripe_transfer_id?: string | null
-          stripe_destination_account?: string | null
-          status?: string | null
-          error_message?: string | null
-          reversed_at?: string | null
-          reversal_reason?: string | null
-          created_at?: string | null
-          processed_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          partner_id?: string
-          order_id?: string
-          listing_id?: string | null
-          staff_id?: string | null
-          order_total_cents?: number
-          payout_amount_cents?: number
-          payout_percent?: number
-          stripe_transfer_id?: string | null
-          stripe_destination_account?: string | null
-          status?: string | null
-          error_message?: string | null
-          reversed_at?: string | null
-          reversal_reason?: string | null
-          created_at?: string | null
-          processed_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      marketing_campaigns: {
-        Row: {
-          id: string
-          listing_id: string | null
-          agent_id: string | null
-          name: string
-          subject: string | null
-          body: string | null
-          template_id: string | null
-          type: string | null
-          status: string | null
-          recipient_filter: Json | null
-          recipient_count: number | null
-          recipient_segment_id: string | null
-          recipient_list: string[] | null
-          scheduled_at: string | null
-          sent_at: string | null
-          created_by: string | null
-          created_at: string | null
-          updated_at: string | null
-          metadata: Json | null
-        }
-        Insert: {
-          id?: string
-          listing_id?: string | null
-          agent_id?: string | null
-          name: string
-          subject?: string | null
-          body?: string | null
-          template_id?: string | null
-          type?: string | null
-          status?: string | null
-          recipient_filter?: Json | null
-          recipient_count?: number | null
-          recipient_segment_id?: string | null
-          recipient_list?: string[] | null
-          scheduled_at?: string | null
-          sent_at?: string | null
-          created_by?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-          metadata?: Json | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string | null
-          agent_id?: string | null
-          name?: string
-          subject?: string | null
-          body?: string | null
-          template_id?: string | null
-          type?: string | null
-          status?: string | null
-          recipient_filter?: Json | null
-          recipient_count?: number | null
-          recipient_segment_id?: string | null
-          recipient_list?: string[] | null
-          scheduled_at?: string | null
-          sent_at?: string | null
-          created_by?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-          metadata?: Json | null
-        }
-        Relationships: []
-      }
-      stories: {
-        Row: {
-          id: string
-          user_id: string | null
-          agent_id: string | null
-          title: string | null
-          story_type: string | null
-          status: string | null
-          content: Json | null
-          guided_answers: Json | null
-          media_urls: Json | null
-          created_at: string | null
-          updated_at: string | null
-          published_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          agent_id?: string | null
-          title?: string | null
-          story_type?: string | null
-          status?: string | null
-          content?: Json | null
-          guided_answers?: Json | null
-          media_urls?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-          published_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          agent_id?: string | null
-          title?: string | null
-          story_type?: string | null
-          status?: string | null
-          content?: Json | null
-          guided_answers?: Json | null
-          media_urls?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-          published_at?: string | null
-        }
-        Relationships: []
-      }
-      brand_kits: {
-        Row: {
-          id: string
-          agent_id: string | null
-          name: string
-          logo_url: string | null
-          primary_color: string | null
-          secondary_color: string | null
-          font_family: string | null
-          is_default: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          agent_id?: string | null
-          name: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          font_family?: string | null
-          is_default?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          agent_id?: string | null
-          name?: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          font_family?: string | null
-          is_default?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      portal_settings: {
-        Row: {
-          id: string
-          listing_id: string
-          branding_enabled: boolean | null
-          custom_domain: string | null
-          password_protected: boolean | null
-          password_hash: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          branding_enabled?: boolean | null
-          custom_domain?: string | null
-          password_protected?: boolean | null
-          password_hash?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          branding_enabled?: boolean | null
-          custom_domain?: string | null
-          password_protected?: boolean | null
-          password_hash?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      portal_activity_log: {
-        Row: {
-          id: string
-          listing_id: string | null
-          share_link_id: string | null
-          staff_id: string | null
-          action: string
-          activity_type: string | null
-          entity_type: string | null
-          entity_id: string | null
-          details: Json | null
-          ip_address: string | null
-          user_agent: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id?: string | null
-          share_link_id?: string | null
-          staff_id?: string | null
-          action?: string
-          activity_type?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          details?: Json | null
-          ip_address?: string | null
-          user_agent?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string | null
-          share_link_id?: string | null
-          staff_id?: string | null
-          action?: string
-          activity_type?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          details?: Json | null
-          ip_address?: string | null
-          user_agent?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      company_pool: {
-        Row: {
-          id: string
-          order_id: string
-          listing_id: string | null
-          pool_type: string
-          amount_cents: number
-          percent: number
-          status: string | null
-          allocated_to: string | null
-          paid_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          order_id: string
-          listing_id?: string | null
-          pool_type: string
-          amount_cents: number
-          percent: number
-          status?: string | null
-          allocated_to?: string | null
-          paid_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          order_id?: string
-          listing_id?: string | null
-          pool_type?: string
-          amount_cents?: number
-          percent?: number
-          status?: string | null
-          allocated_to?: string | null
-          paid_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      communities: {
-        Row: {
-          id: string
-          slug: string
-          name: string
-          tagline: string | null
-          description: string | null
-          hero_image_url: string | null
-          gallery_urls: string[] | null
-          lat: number
-          lng: number
-          city: string | null
-          state: string | null
-          zip: string | null
-          meta_title: string | null
-          meta_description: string | null
-          focus_keyword: string | null
-          secondary_keywords: string[] | null
-          overview_content: Json | null
-          lifestyle_content: Json | null
-          market_snapshot: Json | null
-          schools_info: Json | null
-          subdivisions: Json | null
-          quick_facts: Json | null
-          featured_agent_ids: string[] | null
-          is_published: boolean | null
-          published_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          slug: string
-          name: string
-          tagline?: string | null
-          description?: string | null
-          hero_image_url?: string | null
-          gallery_urls?: string[] | null
-          lat: number
-          lng: number
-          city?: string | null
-          state?: string | null
-          zip?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          focus_keyword?: string | null
-          secondary_keywords?: string[] | null
-          overview_content?: Json | null
-          lifestyle_content?: Json | null
-          market_snapshot?: Json | null
-          schools_info?: Json | null
-          subdivisions?: Json | null
-          quick_facts?: Json | null
-          featured_agent_ids?: string[] | null
-          is_published?: boolean | null
-          published_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          slug?: string
-          name?: string
-          tagline?: string | null
-          description?: string | null
-          hero_image_url?: string | null
-          gallery_urls?: string[] | null
-          lat?: number
-          lng?: number
-          city?: string | null
-          state?: string | null
-          zip?: string | null
-          meta_title?: string | null
-          meta_description?: string | null
-          focus_keyword?: string | null
-          secondary_keywords?: string[] | null
-          overview_content?: Json | null
-          lifestyle_content?: Json | null
-          market_snapshot?: Json | null
-          schools_info?: Json | null
-          subdivisions?: Json | null
-          quick_facts?: Json | null
-          featured_agent_ids?: string[] | null
-          is_published?: boolean | null
-          published_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      zapier_webhooks: {
-        Row: {
-          id: string
-          agent_id: string | null
-          event_type: string
-          webhook_url: string
-          is_active: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          agent_id?: string | null
-          event_type: string
-          webhook_url: string
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          agent_id?: string | null
-          event_type?: string
-          webhook_url?: string
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      zapier_webhook_logs: {
-        Row: {
-          id: string
-          webhook_id: string
-          event_type: string
-          payload: Json | null
-          response_status: number | null
-          response_body: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          webhook_id: string
-          event_type: string
-          payload?: Json | null
-          response_status?: number | null
-          response_body?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          webhook_id?: string
-          event_type?: string
-          payload?: Json | null
-          response_status?: number | null
-          response_body?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      delivery_notifications: {
-        Row: {
-          id: string
-          listing_id: string
-          agent_id: string | null
-          recipient_type: string | null
-          recipient_email: string | null
-          recipient_phone: string | null
-          notification_type: string
-          template_key: string | null
-          subject: string | null
-          body: string | null
-          status: string | null
-          error_message: string | null
-          retry_count: number | null
-          scheduled_for: string | null
-          sent_at: string | null
-          opened_at: string | null
-          clicked_at: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          agent_id?: string | null
-          recipient_type?: string | null
-          recipient_email?: string | null
-          recipient_phone?: string | null
-          notification_type: string
-          template_key?: string | null
-          subject?: string | null
-          body?: string | null
-          status?: string | null
-          error_message?: string | null
-          retry_count?: number | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          opened_at?: string | null
-          clicked_at?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          agent_id?: string | null
-          recipient_type?: string | null
-          recipient_email?: string | null
-          recipient_phone?: string | null
-          notification_type?: string
-          template_key?: string | null
-          subject?: string | null
-          body?: string | null
-          status?: string | null
-          error_message?: string | null
-          retry_count?: number | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          opened_at?: string | null
-          clicked_at?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      client_messages: {
-        Row: {
-          id: string
-          listing_id: string
-          share_link_id: string | null
-          sender_type: string
-          sender_id: string | null
-          sender_name: string | null
-          sender_email: string | null
-          content: string
-          attachments: Json | null
-          read_at: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          share_link_id?: string | null
-          sender_type: string
-          sender_id?: string | null
-          sender_name?: string | null
-          sender_email?: string | null
-          content: string
-          attachments?: Json | null
-          read_at?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          share_link_id?: string | null
-          sender_type?: string
-          sender_id?: string | null
-          sender_name?: string | null
-          sender_email?: string | null
-          content?: string
-          attachments?: Json | null
-          read_at?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      instagram_connections: {
-        Row: {
-          id: string
-          agent_id: string
-          instagram_user_id: string
-          access_token: string | null
-          token_expires_at: string | null
-          username: string | null
-          status: string | null
-          is_active: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          agent_id: string
-          instagram_user_id: string
-          access_token?: string | null
-          token_expires_at?: string | null
-          username?: string | null
-          status?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          agent_id?: string
-          instagram_user_id?: string
-          access_token?: string | null
-          token_expires_at?: string | null
-          username?: string | null
-          status?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      seller_access_controls: {
-        Row: {
-          id: string
-          listing_id: string
-          share_link_id: string | null
-          can_download: boolean | null
-          can_share: boolean | null
-          can_message: boolean | null
-          can_reschedule: boolean | null
-          media_access_enabled: boolean | null
-          granted_at: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          listing_id: string
-          share_link_id?: string | null
-          can_download?: boolean | null
-          can_share?: boolean | null
-          can_message?: boolean | null
-          can_reschedule?: boolean | null
-          media_access_enabled?: boolean | null
-          granted_at?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          listing_id?: string
-          share_link_id?: string | null
-          can_download?: boolean | null
-          can_share?: boolean | null
-          can_message?: boolean | null
-          can_reschedule?: boolean | null
-          media_access_enabled?: boolean | null
-          granted_at?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      daily_routes: {
-        Row: {
-          id: string
-          photographer_id: string
-          staff_id: string | null
-          route_date: string
-          status: string | null
-          total_stops: number | null
-          total_distance_miles: number | null
-          estimated_duration_minutes: number | null
-          start_lat: number | null
-          start_lng: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          photographer_id?: string
-          staff_id?: string | null
-          route_date: string
-          status?: string | null
-          total_stops?: number | null
-          total_distance_miles?: number | null
-          estimated_duration_minutes?: number | null
-          start_lat?: number | null
-          start_lng?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          photographer_id?: string
-          staff_id?: string | null
-          route_date?: string
-          status?: string | null
-          total_stops?: number | null
-          total_distance_miles?: number | null
-          estimated_duration_minutes?: number | null
-          start_lat?: number | null
-          start_lng?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      route_stops: {
-        Row: {
-          id: string
-          route_id: string
-          listing_id: string | null
-          stop_order: number
-          arrival_time: string | null
-          departure_time: string | null
-          status: string | null
-          notes: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          route_id: string
-          listing_id?: string | null
-          stop_order: number
-          arrival_time?: string | null
-          departure_time?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          route_id?: string
-          listing_id?: string | null
-          stop_order?: number
-          arrival_time?: string | null
-          departure_time?: string | null
-          status?: string | null
-          notes?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      drive_time_cache: {
-        Row: {
-          id: string
-          origin_lat: number
-          origin_lng: number
-          destination_lat: number
-          destination_lng: number
-          duration_seconds: number
-          distance_meters: number
-          traffic_model: string | null
-          calculated_at: string | null
-          expires_at: string | null
-        }
-        Insert: {
-          id?: string
-          origin_lat: number
-          origin_lng: number
-          destination_lat: number
-          destination_lng: number
-          duration_seconds: number
-          distance_meters: number
-          traffic_model?: string | null
-          calculated_at?: string | null
-          expires_at?: string | null
-        }
-        Update: {
-          id?: string
-          origin_lat?: number
-          origin_lng?: number
-          destination_lat?: number
-          destination_lng?: number
-          duration_seconds?: number
-          distance_meters?: number
-          traffic_model?: string | null
-          calculated_at?: string | null
-          expires_at?: string | null
-        }
-        Relationships: []
-      }
-      clients: {
-        Row: {
-          id: string
-          agent_id: string | null
-          name: string
-          email: string | null
-          phone: string | null
-          company: string | null
-          notes: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          agent_id?: string | null
-          name: string
-          email?: string | null
-          phone?: string | null
-          company?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          agent_id?: string | null
-          name?: string
-          email?: string | null
-          phone?: string | null
-          company?: string | null
-          notes?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      payout_settings: {
-        Row: {
-          id: string
-          key: string
-          value: Json
-          description: string | null
-          updated_by: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          key: string
-          value: Json
-          description?: string | null
-          updated_by?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          key?: string
-          value?: Json
-          description?: string | null
-          updated_by?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      processed_events: {
-        Row: {
-          event_id: string
-          provider: string
-          processed_at: string | null
-          metadata: Json | null
-        }
-        Insert: {
-          event_id: string
-          provider: string
-          processed_at?: string | null
-          metadata?: Json | null
-        }
-        Update: {
-          event_id?: string
-          provider?: string
-          processed_at?: string | null
-          metadata?: Json | null
-        }
-        Relationships: []
-      }
-      sellers: {
-        Row: {
-          id: string
-          agent_id: string
-          listing_id: string | null
-          email: string
-          name: string
-          phone: string | null
-          clerk_user_id: string | null
-          access_level: string | null
-          last_accessed_at: string | null
-          is_active: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          agent_id: string
-          listing_id?: string | null
-          email: string
-          name: string
-          phone?: string | null
-          clerk_user_id?: string | null
-          access_level?: string | null
-          last_accessed_at?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          agent_id?: string
-          listing_id?: string | null
-          email?: string
-          name?: string
-          phone?: string | null
-          clerk_user_id?: string | null
-          access_level?: string | null
-          last_accessed_at?: string | null
-          is_active?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sellers_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sellers_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
     }
     Views: {
       agent_activity_summary: {
@@ -5123,45 +3641,6 @@ export type Database = {
     Functions: {
       cleanup_expired_reservations: { Args: never; Returns: number }
       cleanup_stale_photographer_locations: { Args: never; Returns: undefined }
-      create_order_and_listing: {
-        Args: {
-          p_agent_id: string | null
-          p_service_type: string
-          p_package_key: string | null
-          p_package_name: string | null
-          p_sqft_tier: string | null
-          p_services: string[]
-          p_subtotal_cents: number
-          p_discount_cents: number
-          p_tax_cents: number
-          p_total_cents: number
-          p_property_address: string
-          p_property_city: string | null
-          p_property_state: string | null
-          p_property_zip: string | null
-          p_property_sqft: number | null
-          p_property_beds: number | null
-          p_property_baths: number | null
-          p_contact_name: string | null
-          p_contact_email: string | null
-          p_contact_phone: string | null
-          p_scheduled_at: string | null
-          p_payment_intent_id: string | null
-          p_payment_status: string | null
-          p_special_instructions: string | null
-        }
-        Returns: {
-          order: {
-            id: string
-            reference_code: string
-            status: string
-            total_cents: number
-          }
-          listing: {
-            id: string
-          }
-        }
-      }
       commit_reservation: {
         Args: { p_idempotency_key?: string; p_reservation_id: string }
         Returns: {
@@ -5424,113 +3903,49 @@ export const Constants = {
   },
 } as const
 
-// ============================================================================
-// Custom Types (not auto-generated from database)
-// ============================================================================
-
-// Integration status types for Cubicasa floor plans
-export type IntegrationStatus =
-  | 'pending'
-  | 'ordered'
-  | 'processing'
-  | 'delivered'
-  | 'failed'
-  | 'not_applicable'
-  | 'needs_manual'
-
-// Zillow 3D tour status types
-export type Zillow3DStatus =
-  | 'pending'
-  | 'scheduled'
-  | 'scanned'
-  | 'processing'
-  | 'live'
-  | 'failed'
-  | 'not_applicable'
-
-// Share link types
-export type ShareLinkType = 'delivery' | 'schedule' | 'preview' | 'marketing'
-
-// Share link insert type
-export type ShareLinkInsert = Database['public']['Tables']['share_links']['Insert']
-
-// Carousel slide type for ListingLaunch
-export interface CarouselSlide {
-  position: number
-  headline: string
-  body: string
-  background_image_id?: string | null
-  background_image_url?: string | null
-  text_position: 'top_left' | 'top_center' | 'top_right' | 'center_left' | 'center' | 'center_right' | 'bottom_left' | 'bottom_center' | 'bottom_right'
-  overlay_style: 'gradient_bottom' | 'gradient_top' | 'solid' | 'none'
-}
-
-// Generated question for ListingLaunch
-export interface GeneratedQuestion {
-  id: string
-  question: string
-  category?: string
-  answer?: string
-  context?: string
-  suggestedFollowUp?: string
-}
-
-export interface CommunitySubdivision {
-  name: string
-  image_url?: string
-  description?: string
-  price_range?: string
-  year_built?: string
-  homes_count?: number
-  home_styles?: string[]
-}
-
-export interface CommunityQuickFacts {
-  population?: number
-  founded?: string
-  area_sqmi?: number
-  median_age?: number
-  median_income?: number
-  total_homes?: number
-  avg_commute?: number
-  zip_codes?: string[]
-  nearby_cities?: string[]
-}
-
-export interface CommunityMarketSnapshot {
-  median_price?: number
-  yoy_change?: number
-  avg_dom?: number
-  price_per_sqft?: number
-  active_listings?: number
-  sold_last_30?: number
-  updated_at?: string
-}
-
-export interface CommunityOverviewBlock {
-  type: 'heading' | 'paragraph' | 'list'
-  content?: string
-  items?: string[]
-}
-
-export interface CommunityOverviewContent {
-  blocks?: CommunityOverviewBlock[]
-  highlights?: string[]
-}
-
-export interface CommunitySchoolInfo {
-  name: string
-  type: 'elementary' | 'middle' | 'high' | 'private' | 'charter'
-  rating?: number
-  grades?: string
-  enrollment?: number
-  distance?: string
-}
-
-export interface CommunitySchoolsInfo {
-  elementary?: CommunitySchoolInfo[]
-  middle?: CommunitySchoolInfo[]
-  high?: CommunitySchoolInfo[]
-  private?: CommunitySchoolInfo[]
-  charter?: CommunitySchoolInfo[]
-}
+// Re-export custom types for tables not in generated schema
+export type {
+  IntegrationStatus,
+  Zillow3DStatus,
+  CommunityQuickFacts,
+  CommunityMarketSnapshot,
+  CommunitySubdivision,
+  CommunitySchoolInfo,
+  CommunitySchoolsInfo,
+  CommunityOverviewContent,
+  CommunityOverviewContentBlock,
+  GeneratedQuestion,
+  CarouselSlide,
+  BookingSessionRow,
+  SellerScheduleRow,
+  ShareLinkRow,
+  ShareLinkType,
+  ShareLinkInsert,
+  PayPeriodRow,
+  TimeEntryRow,
+  PayoutSettingsRow,
+  CompanyPoolRow,
+  PayoutIdempotencyRow,
+  StaffPayoutRow,
+  PartnerPayoutRow,
+  RenderCacheRow,
+  RenderTemplateRow,
+  SkillExecutionRow,
+  AgentActivitySummaryRow,
+  CommunityRow,
+  ProofingSessionRow,
+  ProofingSelectionRow,
+  ProofingCommentRow,
+  ProofingShareRow,
+  DripCampaignRow,
+  DripCampaignStepRow,
+  DripEnrollmentRow,
+  WaitlistEntryRow,
+  TerritoryAvailabilityRow,
+  CouponRow,
+  CouponUsageRow,
+  LoyaltyTierRow,
+  LoyaltyPointsRow,
+  PunchCardRow,
+  PunchCardPunchRow,
+} from './types-custom'

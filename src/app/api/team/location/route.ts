@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient()
     const { data: staff } = await adminClient
       .from('staff')
-      .select('id, name, team_role')
+      .select('id, name, role')
       .eq('email', user.email!)
       .eq('is_active', true)
       .single()
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify photographer or videographer role
-    if (!['photographer', 'videographer'].includes(staff.team_role || '')) {
+    if (!['photographer', 'videographer'].includes(staff.role || '')) {
       return NextResponse.json(
         { error: 'Only photographers can update location' },
         { status: 403 }
@@ -185,12 +185,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ locations })
     }
 
-    // Check if user is a client
-    const { data: client } = await adminClient
+    // Check if user is a client (agent in this context)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: client } = await (adminClient as any)
       .from('clients')
       .select('id')
       .eq('email', user.email!)
-      .single()
+      .single() as { data: { id: string } | null }
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
@@ -204,14 +205,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verify client owns this listing
+    // Verify client owns this listing (agent_id is used for ownership)
     const { data: listing } = await adminClient
       .from('listings')
-      .select('id, client_id')
+      .select('id, agent_id')
       .eq('id', listingId)
       .single()
 
-    if (!listing || listing.client_id !== client.id) {
+    if (!listing || listing.agent_id !== client.id) {
       return NextResponse.json(
         { error: 'Not authorized to view this listing' },
         { status: 403 }

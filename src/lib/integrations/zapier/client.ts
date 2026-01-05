@@ -25,18 +25,19 @@ export async function triggerWebhooks(
 
   try {
     // Get all active webhooks for this event type
-    const { data: webhooks, error } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: webhooks, error } = await (adminSupabase as any)
       .from('zapier_webhooks')
       .select('*')
       .eq('event_type', eventType)
-      .eq('is_active', true)
+      .eq('is_active', true) as { data: ZapierWebhook[] | null; error: Error | null }
 
     if (error || !webhooks || webhooks.length === 0) {
       return results
     }
 
     // Trigger each webhook
-    const triggerPromises = webhooks.map((webhook) =>
+    const triggerPromises = webhooks.map((webhook: ZapierWebhook) =>
       triggerSingleWebhook(webhook, eventType, data, metadata)
     )
 
@@ -111,7 +112,8 @@ async function triggerSingleWebhook(
     const responseBody = await response.text().catch(() => '')
 
     // Log the webhook call
-    await adminSupabase.from('zapier_webhook_logs').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any).from('zapier_webhook_logs').insert({
       webhook_id: webhook.id,
       event_type: eventType,
       payload: JSON.parse(JSON.stringify(payload)),
@@ -122,7 +124,8 @@ async function triggerSingleWebhook(
     })
 
     // Update webhook updated_at timestamp
-    await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any)
       .from('zapier_webhooks')
       .update({
         updated_at: new Date().toISOString(),
@@ -139,7 +142,8 @@ async function triggerSingleWebhook(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
     // Log the failed webhook call
-    await adminSupabase.from('zapier_webhook_logs').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any).from('zapier_webhook_logs').insert({
       webhook_id: webhook.id,
       event_type: eventType,
       payload: JSON.parse(JSON.stringify(payload)),
@@ -216,11 +220,12 @@ export async function createWebhook(
 ): Promise<ZapierWebhook> {
   const adminSupabase = createAdminClient()
 
-  const { data, error } = await adminSupabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (adminSupabase as any)
     .from('zapier_webhooks')
     .insert(webhook)
     .select()
-    .single()
+    .single() as { data: ZapierWebhook | null; error: Error | null }
 
   if (error) {
     throw new Error(`Failed to create webhook: ${error.message}`)
@@ -238,7 +243,8 @@ export async function updateWebhook(
 ): Promise<ZapierWebhook> {
   const adminSupabase = createAdminClient()
 
-  const { data, error } = await adminSupabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (adminSupabase as any)
     .from('zapier_webhooks')
     .update({
       ...updates,
@@ -246,7 +252,7 @@ export async function updateWebhook(
     })
     .eq('id', id)
     .select()
-    .single()
+    .single() as { data: ZapierWebhook | null; error: Error | null }
 
   if (error) {
     throw new Error(`Failed to update webhook: ${error.message}`)
@@ -261,7 +267,8 @@ export async function updateWebhook(
 export async function deleteWebhook(id: string): Promise<void> {
   const adminSupabase = createAdminClient()
 
-  const { error } = await adminSupabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (adminSupabase as any)
     .from('zapier_webhooks')
     .delete()
     .eq('id', id)
@@ -280,12 +287,13 @@ export async function getWebhookLogs(
 ): Promise<Array<Record<string, unknown>>> {
   const adminSupabase = createAdminClient()
 
-  const { data, error } = await adminSupabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (adminSupabase as any)
     .from('zapier_webhook_logs')
     .select('*')
     .eq('webhook_id', webhookId)
     .order('triggered_at', { ascending: false })
-    .limit(limit)
+    .limit(limit) as { data: Array<Record<string, unknown>> | null; error: Error | null }
 
   if (error) {
     throw new Error(`Failed to get webhook logs: ${error.message}`)

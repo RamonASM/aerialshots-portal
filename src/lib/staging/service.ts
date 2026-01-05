@@ -176,20 +176,21 @@ export async function createStagingOrder(params: {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_orders')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_orders' as any)
       .insert({
         listing_id,
         agent_id,
-        status: 'draft',
+        status: 'draft' as StagingOrderStatus,
         is_rush,
         subtotal: 0,
         total: 0,
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: StagingOrder | null; error: Error | null }
+      .single()
+      .returns<StagingOrder>()
 
     if (error || !data) {
       return {
@@ -218,12 +219,13 @@ export async function getStagingOrder(orderId: string): Promise<StagingOrder | n
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_orders')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_orders' as any)
       .select('*, items:staging_order_items(*)')
       .eq('id', orderId)
-      .single() as { data: StagingOrder | null; error: Error | null }
+      .single()
+      .returns<StagingOrder>()
 
     if (error || !data) {
       return null
@@ -267,12 +269,13 @@ export async function addStagingItem(params: {
 
     // Check for duplicate if requested
     if (check_duplicate) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: existing } = await (supabase as any)
-        .from('staging_order_items')
+      const { data: existing } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_order_items' as any)
         .select('id, photo_id')
         .eq('order_id', order_id)
-        .eq('photo_id', photo_id) as { data: Array<{ id: string }> | null }
+        .eq('photo_id', photo_id)
+        .returns<Array<{ id: string; photo_id: string }>>()
 
       if (existing && existing.length > 0) {
         return {
@@ -282,9 +285,9 @@ export async function addStagingItem(params: {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_order_items')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_order_items' as any)
       .insert({
         order_id,
         photo_id,
@@ -292,11 +295,12 @@ export async function addStagingItem(params: {
         room_type,
         furniture_style,
         notes,
-        status: 'pending',
+        status: 'pending' as StagingItem['status'],
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: StagingItem | null; error: Error | null }
+      .single()
+      .returns<StagingItem>()
 
     if (error || !data) {
       return {
@@ -328,9 +332,9 @@ export async function removeStagingItem(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('staging_order_items')
+    const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_order_items' as any)
       .delete()
       .eq('id', itemId)
       .eq('order_id', orderId)
@@ -370,13 +374,14 @@ export async function updateStagingItemStyle(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_order_items')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_order_items' as any)
       .update(updates)
       .eq('id', itemId)
       .select()
-      .single() as { data: StagingItem | null; error: Error | null }
+      .single()
+      .returns<StagingItem>()
 
     if (error || !data) {
       return {
@@ -410,12 +415,13 @@ export async function submitStagingOrder(orderId: string): Promise<{
     const supabase = createAdminClient()
 
     // Get order with items
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: order } = await (supabase as any)
-      .from('staging_orders')
+    const { data: order } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_orders' as any)
       .select('*, items:staging_order_items(*)')
       .eq('id', orderId)
-      .single() as { data: StagingOrder & { items: StagingItem[] } | null }
+      .single()
+      .returns<StagingOrder & { items: StagingItem[] }>()
 
     if (!order) {
       return {
@@ -449,11 +455,11 @@ export async function submitStagingOrder(orderId: string): Promise<{
     })
 
     // Update order status and pricing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_orders')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_orders' as any)
       .update({
-        status: 'submitted',
+        status: 'submitted' as StagingOrderStatus,
         subtotal: pricing.subtotal,
         discount_amount: pricing.discount_amount || 0,
         total: pricing.total,
@@ -461,7 +467,8 @@ export async function submitStagingOrder(orderId: string): Promise<{
       })
       .eq('id', orderId)
       .select()
-      .single() as { data: StagingOrder | null; error: Error | null }
+      .single()
+      .returns<StagingOrder>()
 
     if (error || !data) {
       return {
@@ -490,15 +497,13 @@ export async function getStagingOrdersForListing(listingId: string): Promise<Sta
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('staging_orders')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('staging_orders' as any)
       .select('*, items:staging_order_items(*)')
       .eq('listing_id', listingId)
-      .order('created_at', { ascending: false }) as {
-        data: StagingOrder[] | null
-        error: Error | null
-      }
+      .order('created_at', { ascending: false })
+      .returns<StagingOrder[]>()
 
     if (error || !data) {
       return []

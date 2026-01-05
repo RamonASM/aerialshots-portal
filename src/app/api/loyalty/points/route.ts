@@ -14,6 +14,9 @@ import {
   redeemPoints,
 } from '@/lib/loyalty/service'
 import { z } from 'zod'
+import { getCurrentUser } from '@/lib/auth/clerk'
+
+const agentIdSchema = z.string().uuid()
 
 // GET - Get agent's loyalty summary and history
 export async function GET(request: NextRequest) {
@@ -25,14 +28,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Agent ID is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  // Validate agentId is a valid UUID
+  const parseResult = agentIdSchema.safeParse(agentId)
+  if (!parseResult.success) {
+    return NextResponse.json({ error: 'Invalid agent ID format' }, { status: 400 })
+  }
 
-  // Verify access - agent can view own, staff can view all
-  const { data: { user } } = await supabase.auth.getUser()
-  const isStaff = user?.email?.endsWith('@aerialshots.media')
+  const user = await getCurrentUser()
 
-  if (!isStaff && user?.id !== agentId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+
+  const isStaff = ['admin', 'photographer', 'videographer', 'qc'].includes(user.role)
+
+  // Verify access: staff can view all, agents can only view their own
+  if (!isStaff && (user.userTable !== 'agents' || user.userId !== agentId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   if (historyOnly) {

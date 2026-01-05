@@ -6,12 +6,12 @@ import { TimeClock } from '@/components/team/TimeClock'
 
 /**
  * Check if staff has QC access
- * Supports: role = 'qc', team_role = 'qc', or role = 'admin'
+ * Supports: role = 'qc', 'qc_specialist', or 'admin'
  */
-function hasQCAccess(staff: { role: string | null; team_role: string | null }): boolean {
+function hasQCAccess(staff: { role: string | null }): boolean {
   if (staff.role === 'admin') return true
   if (staff.role === 'qc') return true
-  if (staff.team_role === 'qc') return true
+  if (staff.role === 'qc_specialist') return true
   return false
 }
 
@@ -33,11 +33,19 @@ export default async function QCTimePage() {
   }
 
   // Get staff member with time tracking info
-  const { data: staff } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: staff } = await (supabase as any)
     .from('staff')
-    .select('id, name, email, role, team_role, payout_type, hourly_rate')
+    .select('id, name, email, role, payout_type, hourly_rate')
     .eq('email', user.email!)
-    .single()
+    .single() as { data: {
+      id: string
+      name: string
+      email: string
+      role: string | null
+      payout_type: string | null
+      hourly_rate: number | null
+    } | null }
 
   if (!staff) {
     redirect('/staff-login')

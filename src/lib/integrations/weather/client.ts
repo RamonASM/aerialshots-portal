@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchWithTimeout, FETCH_TIMEOUTS } from '@/lib/utils/fetch-with-timeout'
 
 export interface WeatherForecast {
   date: string // ISO date string
@@ -149,10 +150,13 @@ async function fetchFromOpenWeatherMap(
     // Use One Call API 3.0 for 7-day forecast
     const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lng}&units=imperial&exclude=minutely,hourly,alerts&appid=${apiKey}`
 
-    const response = await fetch(url, { next: { revalidate: 3600 } })
+    const response = await fetchWithTimeout(url, {
+      timeout: FETCH_TIMEOUTS.DEFAULT,
+      next: { revalidate: 3600 } as RequestInit['next'],
+    })
 
     if (!response.ok) {
-      throw new Error(`OpenWeatherMap API error: ${response.status}`)
+      throw new Error(`OpenWeatherMap API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()

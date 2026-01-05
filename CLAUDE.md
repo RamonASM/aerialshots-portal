@@ -614,6 +614,27 @@ The project uses several MCP (Model Context Protocol) servers for AI-assisted de
 | **Vercel** | Deployment management | Via Vercel MCP |
 | **Filesystem** | Local file operations | `~/Projects` |
 
+### ⚠️ CRITICAL: Supabase MCP Verification
+
+**Before using any Supabase MCP tools, ALWAYS verify you're connected to the correct project:**
+
+```
+Correct Project: awoabqaszgeqdlvcevmd (ASM Portal)
+Wrong Project:   slomugiwblohzcwtueav (Coach/Production OS - DIFFERENT PROJECT)
+```
+
+**Verification Steps:**
+1. Run `mcp__supabase__get_project_url` - should return `https://awoabqaszgeqdlvcevmd.supabase.co`
+2. Run `mcp__supabase__list_tables` - should show ASM Portal tables (`listings`, `agents`, `orders`, `media_assets`)
+3. If you see Coach tables (`productions`, `shots`, `scripts`), STOP - wrong project!
+
+**If connected to wrong project:**
+1. Edit `~/.claude/.credentials.json`
+2. In the `mcpOAuth` section, DELETE any Supabase entries pointing to the wrong project:
+   - Remove entries with `slomugiwblohzcwtueav` in the serverUrl
+   - Remove entries with empty/expired tokens for the correct project
+3. Restart Claude Code - it will prompt to re-authenticate with the correct project
+
 ### Clerk MCP Usage
 
 The Clerk MCP enables Claude Code to:
@@ -647,21 +668,99 @@ The portal is feature-complete. All major systems are implemented:
 - Marketing site with luxury redesign
 - Pricing system synced with master reference
 
-### Remaining Setup (Configuration Only)
+### ✅ Stripe Products Created (Sandbox)
 
-**Environment Variables to Add:**
+**Listing Packages (One-time):**
+| Package | Product ID | Prices (5 sqft tiers) |
+|---------|------------|----------------------|
+| Essentials | `prod_TjMikkxmcAc8H8` | $315, $375, $425, $485, $580 |
+| Signature | `prod_TjMiTFr3nKCG8x` | $449, $529, $579, $619, $700 |
+| Premier | `prod_TjMjD33Gcz6obK` | $649, $729, $819, $899, $1,100 |
+
+**Content Retainers (Monthly Subscription):**
+| Retainer | Product ID | Price |
+|----------|------------|-------|
+| Momentum | `prod_TjMk6ERlIB5LPT` | $1,488/month |
+| Dominance | `prod_TjMkTth8d40mGM` | $2,500/month |
+
+---
+
+## 🚀 PENDING TASKS (Resume Here After Restart)
+
+**Last Updated:** 2026-01-04
+**Status:** Supabase MCP OAuth fixed - removed stale credentials, ready for re-auth on restart
+
+### Quick Start After Restart
+1. Claude Code will prompt to authenticate with Supabase → Authorize it
+2. Verify connection: `mcp__supabase__get_project_url` should return `awoabqaszgeqdlvcevmd`
+3. Say **"continue pending tasks"** to execute Tasks 1-3 automatically
+
+---
+
+### Task 1: Create Stripe À La Carte Products
+Create these products in Stripe sandbox using MCP:
+
+**Photography Add-Ons:**
+| Service | Price | Notes |
+|---------|-------|-------|
+| Drone/Aerial (Add-On) | $75 | When added to photo booking |
+| Drone/Aerial (Standalone) | $150 | Without base photography |
+| 3D Floor Plan | $75 | Interactive 3D floor plan |
+| Zillow 3D Tour + Floor Plan | $150 | Virtual tour with floor plan |
+| Virtual Twilight | $15 | Per photo |
+| Real Twilight Photography | $150 | On-site twilight session |
+
+**Video Services:**
+| Service | Price | Notes |
+|---------|-------|-------|
+| Listing Video | $350 | Script assist; agent optional |
+| Lifestyle Listing Video | $425 | Adds 1-2 lifestyle locations |
+| Day-to-Night Video | $750 | Day-to-twilight cinematic |
+| Cinematic Video (Signature) | $900 | Premium cinematic production |
+| 3D Video Render | $250 | 3D walkthrough showcase |
+
+**Virtual Staging:**
+| Service | Price | Notes |
+|---------|-------|-------|
+| Core Staging (per photo) | $12 | Digital furniture & decor |
+| Premium Staging (per photo) | $25 | Premium furniture set |
+| Core Staging (Full Home) | $125 | All vacant areas staged |
+
+### Task 2: Create Supabase Storage Buckets
+Use Supabase MCP `apply_migration` to create storage buckets:
+- `virtual-staging` - AI-generated staging images (public)
+- `media-assets` - Photos, videos, floor plans (private, authenticated)
+- `render-cache` - Carousel/template renders (public, auto-expire)
+- `reference-files` - Client reference uploads (private)
+
+### Task 3: Fix Test File TypeScript Errors
+167 TypeScript errors in test files (build passes, not blocking):
+- Update test mocks to match current interfaces
+- Fix type imports for Supabase generated types
+- Locations: `src/**/*.test.ts`, `src/**/*.spec.ts`
+
+---
+
+### Task 4: Environment Variables (User Action Required)
+Add to `.env.local`:
 ```bash
-STRIPE_CONNECT_WEBHOOK_SECRET=whsec_...  # From Stripe Dashboard
-CLERK_WEBHOOK_SECRET=whsec_...           # From Clerk Dashboard
-GOOGLE_AI_API_KEY=...                    # For virtual staging
+STRIPE_CONNECT_WEBHOOK_SECRET=whsec_...  # From Stripe Dashboard → Webhooks
+CLERK_WEBHOOK_SECRET=whsec_...           # From Clerk Dashboard → Webhooks
+GOOGLE_AI_API_KEY=...                    # For virtual staging (Gemini)
 RUNPOD_ENDPOINT_ID=...                   # For HDR processing
 RUNPOD_API_KEY=...                       # For HDR processing
 ```
 
-**Dashboard Configuration:**
-1. Stripe: Register webhook at `/api/webhooks/stripe-connect`
-2. Clerk: Register webhook at `/api/webhooks/clerk`
-3. Supabase: Create storage buckets (virtual-staging, media-assets)
+### Task 5: Register Webhooks (User Action Required)
+1. **Stripe Dashboard** → Developers → Webhooks → Add endpoint:
+   - URL: `https://app.aerialshots.media/api/webhooks/stripe-connect`
+   - Events: `account.updated`, `transfer.created`, `payout.paid`
+
+2. **Clerk Dashboard** → Webhooks → Add endpoint:
+   - URL: `https://app.aerialshots.media/api/webhooks/clerk`
+   - Events: `user.created`, `user.updated`, `user.deleted`
+
+---
 
 ### Build Status
 - **Production build**: ✅ Passes

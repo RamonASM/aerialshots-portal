@@ -5,6 +5,12 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import type {
+  LoyaltyTierRow,
+  LoyaltyPointsRow,
+  PunchCardRow,
+  PunchCardPunchRow,
+} from '@/lib/supabase/types-custom'
 
 // Types
 export interface LoyaltyTier {
@@ -68,20 +74,19 @@ const POINTS_EXPIRY_DAYS = 365
  */
 export async function getLoyaltyTiers(): Promise<LoyaltyTier[]> {
   const supabase = createAdminClient()
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from('loyalty_tiers')
     .select('*')
     .eq('is_active', true)
-    .order('min_points', { ascending: true })
+    .order('min_points', { ascending: true }) as { data: (LoyaltyTier & { perks: string[] | string })[] | null; error: Error | null }
 
   if (error) {
     console.error('Error fetching loyalty tiers:', error)
     return []
   }
 
-  return (data || []).map((tier: LoyaltyTier & { perks: string[] | string }) => ({
+  return (data || []).map((tier) => ({
     ...tier,
     perks: Array.isArray(tier.perks) ? tier.perks : JSON.parse(tier.perks || '[]'),
   }))
@@ -101,7 +106,7 @@ export async function getAgentLoyaltySummary(agentId: string): Promise<LoyaltySu
   const { data: pointsData } = await (supabase as any)
     .from('loyalty_points')
     .select('points, type, is_expired')
-    .eq('agent_id', agentId)
+    .eq('agent_id', agentId) as { data: LoyaltyPoints[] | null }
 
   const earnedPoints = (pointsData || [])
     .filter((p: LoyaltyPoints) => p.type === 'earned' && !p.is_expired)
@@ -139,7 +144,7 @@ export async function getAgentLoyaltySummary(agentId: string): Promise<LoyaltySu
     .select('*')
     .eq('agent_id', agentId)
     .eq('is_expired', false)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false }) as { data: PunchCard[] | null }
 
   const activePunchCards = (punchCardsData || []).filter((pc: PunchCard) => !pc.is_complete)
   const availableRewards = (punchCardsData || []).filter(
@@ -174,7 +179,6 @@ export async function awardPointsForOrder(
 
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + POINTS_EXPIRY_DAYS)
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('loyalty_points')
@@ -209,7 +213,6 @@ export async function awardBonusPoints(
 
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + POINTS_EXPIRY_DAYS)
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('loyalty_points')
@@ -245,7 +248,6 @@ export async function redeemPoints(
   if (!summary || summary.current_points < points) {
     return false
   }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('loyalty_points')
@@ -286,7 +288,7 @@ export async function addPunch(
     .lt('punches_earned', 10) // Not complete
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .single() as { data: PunchCard | null }
 
   if (!card) {
     // Create new punch card
@@ -302,7 +304,7 @@ export async function addPunch(
         reward_value: cardType,
       })
       .select()
-      .single()
+      .single() as { data: PunchCard | null; error: Error | null }
 
     if (error) {
       console.error('Error creating punch card:', error)
@@ -317,15 +319,14 @@ export async function addPunch(
   await (supabase as any)
     .from('punch_card_punches')
     .insert({
-      punch_card_id: card.id,
+      punch_card_id: card!.id,
       order_id: orderId,
       description: 'Punch from order',
     })
 
   // Update punch count
-  const newPunchCount = card.punches_earned + 1
-  const isComplete = newPunchCount >= card.punches_required
-
+  const newPunchCount = card!.punches_earned + 1
+  const isComplete = newPunchCount >= card!.punches_required
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: updatedCard } = await (supabase as any)
     .from('punch_cards')
@@ -333,9 +334,9 @@ export async function addPunch(
       punches_earned: newPunchCount,
       completed_at: isComplete ? new Date().toISOString() : null,
     })
-    .eq('id', card.id)
+    .eq('id', card!.id)
     .select()
-    .single()
+    .single() as { data: PunchCard | null }
 
   return updatedCard
 }
@@ -384,7 +385,7 @@ export async function getPointsHistory(
     .select('*')
     .eq('agent_id', agentId)
     .order('created_at', { ascending: false })
-    .limit(limit)
+    .limit(limit) as { data: LoyaltyPoints[] | null; error: Error | null }
 
   if (error) {
     console.error('Error fetching points history:', error)

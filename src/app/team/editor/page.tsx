@@ -49,7 +49,6 @@ export default async function EditorDashboard() {
       ops_status,
       is_rush,
       updated_at,
-      expected_completion,
       agent:agents(name)
     `)
     .in('ops_status', ['staged', 'awaiting_editing', 'in_editing'])
@@ -97,7 +96,6 @@ export default async function EditorDashboard() {
     status: listing.ops_status,
     isRush: listing.is_rush,
     stagedAt: listing.updated_at,
-    dueDate: listing.expected_completion,
     agentName: (listing.agent as { name: string } | null)?.name,
   })) || []
 

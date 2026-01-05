@@ -136,12 +136,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    const { data, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
       .from('booking_sessions')
       .select('*')
       .eq('session_id', sessionId)
       .eq('is_converted', false)
-      .single()
+      .single() as { data: import('@/lib/supabase/types').BookingSessionRow | null; error: Error | null }
 
     if (error || !data) {
       return NextResponse.json(
@@ -210,7 +211,8 @@ export async function PATCH(request: NextRequest) {
       updates.abandoned_at = new Date().toISOString()
     }
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('booking_sessions')
       .update(updates)
       .eq('session_id', sessionId)

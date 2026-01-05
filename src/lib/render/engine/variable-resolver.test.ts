@@ -257,14 +257,14 @@ describe('estimateTextWidth', () => {
 })
 
 describe('security', () => {
-  const baseContext: RenderContext = {
+  const baseContext = {
     variables: {
       name: 'John',
       nested: {
         value: 'nested value',
       },
     },
-  }
+  } as unknown as RenderContext
 
   it('should block __proto__ access', () => {
     const result = resolveVariables('{{__proto__.isAdmin}}', baseContext)

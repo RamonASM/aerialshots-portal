@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { MessageSquare, Send, User } from 'lucide-react'
-import type { Database } from '@/lib/supabase/types'
+import type { ClientMessageRow } from '@/lib/supabase/types-custom'
 
-type ClientMessage = Database['public']['Tables']['client_messages']['Row']
+type ClientMessage = ClientMessageRow
 
 interface OrderMessagesProps {
   listingId: string | null

@@ -97,9 +97,9 @@ export async function trackCampaignEvent(params: {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .insert({
         campaign_id: params.campaign_id,
         recipient_id: params.recipient_id,
@@ -108,7 +108,8 @@ export async function trackCampaignEvent(params: {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single() as { data: CampaignEvent | null; error: Error | null }
+      .single()
+      .returns<CampaignEvent>()
 
     if (error || !data) {
       return {
@@ -139,14 +140,12 @@ export async function getCampaignAnalytics(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('event_type, count')
-      .eq('campaign_id', campaignId) as {
-        data: Array<{ event_type: CampaignEventType; count: number }> | null
-        error: Error | null
-      }
+      .eq('campaign_id', campaignId)
+      .returns<Array<{ event_type: CampaignEventType; count: number }>>()
 
     if (error) {
       return null
@@ -210,22 +209,15 @@ export async function getCampaignPerformance(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('*')
       .eq('campaign_id', campaignId)
       .gte('created_at', options.date_from)
       .lte('created_at', options.date_to)
-      .order('created_at', { ascending: true }) as {
-        data: Array<{
-          date?: string
-          hour?: string
-          event_type: CampaignEventType
-          count: number
-        }> | null
-        error: Error | null
-      }
+      .order('created_at', { ascending: true })
+      .returns<CampaignPerformance[]>()
 
     if (error || !data) {
       return []
@@ -248,14 +240,12 @@ export async function getEmailDeliverability(
     const supabase = createAdminClient()
 
     // Get main event counts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: eventData, error: eventError } = await (supabase as any)
-      .from('campaign_events')
+    const { data: eventData, error: eventError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('event_type, count')
-      .eq('campaign_id', campaignId) as {
-        data: Array<{ event_type: CampaignEventType; count: number }> | null
-        error: Error | null
-      }
+      .eq('campaign_id', campaignId)
+      .returns<Array<{ event_type: CampaignEventType; count: number }>>()
 
     if (eventError) {
       return null
@@ -268,14 +258,13 @@ export async function getEmailDeliverability(
     })
 
     // Get bounce breakdown
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: bounceData } = await (supabase as any)
-      .from('campaign_events')
+    const { data: bounceData } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('metadata->bounce_type as bounce_type, count')
       .eq('campaign_id', campaignId)
-      .eq('event_type', 'bounced') as {
-        data: Array<{ bounce_type: string; count: number }> | null
-      }
+      .eq('event_type', 'bounced')
+      .returns<Array<{ bounce_type: string; count: number }>>()
 
     const bounces = bounceData || []
     let hardBounces = 0
@@ -312,16 +301,14 @@ export async function getClickHeatmap(campaignId: string): Promise<ClickHeatmapE
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('metadata->link_id as link_id, metadata->url as url, count')
       .eq('campaign_id', campaignId)
       .eq('event_type', 'clicked')
-      .order('count', { ascending: false }) as {
-        data: Array<{ link_id: string; url: string; clicks: number }> | null
-        error: Error | null
-      }
+      .order('count', { ascending: false })
+      .returns<Array<{ link_id: string; url: string; clicks: number }>>()
 
     if (error || !data) {
       return []
@@ -348,16 +335,14 @@ export async function getUnsubscribeReasons(campaignId: string): Promise<Unsubsc
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('metadata->reason as reason, count')
       .eq('campaign_id', campaignId)
       .eq('event_type', 'unsubscribed')
-      .order('count', { ascending: false }) as {
-        data: Array<{ reason: string; count: number }> | null
-        error: Error | null
-      }
+      .order('count', { ascending: false })
+      .returns<Array<{ reason: string; count: number }>>()
 
     if (error || !data) {
       return []
@@ -393,20 +378,18 @@ export async function exportCampaignReport(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('campaign_events')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('*')
       .eq('campaign_id', campaignId)
-      .order('created_at', { ascending: true }) as {
-        data: Array<{
-          recipient_email?: string
-          event_type: CampaignEventType
-          created_at: string
-          count?: number
-        }> | null
-        error: Error | null
-      }
+      .order('created_at', { ascending: true })
+      .returns<Array<{
+        recipient_email?: string
+        event_type: CampaignEventType
+        created_at: string
+        count?: number
+      }>>()
 
     if (error || !data) {
       return {
@@ -479,27 +462,25 @@ export async function getRealtimeCampaignStats(campaignId: string): Promise<{
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
 
     // Get last hour stats
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: lastHour } = await (supabase as any)
-      .from('campaign_events')
+    const { data: lastHour } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('event_type, count')
       .eq('campaign_id', campaignId)
       .gte('created_at', oneHourAgo)
-      .in('event_type', ['opened', 'clicked']) as {
-        data: Array<{ event_type: string; count: number }> | null
-      }
+      .in('event_type', ['opened', 'clicked'])
+      .returns<Array<{ event_type: string; count: number }>>()
 
     // Get previous hour stats
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: prevHour } = await (supabase as any)
-      .from('campaign_events')
+    const { data: prevHour } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .from('campaign_events' as any)
       .select('event_type, count')
       .eq('campaign_id', campaignId)
       .gte('created_at', twoHoursAgo)
       .lt('created_at', oneHourAgo)
-      .in('event_type', ['opened', 'clicked']) as {
-        data: Array<{ event_type: string; count: number }> | null
-      }
+      .in('event_type', ['opened', 'clicked'])
+      .returns<Array<{ event_type: string; count: number }>>()
 
     const lastHourOpens = lastHour?.find((e) => e.event_type === 'opened')?.count || 0
     const lastHourClicks = lastHour?.find((e) => e.event_type === 'clicked')?.count || 0

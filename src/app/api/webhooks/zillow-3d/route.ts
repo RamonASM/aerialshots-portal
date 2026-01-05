@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
     const adminSupabase = createAdminClient()
 
     // Find the listing by our ID or MLS ID
-    let query = adminSupabase.from('listings').select('id, address, zillow_3d_status')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (adminSupabase as any).from('listings').select('id, address, zillow_3d_status')
 
     if (listing_id) {
       query = query.eq('id', listing_id)
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data: listing, error: findError } = await query.single()
+    const { data: listing, error: findError } = await query.single() as { data: { id: string; address: string; zillow_3d_status: string | null } | null; error: Error | null }
 
     if (findError || !listing) {
       console.warn(`[Zillow 3D Webhook] No listing found for: ${listing_id || mls_id}`)
@@ -166,21 +167,18 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (existingAsset) {
-          await adminSupabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (adminSupabase as any)
             .from('media_assets')
             .update({
-              media_url: data.tour_url,
-              embed_url: data.embed_url,
-              thumbnail_url: data.thumbnail_url,
+              aryeo_url: data.tour_url,
               qc_status: 'approved', // Auto-approve Zillow tours
             })
             .eq('id', existingAsset.id)
         } else {
           await adminSupabase.from('media_assets').insert({
             listing_id: listing.id,
-            media_url: data.tour_url,
-            embed_url: data.embed_url,
-            thumbnail_url: data.thumbnail_url,
+            aryeo_url: data.tour_url,
             type: 'virtual_tour',
             category: '3d_tour',
             qc_status: 'approved',
@@ -195,10 +193,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the listing
-    const { error: updateError } = await adminSupabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateError } = await (adminSupabase as any)
       .from('listings')
       .update(updateData)
-      .eq('id', listing.id)
+      .eq('id', listing.id) as { error: Error | null }
 
     if (updateError) {
       console.error('[Zillow 3D Webhook] Error updating listing:', updateError)

@@ -22,8 +22,12 @@ const footerLinks = {
     { name: 'Pre-Shoot Checklist', href: '/checklist' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'FAQs', href: '/faqs' },
-    { name: 'Agent Portal', href: '/sign-in' },
     { name: 'Book Now', href: '/book' },
+  ],
+  portals: [
+    { name: 'Agent Portal', href: '/sign-in' },
+    { name: 'Client Portal', href: '/sign-in/seller' },
+    { name: 'Team Dashboard', href: '/sign-in/staff' },
   ],
   legal: [
     { name: 'Terms of Service', href: '/legal/terms' },
@@ -45,7 +49,7 @@ export function MarketingFooter() {
     <footer className="bg-[#0a0a0a] border-t border-white/[0.06]">
       {/* Main Footer Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-7">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 group">
@@ -150,6 +154,25 @@ export function MarketingFooter() {
             </h3>
             <ul className="mt-4 space-y-3">
               {footerLinks.resources.map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Portals */}
+          <div>
+            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+              Portals
+            </h3>
+            <ul className="mt-4 space-y-3">
+              {footerLinks.portals.map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}

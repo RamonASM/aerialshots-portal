@@ -69,7 +69,7 @@ export default async function TeamLayout({
   // Get staff member with role
   const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, email, role, team_role')
+    .select('id, name, email, role')
     .eq('email', user.email!)
     .eq('is_active', true)
     .single()
@@ -78,7 +78,7 @@ export default async function TeamLayout({
     redirect('/staff-login')
   }
 
-  const teamRole = (staff.team_role as keyof typeof roleNavItems) || 'photographer'
+  const teamRole = (staff.role as keyof typeof roleNavItems) || 'photographer'
   const navItems = roleNavItems[teamRole] || roleNavItems.photographer
   const RoleIcon = roleIcons[teamRole] || Camera
   const roleLabel = roleLabels[teamRole] || 'Team Member'

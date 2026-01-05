@@ -70,15 +70,13 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscription_plans')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscription_plans' as any)
       .select('*')
       .eq('is_active', true)
-      .order('price_monthly', { ascending: true }) as {
-        data: SubscriptionPlan[] | null
-        error: Error | null
-      }
+      .order('price_monthly', { ascending: true })
+      .returns<SubscriptionPlan[]>()
 
     if (error || !data) {
       return []
@@ -98,15 +96,13 @@ export async function getAgentSubscriptions(agentId: string): Promise<Subscripti
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .select('*, plan:subscription_plans(*)')
       .eq('agent_id', agentId)
-      .order('created_at', { ascending: false }) as {
-        data: Subscription[] | null
-        error: Error | null
-      }
+      .order('created_at', { ascending: false })
+      .returns<Subscription[]>()
 
     if (error || !data) {
       return []
@@ -141,14 +137,15 @@ export async function createSubscription(params: {
 
     // Check for existing subscription
     if (check_existing) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: existing } = await (supabase as any)
-        .from('subscriptions')
+      const { data: existing } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
         .select('id, status')
         .eq('agent_id', agent_id)
         .eq('plan_id', plan_id)
         .eq('status', 'active')
-        .limit(1) as { data: Array<{ id: string }> | null }
+        .limit(1)
+        .returns<Array<{ id: string; status: SubscriptionStatus }>>()
 
       if (existing && existing.length > 0) {
         return {
@@ -168,20 +165,21 @@ export async function createSubscription(params: {
     }
 
     // Create subscription record
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .insert({
         agent_id,
         plan_id,
-        status: 'active',
+        status: 'active' as SubscriptionStatus,
         stripe_subscription_id: 'sub_test_123', // Would come from Stripe in real implementation
         current_period_start: now.toISOString(),
         current_period_end: periodEnd.toISOString(),
         created_at: now.toISOString(),
       })
       .select()
-      .single() as { data: Subscription | null; error: Error | null }
+      .single()
+      .returns<Subscription>()
 
     if (error || !data) {
       return {
@@ -224,12 +222,13 @@ export async function cancelSubscription(
     const supabase = createAdminClient()
 
     // Get current subscription
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: current } = await (supabase as any)
-      .from('subscriptions')
+    const { data: current } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .select('*')
       .eq('id', subscriptionId)
-      .single() as { data: Subscription | null }
+      .single()
+      .returns<Subscription>()
 
     if (!current) {
       return {
@@ -239,7 +238,12 @@ export async function cancelSubscription(
     }
 
     // Update subscription
-    const updates: Record<string, unknown> = {
+    const updates: {
+      cancellation_reason?: string
+      cancel_at_period_end?: boolean
+      status?: SubscriptionStatus
+      cancelled_at?: string
+    } = {
       cancellation_reason: reason,
     }
 
@@ -250,13 +254,14 @@ export async function cancelSubscription(
       updates.cancelled_at = new Date().toISOString()
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .update(updates)
       .eq('id', subscriptionId)
       .select()
-      .single() as { data: Subscription | null; error: Error | null }
+      .single()
+      .returns<Subscription>()
 
     if (error || !data) {
       return {
@@ -289,16 +294,17 @@ export async function pauseSubscription(subscriptionId: string): Promise<{
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .update({
-        status: 'paused',
+        status: 'paused' as SubscriptionStatus,
         paused_at: new Date().toISOString(),
       })
       .eq('id', subscriptionId)
       .select()
-      .single() as { data: Subscription | null; error: Error | null }
+      .single()
+      .returns<Subscription>()
 
     if (error || !data) {
       return {
@@ -331,16 +337,17 @@ export async function resumeSubscription(subscriptionId: string): Promise<{
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .update({
-        status: 'active',
+        status: 'active' as SubscriptionStatus,
         paused_at: null,
       })
       .eq('id', subscriptionId)
       .select()
-      .single() as { data: Subscription | null; error: Error | null }
+      .single()
+      .returns<Subscription>()
 
     if (error || !data) {
       return {
@@ -369,15 +376,13 @@ export async function getSubscriptionUsage(subscriptionId: string): Promise<Subs
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .select('*, plan:subscription_plans(*)')
       .eq('id', subscriptionId)
-      .single() as {
-        data: Subscription & { plan: SubscriptionPlan } | null
-        error: Error | null
-      }
+      .single()
+      .returns<Subscription & { plan: SubscriptionPlan }>()
 
     if (error || !data) {
       return null
@@ -426,7 +431,12 @@ export async function processSubscriptionRenewal(params: {
     const newPeriodEnd = new Date(now)
     newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1)
 
-    const updates: Record<string, unknown> = {
+    const updates: {
+      status: SubscriptionStatus
+      current_period_start?: string
+      current_period_end?: string
+      usage?: { photos_used: number; videos_used: number }
+    } = {
       status: payment_failed ? 'past_due' : 'active',
     }
 
@@ -437,13 +447,14 @@ export async function processSubscriptionRenewal(params: {
       updates.usage = { photos_used: 0, videos_used: 0 }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('subscriptions')
+    const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .update(updates)
       .eq('id', subscription_id)
       .select()
-      .single() as { data: Subscription | null; error: Error | null }
+      .single()
+      .returns<Subscription>()
 
     if (error || !data) {
       return {
@@ -475,9 +486,9 @@ export async function hasActiveSubscription(
   try {
     const supabase = createAdminClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('subscriptions')
+    let query = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('subscriptions' as any)
       .select('id')
       .eq('agent_id', agentId)
       .eq('status', 'active')
@@ -487,7 +498,7 @@ export async function hasActiveSubscription(
       query = query.eq('plan_id', planId)
     }
 
-    const { data } = await query as { data: Array<{ id: string }> | null }
+    const { data } = await query.returns<Array<{ id: string }>>()
 
     return !!(data && data.length > 0)
   } catch (error) {

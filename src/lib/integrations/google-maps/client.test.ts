@@ -380,7 +380,7 @@ describe('Google Maps Extended Client', () => {
         [
           {
             id: 'stop-1',
-            name: 'Property 1',
+            address: 'Property 1',
             lat: 28.4,
             lng: -81.2,
             dwellTimeMinutes: 60,
@@ -439,8 +439,8 @@ describe('Google Maps Extended Client', () => {
       const result = await optimizeRoute(
         { lat: 28.5, lng: -81.3 },
         [
-          { id: 'stop-1', name: 'Far Property', lat: 28.3, lng: -81.1, dwellTimeMinutes: 60 },
-          { id: 'stop-2', name: 'Near Property', lat: 28.45, lng: -81.25, dwellTimeMinutes: 45 },
+          { id: 'stop-1', address: 'Far Property', lat: 28.3, lng: -81.1, dwellTimeMinutes: 60 },
+          { id: 'stop-2', address: 'Near Property', lat: 28.45, lng: -81.25, dwellTimeMinutes: 45 },
         ],
         startTime
       )
@@ -474,7 +474,7 @@ describe('Google Maps Extended Client', () => {
       const result = await optimizeRoute(
         { lat: 28.5, lng: -81.3 },
         [
-          { id: 'stop-1', name: 'Property', lat: 28.4, lng: -81.2, dwellTimeMinutes: 45 },
+          { id: 'stop-1', address: 'Property', lat: 28.4, lng: -81.2, dwellTimeMinutes: 45 },
         ],
         startTime
       )
@@ -499,8 +499,8 @@ describe('Google Maps Extended Client', () => {
       const result = await optimizeRoute(
         { lat: 28.5, lng: -81.3 },
         [
-          { id: 'stop-1', name: 'Property 1', lat: 28.4, lng: -81.2, dwellTimeMinutes: 60 },
-          { id: 'stop-2', name: 'Property 2', lat: 28.3, lng: -81.1, dwellTimeMinutes: 45 },
+          { id: 'stop-1', address: 'Property 1', lat: 28.4, lng: -81.2, dwellTimeMinutes: 60 },
+          { id: 'stop-2', address: 'Property 2', lat: 28.3, lng: -81.1, dwellTimeMinutes: 45 },
         ],
         startTime
       )
