@@ -84,7 +84,7 @@ export default function PartnerSignInPage() {
           }}
           routing="path"
           path="/sign-in/partner"
-          forceRedirectUrl="/admin/team"
+          fallbackRedirectUrl="/admin/team"
         />
 
         {/* Info box */}

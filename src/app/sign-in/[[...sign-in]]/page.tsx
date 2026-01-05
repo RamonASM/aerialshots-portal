@@ -71,7 +71,7 @@ export default function AgentSignInPage() {
           routing="path"
           path="/sign-in"
           signUpUrl="/sign-up/agent"
-          forceRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/dashboard"
         />
 
         {/* Role switcher */}

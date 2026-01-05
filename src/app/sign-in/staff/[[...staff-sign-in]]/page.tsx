@@ -88,7 +88,7 @@ export default function StaffSignInPage() {
           }}
           routing="path"
           path="/sign-in/staff"
-          forceRedirectUrl="/team"
+          fallbackRedirectUrl="/team"
         />
 
         {/* Note for staff */}
