@@ -12,6 +12,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
+// Force dynamic rendering - admin routes require authentication
+export const dynamic = 'force-dynamic'
+
 // Allowed partner emails - same list as in Clerk webhook and admin layout
 const ALLOWED_PARTNER_EMAILS = [
   'ramon@aerialshots.media',

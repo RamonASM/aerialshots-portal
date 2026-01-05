@@ -3,6 +3,9 @@ import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminShell } from '@/components/admin/layout/AdminShell'
 
+// Force dynamic rendering - admin routes require authentication
+export const dynamic = 'force-dynamic'
+
 // Allowed partner emails - same list as in Clerk webhook
 const ALLOWED_PARTNER_EMAILS = [
   'ramon@aerialshots.media',
