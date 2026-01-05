@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminShell } from '@/components/admin/layout/AdminShell'
 
@@ -8,37 +8,56 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const adminSupabase = createAdminClient()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk currentUser() error in admin layout:', error)
+    redirect('/sign-in/partner?error=clerk_error')
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (!user?.emailAddresses?.[0]?.emailAddress) {
+    redirect('/sign-in/partner')
+  }
 
-  if (!user) {
-    redirect('/login')
+  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+
+  let adminSupabase
+  try {
+    adminSupabase = createAdminClient()
+  } catch (error) {
+    console.error('Supabase client error in admin layout:', error)
+    redirect('/sign-in/partner?error=db_error')
   }
 
   // Check if user is staff or partner
-  const { data: staff } = await adminSupabase
+  const { data: staff, error: staffError } = await adminSupabase
     .from('staff')
     .select('id, name, role, email')
-    .eq('email', user.email!)
+    .eq('email', userEmail)
     .eq('is_active', true)
-    .single()
+    .maybeSingle()
+
+  if (staffError) {
+    console.error('Staff query error in admin layout:', staffError)
+  }
 
   let adminUser = staff
 
   if (!adminUser) {
-    const { data: partner } = await adminSupabase
+    const { data: partner, error: partnerError } = await adminSupabase
       .from('partners')
       .select('id, name, email')
-      .eq('email', user.email!)
+      .eq('email', userEmail)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (partnerError) {
+      console.error('Partner query error in admin layout:', partnerError)
+    }
 
     if (!partner) {
-      redirect(`https://${process.env.NEXT_PUBLIC_APP_DOMAIN}/dashboard`)
+      redirect('/dashboard')
     }
 
     adminUser = {
@@ -81,7 +100,7 @@ export default async function AdminLayout({
       staff={{
         id: adminUser.id,
         name: adminUser.name,
-        email: adminUser.email || user.email!,
+        email: adminUser.email || userEmail,
         role: adminUser.role,
       }}
       badgeCounts={badgeCounts}

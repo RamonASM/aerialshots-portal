@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Home,
   User,
@@ -42,22 +43,38 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk currentUser() error in layout:', error)
+    redirect('/sign-in?error=clerk_error')
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (!user?.emailAddresses?.[0]?.emailAddress) {
+    redirect('/sign-in')
+  }
 
-  if (!user) {
-    redirect('/login')
+  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+
+  let supabase
+  try {
+    supabase = createAdminClient()
+  } catch (error) {
+    console.error('Supabase client error in layout:', error)
+    redirect('/sign-in?error=db_error')
   }
 
   // Get agent info
-  const { data: agent } = await supabase
+  const { data: agent, error: agentError } = await supabase
     .from('agents')
     .select('*')
-    .eq('email', user.email!)
-    .single()
+    .eq('email', userEmail)
+    .maybeSingle()
+
+  if (agentError) {
+    console.error('Agent query error in layout:', agentError)
+  }
 
   // Get new leads count for badge
   const { count: newLeadsCount } = agent?.id
