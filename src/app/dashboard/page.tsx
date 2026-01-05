@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Building,
   Users,
@@ -20,25 +21,42 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  const user = await currentUser()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
+  if (!user?.emailAddresses?.[0]?.emailAddress) {
+    redirect('/sign-in')
   }
+
+  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+  const supabase = createAdminClient()
 
   // Get agent with stats
   const { data: agent } = await supabase
     .from('agents')
     .select('*')
-    .eq('email', user.email!)
+    .eq('email', userEmail)
     .single()
 
   if (!agent) {
-    redirect('/login')
+    // Create agent record if it doesn't exist
+    const slug = userEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
+    const { data: newAgent, error } = await supabase
+      .from('agents')
+      .insert({
+        email: userEmail,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || userEmail.split('@')[0],
+        slug: `${slug}-${Date.now().toString(36)}`,
+        auth_user_id: user.id,
+      })
+      .select()
+      .single()
+
+    if (error || !newAgent) {
+      redirect('/sign-in?error=agent_creation_failed')
+    }
+
+    // Use the newly created agent
+    redirect('/dashboard')
   }
 
   // Get current month date range
