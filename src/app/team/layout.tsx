@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import {
   Camera,
@@ -56,26 +57,42 @@ export default async function TeamLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk currentUser() error in team layout:', error)
+    redirect('/sign-in/staff?error=clerk_error')
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (!user?.emailAddresses?.[0]?.emailAddress) {
+    redirect('/sign-in/staff')
+  }
 
-  if (!user) {
-    redirect('/staff-login')
+  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+
+  let supabase
+  try {
+    supabase = createAdminClient()
+  } catch (error) {
+    console.error('Supabase client error in team layout:', error)
+    redirect('/sign-in/staff?error=db_error')
   }
 
   // Get staff member with role
-  const { data: staff } = await supabase
+  const { data: staff, error: staffError } = await supabase
     .from('staff')
     .select('id, name, email, role')
-    .eq('email', user.email!)
+    .eq('email', userEmail)
     .eq('is_active', true)
-    .single()
+    .maybeSingle()
+
+  if (staffError) {
+    console.error('Staff query error in team layout:', staffError)
+  }
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
 
   const teamRole = (staff.role as keyof typeof roleNavItems) || 'photographer'
