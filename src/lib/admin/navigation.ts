@@ -27,6 +27,7 @@ import {
   Link2,
   Calendar,
   UsersRound,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -60,6 +61,13 @@ export const navigationGroups: NavGroup[] = [
         badge: 'count',
         badgeKey: 'pending_jobs',
         shortcut: 'G O',
+      },
+      {
+        name: 'StashDR',
+        href: '/admin/ops/processing',
+        icon: Sparkles,
+        description: 'AI HDR photo processing pipeline',
+        shortcut: 'G H',
       },
       {
         name: 'QC Live',
@@ -380,6 +388,9 @@ export function getPathLabel(segment: string): string {
     merge: 'Merge Orders',
     preview: 'Video Preview',
     customers: 'Customers',
+    // StashDR Processing
+    processing: 'StashDR',
+    stashdr: 'StashDR',
   }
   return labels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
 }
