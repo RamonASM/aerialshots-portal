@@ -60,10 +60,16 @@ export function useRealtimeStatus(options: UseRealtimeStatusOptions = {}) {
   useEffect(() => {
     if (!enabled) return
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      setError(new Error('Supabase realtime not configured'))
+      setIsConnected(false)
+      return
+    }
+
+    const supabase = createBrowserClient(supabaseUrl, supabaseKey)
 
     let channel: RealtimeChannel | null = null
 
@@ -164,10 +170,15 @@ export function useRealtimeAssignments(options: {
   useEffect(() => {
     if (!enabled) return
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      setIsConnected(false)
+      return
+    }
+
+    const supabase = createBrowserClient(supabaseUrl, supabaseKey)
 
     let filter = undefined
     if (staffId) {
@@ -216,10 +227,15 @@ export function useRealtimeQCQueue(options: {
   useEffect(() => {
     if (!enabled) return
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      setIsConnected(false)
+      return
+    }
+
+    const supabase = createBrowserClient(supabaseUrl, supabaseKey)
 
     const channel = supabase
       .channel('qc-queue')

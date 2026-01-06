@@ -4,11 +4,26 @@ import { SignUp } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Home, ArrowLeft, Images, Download, Share2 } from 'lucide-react'
 
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+
 /**
  * Seller/Homeowner Sign-Up Page
  * For property owners creating an account to view their media
  */
 export default function SellerSignUpPage() {
+  if (!clerkEnabled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="max-w-md text-center text-white">
+          <h1 className="text-xl font-semibold">Sign-up temporarily disabled</h1>
+          <p className="mt-3 text-sm text-[#a1a1a6]">
+            Clerk authentication is paused. Re-enable Clerk keys to restore homeowner sign-up.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-4 py-12">
       {/* Subtle gradient */}

@@ -1,8 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
+
 // Public routes that don't require authentication
-const isPublicRoute = createRouteMatcher([
+const publicRoutes = [
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
@@ -33,11 +37,13 @@ const isPublicRoute = createRouteMatcher([
   '/careers',
   '/legal/(.*)',
   '/help(.*)',
-  // TEMPORARY: Admin/team routes public for testing (REMOVE AFTER TESTING)
-  '/admin(.*)',
-  '/team(.*)',
-  '/dashboard(.*)',
-])
+]
+
+if (authBypassEnabled) {
+  publicRoutes.push('/admin(.*)', '/team(.*)', '/dashboard(.*)')
+}
+
+const isPublicRoute = createRouteMatcher(publicRoutes)
 
 // Staff-only routes
 const isStaffRoute = createRouteMatcher([
@@ -137,15 +143,34 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Check specific role access
-    if (pathname.startsWith('/team/photographer') && userRole !== 'photographer' && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/team', request.url))
+    // Check specific role access for team routes
+    // Partners can access all team routes if they have active_roles (validated in layout)
+    const isPartnerUser = userRole === 'partner' || userEmail?.toLowerCase().endsWith('@aerialshots.media')
+
+    // For partners, allow access to team routes - detailed role validation happens in team layout
+    // which checks the partner's active_roles in the database
+    if (!isPartnerUser) {
+      if (pathname.startsWith('/team/photographer') && userRole !== 'photographer' && userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/team', request.url))
+      }
+      if (pathname.startsWith('/team/videographer') && userRole !== 'videographer' && userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/team', request.url))
+      }
+      if (pathname.startsWith('/team/qc') && userRole !== 'qc' && userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/team', request.url))
+      }
+      if (pathname.startsWith('/team/va') && userRole !== 'va' && userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/team', request.url))
+      }
     }
-    if (pathname.startsWith('/team/videographer') && userRole !== 'videographer' && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/team', request.url))
-    }
-    if (pathname.startsWith('/team/qc') && userRole !== 'qc' && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/team', request.url))
+
+    // Add pathname header for layout to use
+    const response = NextResponse.next()
+    response.headers.set('x-pathname', pathname)
+
+    // For partner accessing team routes, continue with pathname header
+    if (isPartnerUser && pathname.startsWith('/team/')) {
+      return response
     }
 
     // Admin route access check
@@ -155,8 +180,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       const isPartnerByEmail = userEmail?.toLowerCase().endsWith('@aerialshots.media')
       const isPartner = isPartnerByRole || isPartnerByEmail
 
-      // Allow partner access to /admin/team
-      if (isPartner && pathname.startsWith('/admin/team')) {
+      // Allow partner access to /admin/team, /admin/settings, and /admin/help
+      if (isPartner && (
+        pathname.startsWith('/admin/team') ||
+        pathname.startsWith('/admin/settings') ||
+        pathname.startsWith('/admin/help')
+      )) {
         return NextResponse.next()
       }
 

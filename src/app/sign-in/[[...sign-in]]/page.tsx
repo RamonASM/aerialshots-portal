@@ -4,11 +4,26 @@ import { SignIn } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Camera, ArrowLeft, Building2 } from 'lucide-react'
 
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+
 /**
  * Agent Sign-In Page
  * For real estate agents accessing the dashboard
  */
 export default function AgentSignInPage() {
+  if (!clerkEnabled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="max-w-md text-center text-white">
+          <h1 className="text-xl font-semibold">Sign-in temporarily disabled</h1>
+          <p className="mt-3 text-sm text-[#a1a1a6]">
+            Clerk authentication is paused. Re-enable Clerk keys to restore agent sign-in.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-4">
       {/* Subtle gradient */}

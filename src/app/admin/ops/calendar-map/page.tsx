@@ -66,7 +66,9 @@ export default function CalendarMapPage() {
     try {
       setLoading(true)
       const dateStr = formatDate(selectedDate)
-      const response = await fetch(`/api/admin/team/assignments?date=${dateStr}`)
+      const response = await fetch(
+        `/api/admin/team/assignments?from=${dateStr}&to=${dateStr}`
+      )
 
       if (response.ok) {
         const data = await response.json()

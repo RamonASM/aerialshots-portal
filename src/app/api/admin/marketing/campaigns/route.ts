@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStaffAccess } from '@/lib/auth/server-access'
 
 interface CampaignInput {
   name: string
@@ -21,28 +22,12 @@ interface CampaignInput {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = createAdminClient()
 
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status')
@@ -116,28 +101,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const supabase = createAdminClient()
 
     const body: CampaignInput = await request.json()
 
@@ -179,7 +148,7 @@ export async function POST(request: NextRequest) {
         recipient_filter: body.recipient_filter,
         recipient_count: recipientCount,
         scheduled_at: body.schedule_at,
-        created_by: staff.id,
+        created_by: access.id,
       })
       .select()
       .single()

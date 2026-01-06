@@ -28,6 +28,7 @@ import {
   Calendar,
   UsersRound,
   Sparkles,
+  Shield,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -122,6 +123,13 @@ export const navigationGroups: NavGroup[] = [
   {
     label: 'Team',
     items: [
+      {
+        name: 'My Roles',
+        href: '/admin/team/roles',
+        icon: UsersRound,
+        description: 'Configure your active work roles',
+        badge: 'new',
+      },
       {
         name: 'Team Settings',
         href: '/admin/settings/team',
@@ -312,6 +320,13 @@ export const navigationGroups: NavGroup[] = [
         shortcut: 'G S',
       },
       {
+        name: 'Auth Status',
+        href: '/admin/settings/auth',
+        icon: Shield,
+        description: 'Authentication and session diagnostics',
+        badge: 'new',
+      },
+      {
         name: 'Integrations',
         href: '/admin/settings/integrations',
         icon: Link2,
@@ -382,6 +397,7 @@ export function getPathLabel(segment: string): string {
     availability: 'Availability',
     // Tier 7 - Integrations
     integrations: 'Integrations',
+    auth: 'Auth Status',
     // Tier 8 - Advanced Features
     'calendar-map': 'Calendar Map',
     'aryeo-lite': 'Zillow Showcase',
@@ -391,6 +407,8 @@ export function getPathLabel(segment: string): string {
     // StashDR Processing
     processing: 'StashDR',
     stashdr: 'StashDR',
+    // Partner Roles
+    roles: 'My Roles',
   }
   return labels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
 }

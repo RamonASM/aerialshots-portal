@@ -52,44 +52,58 @@ export const metadata: Metadata = {
   },
 };
 
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+const clerkAppearance = {
+  baseTheme: dark,
+  variables: {
+    colorPrimary: "#A29991",
+    colorBackground: "#0a0a0a",
+    colorInputBackground: "#1c1c1e",
+    colorInputText: "#ffffff",
+    colorText: "#ffffff",
+    colorTextSecondary: "#B5ADA6",
+    borderRadius: "0.5rem",
+  },
+  elements: {
+    formButtonPrimary:
+      "bg-[#A29991] hover:bg-[#B5ADA6] text-black font-medium",
+    card: "bg-[#0a0a0a] border border-white/[0.06]",
+    headerTitle: "text-white",
+    headerSubtitle: "text-[#B5ADA6]",
+    socialButtonsBlockButton:
+      "border-white/[0.06] text-white hover:bg-white/[0.05]",
+    formFieldLabel: "text-[#B5ADA6]",
+    formFieldInput:
+      "bg-[#1c1c1e] border-white/[0.06] text-white placeholder:text-[#6a6765]",
+    footerActionLink: "text-[#B5ADA6] hover:text-white",
+    identityPreviewEditButton: "text-[#A29991]",
+    userButtonPopoverCard: "bg-[#0a0a0a] border border-white/[0.06]",
+    userButtonPopoverActionButton: "text-white hover:bg-white/[0.05]",
+    userButtonPopoverActionButtonText: "text-white",
+    userButtonPopoverFooter: "hidden",
+  },
+};
+
+function AppProviders({ children }: { children: React.ReactNode }) {
+  if (!clerkEnabled) {
+    return <>{children}</>;
+  }
+
+  return (
+    <ClerkProvider appearance={clerkAppearance}>
+      {children}
+    </ClerkProvider>
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: dark,
-        variables: {
-          colorPrimary: "#A29991",
-          colorBackground: "#0a0a0a",
-          colorInputBackground: "#1c1c1e",
-          colorInputText: "#ffffff",
-          colorText: "#ffffff",
-          colorTextSecondary: "#B5ADA6",
-          borderRadius: "0.5rem",
-        },
-        elements: {
-          formButtonPrimary:
-            "bg-[#A29991] hover:bg-[#B5ADA6] text-black font-medium",
-          card: "bg-[#0a0a0a] border border-white/[0.06]",
-          headerTitle: "text-white",
-          headerSubtitle: "text-[#B5ADA6]",
-          socialButtonsBlockButton:
-            "border-white/[0.06] text-white hover:bg-white/[0.05]",
-          formFieldLabel: "text-[#B5ADA6]",
-          formFieldInput:
-            "bg-[#1c1c1e] border-white/[0.06] text-white placeholder:text-[#6a6765]",
-          footerActionLink: "text-[#B5ADA6] hover:text-white",
-          identityPreviewEditButton: "text-[#A29991]",
-          userButtonPopoverCard: "bg-[#0a0a0a] border-white/[0.06]",
-          userButtonPopoverActionButton: "text-white hover:bg-white/[0.05]",
-          userButtonPopoverActionButtonText: "text-white",
-          userButtonPopoverFooter: "hidden",
-        },
-      }}
-    >
+    <AppProviders>
       <html lang="en">
         <body
           className={`${satoshi.variable} ${playfair.variable} ${geistMono.variable} font-sans antialiased`}
@@ -100,6 +114,6 @@ export default function RootLayout({
           <OfflineIndicator />
         </body>
       </html>
-    </ClerkProvider>
+    </AppProviders>
   );
 }

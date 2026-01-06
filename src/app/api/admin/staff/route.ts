@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStaffAccess, hasRequiredRole } from '@/lib/auth/server-access'
 import {
   handleApiError,
   badRequest,
   resourceConflict,
   databaseError,
+  notAuthenticated,
+  notAuthorized,
 } from '@/lib/utils/errors'
 import { z } from 'zod'
 
@@ -35,10 +37,15 @@ const createStaffSchema = z.object({
  */
 export async function GET() {
   return handleApiError(async () => {
-    const supabase = await createClient()
+    const access = await getStaffAccess()
+    if (!access) {
+      throw notAuthenticated()
+    }
+    if (!hasRequiredRole(access.role, ['admin'], true)) {
+      throw notAuthorized('Admin access required', 'admin')
+    }
 
-    // Require admin role
-    await requireStaff(supabase, 'admin')
+    const supabase = createAdminClient()
 
     // Fetch all staff members
     const { data: staffList, error } = await supabase
@@ -62,10 +69,15 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   return handleApiError(async () => {
-    const supabase = await createClient()
+    const access = await getStaffAccess()
+    if (!access) {
+      throw notAuthenticated()
+    }
+    if (!hasRequiredRole(access.role, ['admin'], true)) {
+      throw notAuthorized('Admin access required', 'admin')
+    }
 
-    // Require admin role
-    await requireStaff(supabase, 'admin')
+    const supabase = createAdminClient()
 
     const body = await request.json()
 

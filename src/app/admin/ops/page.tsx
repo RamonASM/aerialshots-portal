@@ -1,5 +1,7 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStaffAccess } from '@/lib/auth/server-access'
 import { Clock, CheckCircle, Camera, AlertTriangle, ArrowRight, Palette, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
@@ -18,7 +20,12 @@ const statusColumns = [
 ]
 
 export default async function OpsPage() {
-  const supabase = await createClient()
+  const access = await getStaffAccess()
+  if (!access) {
+    redirect('/sign-in/staff')
+  }
+
+  const supabase = createAdminClient()
 
   // Get listings by status
   const { data: listingsData } = await supabase

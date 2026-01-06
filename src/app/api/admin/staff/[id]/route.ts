@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStaffAccess, hasRequiredRole } from '@/lib/auth/server-access'
 import {
   handleApiError,
   badRequest,
   resourceNotFound,
   databaseError,
+  notAuthenticated,
+  notAuthorized,
 } from '@/lib/utils/errors'
 import { z } from 'zod'
 
@@ -36,10 +38,12 @@ export async function GET(
 ) {
   return handleApiError(async () => {
     const { id } = await params
-    const supabase = await createClient()
+    const access = await getStaffAccess()
+    if (!access) {
+      throw notAuthenticated()
+    }
 
-    // Require staff authentication
-    await requireStaff(supabase)
+    const supabase = createAdminClient()
 
     // Fetch staff member
     const { data: staff, error } = await supabase
@@ -68,10 +72,15 @@ export async function PUT(
 ) {
   return handleApiError(async () => {
     const { id } = await params
-    const supabase = await createClient()
+    const access = await getStaffAccess()
+    if (!access) {
+      throw notAuthenticated()
+    }
+    if (!hasRequiredRole(access.role, ['admin'], true)) {
+      throw notAuthorized('Admin access required', 'admin')
+    }
 
-    // Require admin role
-    await requireStaff(supabase, 'admin')
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -120,13 +129,18 @@ export async function DELETE(
 ) {
   return handleApiError(async () => {
     const { id } = await params
-    const supabase = await createClient()
+    const access = await getStaffAccess()
+    if (!access) {
+      throw notAuthenticated()
+    }
+    if (!hasRequiredRole(access.role, ['admin'], true)) {
+      throw notAuthorized('Admin access required', 'admin')
+    }
 
-    // Require admin role and get staff record
-    const { staff: currentStaff } = await requireStaff(supabase, 'admin')
+    const supabase = createAdminClient()
 
     // Prevent self-deletion
-    if (currentStaff.id === id) {
+    if (access.id === id) {
       throw badRequest('You cannot delete your own account')
     }
 
