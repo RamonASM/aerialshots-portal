@@ -1,31 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 // GET /api/admin/analytics/revenue - Get revenue analytics
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
 
     // Parse year parameter
     const { searchParams } = new URL(request.url)

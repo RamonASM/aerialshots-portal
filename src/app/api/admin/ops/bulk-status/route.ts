@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 const VALID_STATUSES = [
   'pending',
@@ -16,10 +16,8 @@ const VALID_STATUSES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Require staff authentication
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const { jobIds, newStatus } = body

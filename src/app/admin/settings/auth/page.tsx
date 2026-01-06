@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { currentUser } from '@clerk/nextjs/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getStaffAccess } from '@/lib/auth/server-access'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -62,7 +62,7 @@ export default async function AuthStatusPage() {
   let supabaseSessionError: string | null = null
   if (supabaseConfigured) {
     try {
-      const supabase = await createClient()
+      const supabase = createAdminClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       supabaseUser = user
       supabaseSessionError = error?.message || null

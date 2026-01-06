@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/api/middleware/require-staff'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 export async function GET() {
   try {
-    // Require staff authentication
-    try {
-      await requireStaff()
-    } catch {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const supabase = await createClient()
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get all alerts
     const { data: alerts, error: alertsError } = await supabase
@@ -55,21 +49,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
     const body = await request.json()
-
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get staff ID
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
 
     const { data: alert, error } = await supabase
       .from('analytics_alerts')
@@ -83,7 +65,7 @@ export async function POST(request: NextRequest) {
         notification_channels: body.notification_channels,
         recipients: body.recipients || [],
         is_active: true,
-        created_by: staff?.id,
+        created_by: access.id,
       })
       .select()
       .single()

@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PayoutsPageClient } from './PayoutsPageClient'
 
 export const metadata = {
@@ -8,25 +7,8 @@ export const metadata = {
 }
 
 export default async function PayoutsPage() {
-  const supabase = await createClient()
-
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Check if user is staff
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
-
-  if (!staff) {
-    redirect('/dashboard')
-  }
+  // Auth is handled by admin layout - just get the data
+  const supabase = createAdminClient()
 
   // Get all staff with payout info
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

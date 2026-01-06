@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 interface AddServiceInput {
   service_key: string
@@ -25,28 +26,8 @@ export async function GET(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get listing and order info
     const { data: listing, error: listingError } = await supabase
@@ -131,28 +112,8 @@ export async function POST(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body: AddServiceInput = await request.json()
 
@@ -217,9 +178,9 @@ export async function POST(
         new_total: newTotalCents / 100,
         status: 'applied',
         reason: body.reason,
-        requested_by: staff.id,
+        requested_by: access.id,
         requested_by_type: 'staff',
-        approved_by: staff.id,
+        approved_by: access.id,
         approved_at: new Date().toISOString(),
         applied_at: new Date().toISOString(),
       })
@@ -279,28 +240,8 @@ export async function DELETE(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body: RemoveServiceInput = await request.json()
 
@@ -360,9 +301,9 @@ export async function DELETE(
         new_total: newTotalCents / 100,
         status: 'applied',
         reason: body.reason,
-        requested_by: staff.id,
+        requested_by: access.id,
         requested_by_type: 'staff',
-        approved_by: staff.id,
+        approved_by: access.id,
         approved_at: new Date().toISOString(),
         applied_at: new Date().toISOString(),
       })

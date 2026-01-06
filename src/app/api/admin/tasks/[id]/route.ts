@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 export async function GET(
   request: NextRequest,
@@ -7,28 +8,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get task with related data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,28 +82,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -139,7 +100,7 @@ export async function POST(
       .from('task_comments')
       .insert({
         task_id: id,
-        author_id: staff.id,
+        author_id: access.id,
         content: body.content,
         mentions: body.mentions || [],
         attachments: body.attachments || [],

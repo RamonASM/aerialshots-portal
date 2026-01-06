@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import {
   syncAllToStripe,
   getStripeSyncStatus,
@@ -15,26 +15,12 @@ import {
   syncRetainersToStripe,
 } from '@/lib/payments/stripe-catalog'
 
-// Admin-only check
-async function isAdmin(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user?.email?.endsWith('@aerialshots.media')) {
-    return false
-  }
-
-  return true
-}
-
 /**
  * GET - Get Stripe sync status
  */
 export async function GET() {
   try {
-    if (!await isAdmin()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess(['admin'])
 
     const status = await getStripeSyncStatus()
     return NextResponse.json(status)
@@ -52,9 +38,7 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!await isAdmin()) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess(['admin'])
 
     const body = await request.json().catch(() => ({}))
     const { type = 'all' } = body as { type?: 'all' | 'packages' | 'services' | 'retainers' }

@@ -1,6 +1,6 @@
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft,
@@ -28,7 +28,7 @@ async function completeTask(formData: FormData) {
   const outcome = formData.get('outcome') as string
   const notes = formData.get('notes') as string
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('care_tasks')
@@ -40,6 +40,8 @@ async function completeTask(formData: FormData) {
     })
     .eq('id', id)
 
+  // Note: Using redirect from next/cache for server actions
+  const { redirect } = await import('next/navigation')
   redirect('/admin/care')
 }
 
@@ -49,7 +51,7 @@ async function skipTask(formData: FormData) {
   const id = formData.get('id') as string
   const notes = formData.get('notes') as string
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('care_tasks')
@@ -60,12 +62,13 @@ async function skipTask(formData: FormData) {
     })
     .eq('id', id)
 
+  const { redirect } = await import('next/navigation')
   redirect('/admin/care')
 }
 
 export default async function TaskDetailPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: task, error } = await supabase
     .from('care_tasks')

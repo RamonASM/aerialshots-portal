@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/api/middleware/require-staff'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 export async function GET() {
   try {
-    // Require staff authentication
     try {
-      await requireStaff()
+      await requireStaffAccess()
     } catch {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { data: schedules, error } = await supabase
       .from('ai_agent_schedules')
@@ -32,21 +31,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
     const body = await request.json()
-
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get staff ID
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
 
     // Calculate next run time
     let nextRunAt = null
@@ -68,7 +55,7 @@ export async function POST(request: NextRequest) {
         max_concurrent: body.max_concurrent || 1,
         is_active: true,
         next_run_at: nextRunAt,
-        created_by: staff?.id,
+        created_by: access.id,
       })
       .select()
       .single()

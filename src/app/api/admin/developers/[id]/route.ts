@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 export async function GET(
   request: NextRequest,
@@ -7,28 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || staff.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     // Note: API keys table not yet implemented
     return NextResponse.json(
@@ -60,28 +39,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || staff.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     // Note: API keys table not yet implemented
     return NextResponse.json(
@@ -103,28 +61,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || staff.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     // Note: API keys table not yet implemented
     return NextResponse.json(

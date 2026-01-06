@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 /**
  * GET /api/admin/payouts/partners/[id]
@@ -11,26 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
     const { id } = await params
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff (admin)
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     // Get partner
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,26 +55,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
     const { id } = await params
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff (admin)
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const body = await request.json()
     const {
@@ -116,10 +82,8 @@ export async function PUT(
     if (default_profit_percent !== undefined) updateData.default_profit_percent = parseFloat(default_profit_percent)
     if (payout_schedule !== undefined) updateData.payout_schedule = payout_schedule
 
-    const adminSupabase = createAdminClient()
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: partner, error } = await (adminSupabase as any)
+    const { data: partner, error } = await (supabase as any)
       .from('partners')
       .update(updateData)
       .eq('id', id)

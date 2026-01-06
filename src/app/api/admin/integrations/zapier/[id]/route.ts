@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -10,27 +10,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     const adminSupabase = createAdminClient()
 
@@ -64,27 +44,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     const body = await request.json()
     const { name, description, webhook_url, trigger_event, filter_conditions, is_active } = body
@@ -123,27 +83,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
 
     const adminSupabase = createAdminClient()
 

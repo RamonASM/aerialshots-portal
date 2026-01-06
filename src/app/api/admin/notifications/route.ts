@@ -1,29 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-
-    // Verify user is staff
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Check authentication via Clerk or Supabase session
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff not found' }, { status: 403 })
-    }
+    const supabase = createAdminClient()
 
     // Fetch notification rules
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,28 +58,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Verify user is staff
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Check authentication via Clerk or Supabase session
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff not found' }, { status: 403 })
-    }
-
+    const supabase = createAdminClient()
     const body = await request.json()
     const { name, description, trigger_type, trigger_conditions, channels, is_active } = body
 

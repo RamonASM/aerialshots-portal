@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 // Define inline types for tables not yet in generated types
 interface OrderService {
@@ -33,27 +33,7 @@ interface MergedOrder {
 // POST /api/admin/listings/merge - Merge two listings
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    const access = await requireStaffAccess()
 
     const body = await request.json()
     const { primary_listing_id, merged_listing_id, reason } = body
@@ -147,7 +127,7 @@ export async function POST(request: Request) {
       .insert({
         primary_listing_id,
         merged_listing_id,
-        merged_by: staff.id,
+        merged_by: access.id,
         reason: reason || 'Orders merged by admin',
         merged_services: mergedServices || [],
         merged_media_count: mergedMedia?.length || 0,
@@ -192,27 +172,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const listing_id = searchParams.get('listing_id')
 
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
 
     const adminSupabase = createAdminClient()
 
@@ -261,27 +221,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Merge ID is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
 
     const adminSupabase = createAdminClient()
 

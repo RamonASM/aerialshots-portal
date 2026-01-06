@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   LayoutGrid,
   View,
@@ -37,7 +37,7 @@ interface IntegrationListing {
   last_integration_check?: string | null
 }
 
-async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function getIntegrationMetrics(supabase: ReturnType<typeof createAdminClient>) {
   // Get counts for each integration status
   // Using any cast since these columns may not be in generated types
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,7 @@ async function getIntegrationMetrics(supabase: Awaited<ReturnType<typeof createC
 }
 
 export default async function IntegrationsDashboardPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get metrics
   const metrics = await getIntegrationMetrics(supabase)

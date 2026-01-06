@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 // GET - Fetch invoice template (default or by agent)
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get the default template (agent_id is null for global template)
     const { data: template, error } = await supabase
@@ -57,28 +38,8 @@ export async function GET(request: NextRequest) {
 // POST - Create new invoice template
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -114,28 +75,8 @@ export async function POST(request: NextRequest) {
 // PATCH - Update invoice template
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const { id, ...updates } = body

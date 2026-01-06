@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PayrollClient } from './PayrollClient'
 
 export const metadata = {
@@ -8,24 +7,8 @@ export const metadata = {
 }
 
 export default async function PayrollPage() {
-  const supabase = await createClient()
-
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Check if user is admin staff
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, role')
-    .eq('email', user.email!)
-    .single()
-
-  if (!staff || staff.role !== 'admin') {
-    redirect('/dashboard')
-  }
+  // Auth is handled by admin layout - just get the data
+  const supabase = createAdminClient()
 
   // Get pay periods (most recent first)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 type EditRequestStatus = 'pending' | 'reviewing' | 'approved' | 'in_progress' | 'completed' | 'rejected' | 'cancelled'
 
@@ -9,28 +10,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get edit request with all related data
     // Using separate queries to avoid deep type instantiation
@@ -118,28 +99,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -151,7 +112,7 @@ export async function PATCH(
 
       // Set resolved fields when completing/rejecting
       if (['completed', 'rejected'].includes(body.status)) {
-        updateData.resolved_by = staff.id
+        updateData.resolved_by = access.id
         updateData.resolved_at = new Date().toISOString()
       }
     }
@@ -220,28 +181,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -259,7 +200,7 @@ export async function POST(
       .insert({
         edit_request_id: id,
         author_type: 'staff',
-        author_id: staff.id,
+        author_id: access.id,
         content: body.content,
         attachments: body.attachments || [],
         is_internal: body.is_internal || false,

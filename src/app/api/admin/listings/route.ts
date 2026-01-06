@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { handleApiError, databaseError } from '@/lib/utils/errors'
 
 /**
@@ -15,10 +15,8 @@ import { handleApiError, databaseError } from '@/lib/utils/errors'
  */
 export async function GET(request: NextRequest) {
   return handleApiError(async () => {
-    const supabase = await createClient()
-
-    // Require staff access
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')

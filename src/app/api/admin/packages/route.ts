@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 // Types for tables not yet in generated types
 interface ServicePackage {
@@ -18,28 +19,8 @@ interface ServicePackage {
 // GET - List all packages with their items and tiers
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get query params for filtering
     const searchParams = request.nextUrl.searchParams
@@ -99,28 +80,8 @@ export async function GET(request: NextRequest) {
 // POST - Create a new package
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const { name, slug, description, features, items, tiers, display_order, is_featured } = body
@@ -240,28 +201,8 @@ export async function POST(request: NextRequest) {
 // PATCH - Update a package
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const { id, name, slug, description, features, items, tiers, display_order, is_featured, is_active } = body
@@ -414,28 +355,8 @@ export async function PATCH(request: NextRequest) {
 // DELETE - Delete a package
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const { id } = await request.json()
 

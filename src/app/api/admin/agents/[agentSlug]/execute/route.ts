@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { executeAgent } from '@/lib/agents'
 
 interface RouteContext {
@@ -15,28 +14,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { agentSlug } = await params
 
-    // Verify user is authenticated staff
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const adminSupabase = createAdminClient()
-    const { data: staff } = await adminSupabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const access = await requireStaffAccess()
 
     // Parse input from request body (optional)
     let input: Record<string, unknown> = {}
@@ -52,7 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       agentSlug,
       triggerSource: 'manual',
       input,
-      triggeredBy: staff.id,
+      triggeredBy: access.id,
     })
 
     if (!result.success) {

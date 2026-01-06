@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { handleApiError, badRequest, databaseError } from '@/lib/utils/errors'
 import { sendNotification, isEmailConfigured, isSMSConfigured } from '@/lib/notifications'
 import { z } from 'zod'
@@ -30,10 +30,8 @@ const batchAssignmentSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   return handleApiError(async () => {
-    const supabase = await createClient()
-
-    // Require staff access
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const role = searchParams.get('role') || 'all'
@@ -127,10 +125,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   return handleApiError(async () => {
-    const supabase = await createClient()
-
-    // Require admin or QC staff
-    const { staff } = await requireStaff(supabase, ['admin', 'qc'])
+    const staff = await requireStaffAccess(['admin', 'qc'])
+    const supabase = createAdminClient()
 
     const body = await request.json()
 

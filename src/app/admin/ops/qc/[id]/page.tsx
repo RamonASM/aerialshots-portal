@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft,
@@ -21,7 +21,7 @@ interface PageProps {
 async function approvePhoto(assetId: string, listingId: string) {
   'use server'
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('media_assets')
@@ -34,7 +34,7 @@ async function approvePhoto(assetId: string, listingId: string) {
 async function rejectPhoto(assetId: string, listingId: string, notes?: string) {
   'use server'
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('media_assets')
@@ -48,7 +48,7 @@ async function approveAll(formData: FormData) {
   'use server'
 
   const listingId = formData.get('listingId') as string
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('media_assets')
@@ -63,7 +63,7 @@ async function markDelivered(formData: FormData) {
   'use server'
 
   const listingId = formData.get('listingId') as string
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get listing and agent info before updating
   const { data: listing } = await supabase
@@ -124,7 +124,7 @@ async function startQC(formData: FormData) {
   'use server'
 
   const listingId = formData.get('listingId') as string
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase.from('listings').update({ ops_status: 'in_qc' }).eq('id', listingId)
 
@@ -133,7 +133,7 @@ async function startQC(formData: FormData) {
 
 export default async function QCDetailPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: listing, error } = await supabase
     .from('listings')

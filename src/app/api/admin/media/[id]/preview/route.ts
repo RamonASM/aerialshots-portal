@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveMediaUrl } from '@/lib/storage/resolve-url'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -11,16 +11,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
 
     const adminSupabase = createAdminClient()
 
@@ -67,27 +58,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
 
     const body = await request.json()
     const { preview_duration, watermark_enabled } = body

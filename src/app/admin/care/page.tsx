@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import {
   Phone,
@@ -18,7 +18,7 @@ async function completeTask(formData: FormData) {
   const id = formData.get('id') as string
   const outcome = formData.get('outcome') as string
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('care_tasks')
@@ -33,7 +33,7 @@ async function completeTask(formData: FormData) {
 }
 
 export default async function CarePage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get pending tasks
   const { data: tasksData } = await supabase

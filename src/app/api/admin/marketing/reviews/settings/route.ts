@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { z } from 'zod'
 
 const settingsSchema = z.object({
@@ -27,8 +27,8 @@ const settingsSchema = z.object({
 // GET - Get current settings
 export async function GET() {
   try {
-    const supabase = await createClient()
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
@@ -54,8 +54,8 @@ export async function GET() {
 // PATCH - Update settings
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
     const parsed = settingsSchema.safeParse(body)

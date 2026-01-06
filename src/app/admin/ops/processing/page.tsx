@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import {
   Activity,
@@ -36,7 +36,7 @@ interface JobMetrics {
 }
 
 async function getProcessingStats(): Promise<ProcessingStats> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get job counts by status
   const { data: jobs } = await supabase
@@ -95,7 +95,7 @@ async function getProcessingStats(): Promise<ProcessingStats> {
 }
 
 async function getRecentJobs() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: jobs } = await supabase
     .from('processing_jobs')

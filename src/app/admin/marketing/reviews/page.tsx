@@ -5,8 +5,7 @@
  */
 
 import { Suspense } from 'react'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getReviewStats, getReviewSettings } from '@/lib/marketing/reviews/service'
 import { ReviewsPageClient } from '@/components/admin/marketing/ReviewsPageClient'
 
@@ -25,12 +24,8 @@ async function getReviewData() {
 }
 
 export default async function ReviewsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user?.email?.endsWith('@aerialshots.media')) {
-    redirect('/login')
-  }
+  // Auth is handled by admin layout - just get the data
+  const supabase = createAdminClient()
 
   const { stats, settings } = await getReviewData()
 

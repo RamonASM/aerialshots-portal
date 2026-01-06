@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 /**
  * GET /api/admin/payouts/staff/[id]
@@ -11,26 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
     const { id } = await params
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff (admin)
-    const { data: adminStaff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!adminStaff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     // Get staff member
     const { data: staff, error } = await supabase
@@ -74,26 +57,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
     const { id } = await params
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff (admin)
-    const { data: adminStaff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!adminStaff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const body = await request.json()
     const {
@@ -129,9 +95,7 @@ export async function PUT(
     if (hourly_rate !== undefined) updateData.hourly_rate = parseFloat(hourly_rate)
     if (partner_id !== undefined) updateData.partner_id = partner_id || null
 
-    const adminSupabase = createAdminClient()
-
-    const { data: staff, error } = await adminSupabase
+    const { data: staff, error } = await supabase
       .from('staff')
       .update(updateData)
       .eq('id', id)

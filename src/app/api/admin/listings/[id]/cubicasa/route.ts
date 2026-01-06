@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { getCubicasaClient } from '@/lib/integrations/cubicasa'
 import { apiLogger, formatError } from '@/lib/logger'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -17,25 +18,8 @@ export async function POST(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Verify staff authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Verify staff role
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get listing details
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,16 +82,16 @@ export async function POST(
         new_value: {
           order_id: result.orderId,
           go_to_scan_url: result.goToScanUrl,
-          created_by: user.email,
-        },
-        actor_id: staff.id,
-        actor_type: 'staff',
-      })
+        created_by: access.email,
+      },
+      actor_id: access.id,
+      actor_type: 'staff',
+    })
 
       apiLogger.info({
         listingId,
         orderId: result.orderId,
-        staffEmail: user.email,
+        staffEmail: access.email,
       }, 'Cubicasa order created')
 
       return NextResponse.json({
@@ -155,13 +139,8 @@ export async function GET(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get listing with Cubicasa info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -240,25 +219,8 @@ export async function DELETE(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Verify staff authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Verify staff role (admin only)
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const access = await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
 
     // Get listing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -299,16 +261,16 @@ export async function DELETE(
       event_type: 'cubicasa_order_cancelled',
       new_value: {
         order_id: listing.cubicasa_order_id,
-        cancelled_by: user.email,
+        cancelled_by: access.email,
       },
-      actor_id: staff.id,
+      actor_id: access.id,
       actor_type: 'staff',
     })
 
     apiLogger.info({
       listingId,
       orderId: listing.cubicasa_order_id,
-      staffEmail: user.email,
+      staffEmail: access.email,
     }, 'Cubicasa order cancelled')
 
     return NextResponse.json({

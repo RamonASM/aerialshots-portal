@@ -6,11 +6,13 @@ import { AdminShell } from '@/components/admin/layout/AdminShell'
 // Force dynamic rendering - admin routes require authentication
 export const dynamic = 'force-dynamic'
 
-// Allowed partner emails - same list as in Clerk webhook
+// Auth bypass for development/testing - must be explicitly enabled via env var
+const authBypassEnabled = process.env.AUTH_BYPASS === 'true'
+
+// Allowed partner emails - production list only (no test emails)
 const ALLOWED_PARTNER_EMAILS = [
   'ramon@aerialshots.media',
   'alex@aerialshots.media',
-  'test@aerialshots.media', // TEMPORARY: For testing without auth
 ]
 
 export default async function AdminLayout({
@@ -23,11 +25,25 @@ export default async function AdminLayout({
     user = await currentUser()
   } catch (error) {
     console.error('Clerk currentUser() error in admin layout:', error)
-    // TEMPORARY: Don't redirect, allow testing without auth
+    // Only allow bypass if explicitly enabled
+    if (!authBypassEnabled) {
+      redirect('/sign-in/partner?error=clerk_error')
+    }
   }
 
-  // TEMPORARY: Allow access without authentication for testing
-  const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase() || 'test@aerialshots.media'
+  // Require authenticated user unless bypass is enabled
+  if (!user && !authBypassEnabled) {
+    redirect('/sign-in/partner')
+  }
+
+  // Get user email - require it unless bypass is enabled
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase()
+  if (!userEmail && !authBypassEnabled) {
+    redirect('/sign-in/partner?error=no_email')
+  }
+
+  // Fallback email only used when auth bypass is explicitly enabled
+  const effectiveEmail = userEmail || (authBypassEnabled ? 'bypass@aerialshots.media' : '')
 
   let adminSupabase
   try {
@@ -44,7 +60,7 @@ export default async function AdminLayout({
     const result = await adminSupabase
       .from('staff')
       .select('id, name, role, email')
-      .eq('email', userEmail)
+      .eq('email', effectiveEmail)
       .eq('is_active', true)
       .maybeSingle()
     staff = result.data
@@ -66,7 +82,7 @@ export default async function AdminLayout({
       const result = await adminSupabase
         .from('partners')
         .select('id, name, email')
-        .eq('email', userEmail)
+        .eq('email', effectiveEmail)
         .eq('is_active', true)
         .maybeSingle()
       partner = result.data
@@ -82,28 +98,28 @@ export default async function AdminLayout({
         message: partnerError?.message,
         details: partnerError?.details,
         hint: partnerError?.hint,
-        userEmail,
+        userEmail: effectiveEmail,
       })
     }
 
     if (!partner) {
       // Check if this email is an allowed partner email
-      const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(userEmail)
+      const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(effectiveEmail)
 
-      if (isAllowedPartner) {
+      if (isAllowedPartner && user) {
         // Partner record doesn't exist but email is allowed - create it
-        console.log(`[Admin Layout] Creating partner record for allowed email: ${userEmail}`)
-        const userName = user?.firstName && user?.lastName
+        console.log(`[Admin Layout] Creating partner record for allowed email: ${effectiveEmail}`)
+        const userName = user.firstName && user.lastName
           ? `${user.firstName} ${user.lastName}`
-          : user?.firstName || userEmail.split('@')[0]
+          : user.firstName || effectiveEmail.split('@')[0]
 
         try {
           const { data: newPartner, error: createError } = await adminSupabase
             .from('partners')
             .insert({
               name: userName,
-              email: userEmail,
-              clerk_user_id: user?.id || 'test-user',
+              email: effectiveEmail,
+              clerk_user_id: user.id,
               is_active: true,
             })
             .select('id, name, email')
@@ -111,12 +127,16 @@ export default async function AdminLayout({
 
           if (createError) {
             console.error('[Admin Layout] Failed to create partner:', createError)
-            // Use fallback partner data so page can still render
-            adminUser = {
-              id: user?.id || 'test-user',
-              name: userName,
-              email: userEmail,
-              role: 'partner',
+            // Only use fallback if auth bypass is enabled
+            if (authBypassEnabled) {
+              adminUser = {
+                id: user.id,
+                name: userName,
+                email: effectiveEmail,
+                role: 'partner',
+              }
+            } else {
+              redirect('/sign-in/partner?error=partner_create_failed')
             }
           } else if (newPartner) {
             console.log(`[Admin Layout] Created partner record: ${newPartner.id}`)
@@ -129,17 +149,29 @@ export default async function AdminLayout({
           }
         } catch (error) {
           console.error('[Admin Layout] Partner insert exception:', error)
-          // Use fallback partner data so page can still render
-          adminUser = {
-            id: user?.id || 'test-user',
-            name: userName,
-            email: userEmail,
-            role: 'partner',
+          if (authBypassEnabled) {
+            adminUser = {
+              id: user.id,
+              name: userName,
+              email: effectiveEmail,
+              role: 'partner',
+            }
+          } else {
+            redirect('/sign-in/partner?error=partner_insert_exception')
           }
+        }
+      } else if (authBypassEnabled) {
+        // Auth bypass mode - create temporary admin user
+        console.warn('[Admin Layout] Auth bypass enabled - creating temporary admin user')
+        adminUser = {
+          id: 'bypass-user',
+          name: 'Bypass User',
+          email: effectiveEmail,
+          role: 'partner',
         }
       } else {
         // Not an allowed partner email - redirect to dashboard
-        console.log(`[Admin Layout] User ${userEmail} is not a partner, redirecting to dashboard`)
+        console.log(`[Admin Layout] User ${effectiveEmail} is not a partner, redirecting to dashboard`)
         redirect('/dashboard')
       }
     } else {
@@ -167,7 +199,7 @@ export default async function AdminLayout({
       .select('id', { count: 'exact', head: true })
       .in('ops_status', ['pending', 'scheduled'])
     badgeCounts.pending_jobs = count || 0
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   try {
     const { count } = await adminSupabase
@@ -175,7 +207,7 @@ export default async function AdminLayout({
       .select('id', { count: 'exact', head: true })
       .eq('ops_status', 'ready_for_qc')
     badgeCounts.ready_for_qc = count || 0
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   try {
     const { count } = await adminSupabase
@@ -183,7 +215,7 @@ export default async function AdminLayout({
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')
     badgeCounts.care_tasks = count || 0
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   try {
     const { count } = await adminSupabase
@@ -191,7 +223,7 @@ export default async function AdminLayout({
       .select('id', { count: 'exact', head: true })
       .eq('is_active', true)
     badgeCounts.active_clients = count || 0
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   // Final safety check - should never reach here without adminUser
   if (!adminUser) {
@@ -203,8 +235,8 @@ export default async function AdminLayout({
     <AdminShell
       staff={{
         id: adminUser.id || 'unknown',
-        name: adminUser.name || userEmail.split('@')[0] || 'User',
-        email: adminUser.email || userEmail,
+        name: adminUser.name || effectiveEmail.split('@')[0] || 'User',
+        email: adminUser.email || effectiveEmail,
         role: adminUser.role || 'partner',
       }}
       badgeCounts={badgeCounts}

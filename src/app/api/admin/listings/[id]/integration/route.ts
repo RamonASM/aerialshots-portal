@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/utils/rate-limit'
 import type { IntegrationStatus, Zillow3DStatus } from '@/lib/supabase/types'
 
@@ -46,10 +46,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Require staff authentication
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: listing, error } = await (supabase as any)
@@ -111,10 +109,8 @@ export async function PATCH(
     const body: UpdateIntegrationBody = await request.json()
     const { integration, status, external_id, error_message, notes } = body
 
-    const supabase = await createClient()
-
-    // Require staff authentication
-    await requireStaff(supabase)
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Validate integration type
     if (!INTEGRATION_TYPES.includes(integration)) {
@@ -217,13 +213,11 @@ export async function POST(
     const body = await request.json()
     const { integration } = body
 
-    const supabase = await createClient()
-
-    // Require staff authentication
-    const { user: staffUser } = await requireStaff(supabase)
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Rate limiting by staff user ID
-    const rateLimitResult = checkRateLimit(`integration-order:${staffUser.id}`, RATE_LIMIT_CONFIG)
+    const rateLimitResult = checkRateLimit(`integration-order:${access.id}`, RATE_LIMIT_CONFIG)
     if (!rateLimitResult.allowed) {
       const response = NextResponse.json(
         { error: 'Too many integration order requests. Please wait.' },

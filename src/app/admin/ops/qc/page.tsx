@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { CheckCircle, XCircle, Clock, Eye, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function QCPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get listings ready for QC
   const { data: listingsData } = await supabase

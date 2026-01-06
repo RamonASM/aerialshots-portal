@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft,
@@ -22,7 +22,7 @@ async function startJob(formData: FormData) {
   'use server'
 
   const id = formData.get('id') as string
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('listings')
@@ -42,7 +42,7 @@ async function startJob(formData: FormData) {
 
 export default async function PhotographerJobDetailPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: listing, error } = await supabase
     .from('listings')

@@ -1,6 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Check if Clerk is properly configured
+const clerkConfigured = Boolean(
+  process.env.CLERK_SECRET_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+)
+
 const authBypassEnabled =
   process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
   process.env.AUTH_BYPASS === 'true'
@@ -70,6 +76,14 @@ function getSubdomain(hostname: string): string | null {
   return parts.length >= 3 ? parts[0] : null
 }
 
+function isApiRoute(pathname: string): boolean {
+  return pathname.startsWith('/api')
+}
+
+function apiUnauthorized(message: string, status: number = 401): NextResponse {
+  return NextResponse.json({ error: message }, { status })
+}
+
 function hasSupabaseSession(request: NextRequest): boolean {
   const cookies = request.cookies.getAll()
   return cookies.some(({ name }) => {
@@ -83,18 +97,56 @@ function hasSupabaseSession(request: NextRequest): boolean {
   })
 }
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
-  const { userId, sessionClaims } = await auth()
+// Helper to check static files
+function isStaticFile(pathname: string): boolean {
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(pathname)
+  )
+}
+
+// Fallback middleware when Clerk is not configured
+async function fallbackMiddleware(request: NextRequest): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname
+
+  // Allow static files
+  if (isStaticFile(pathname)) {
+    return NextResponse.next()
+  }
+
+  // Allow public routes
+  if (isPublicRoute(request)) {
+    return NextResponse.next()
+  }
+
+  // Allow Supabase-authenticated sessions
+  if (hasSupabaseSession(request)) {
+    return NextResponse.next()
+  }
+
+  // If auth bypass is enabled, allow all routes
+  if (authBypassEnabled) {
+    return NextResponse.next()
+  }
+
+  // Block protected routes - redirect to sign-in
+  if (isApiRoute(pathname)) {
+    return apiUnauthorized('Unauthorized')
+  }
+  const signInUrl = new URL('/sign-in', request.url)
+  signInUrl.searchParams.set('redirect_url', pathname)
+  return NextResponse.redirect(signInUrl)
+}
+
+// Main middleware with Clerk
+const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest) => {
   const pathname = request.nextUrl.pathname
   const hostname = request.headers.get('host') || ''
   const subdomain = getSubdomain(hostname)
 
   // Allow static files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon') ||
-    pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/)
-  ) {
+  if (isStaticFile(pathname)) {
     return NextResponse.next()
   }
 
@@ -104,13 +156,38 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
 
   // Allow Supabase-authenticated sessions to proceed without Clerk
-  if (!userId && hasSupabaseSession(request)) {
+  if (hasSupabaseSession(request)) {
     return NextResponse.next()
+  }
+
+  // Get auth info with error handling
+  let userId: string | null = null
+  let sessionClaims: Record<string, unknown> | null = null
+
+  try {
+    const authResult = await auth()
+    userId = authResult.userId
+    sessionClaims = authResult.sessionClaims as Record<string, unknown> | null
+  } catch (error) {
+    console.error('[Middleware] Clerk auth() error:', error)
+    // On auth error, allow public routes and block protected
+    if (authBypassEnabled) {
+      return NextResponse.next()
+    }
+    if (isApiRoute(pathname)) {
+      return apiUnauthorized('Unauthorized')
+    }
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('redirect_url', pathname)
+    return NextResponse.redirect(signInUrl)
   }
 
   // If not authenticated and not on a public route, redirect to sign-in
   if (!userId) {
     // Determine appropriate sign-in page based on route
+    if (isApiRoute(pathname)) {
+      return apiUnauthorized('Unauthorized')
+    }
     if (isStaffRoute(request) || subdomain === 'asm') {
       const signInUrl = new URL('/sign-in/staff', request.url)
       signInUrl.searchParams.set('redirect_url', pathname)
@@ -140,6 +217,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
     if (!isStaff) {
       // Redirect non-staff to agent dashboard
+      if (isApiRoute(pathname)) {
+        return apiUnauthorized('Staff access required', 403)
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
@@ -206,6 +286,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   return NextResponse.next()
 })
+
+// Export the appropriate middleware based on Clerk configuration
+export default clerkConfigured ? clerkMiddlewareHandler : fallbackMiddleware
 
 export const config = {
   matcher: [

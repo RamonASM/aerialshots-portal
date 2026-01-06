@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { MapPin, Clock, Camera, CheckCircle, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function PhotographerPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get today's jobs for the current photographer
   const today = new Date()

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Image,
   Clock,
@@ -16,18 +16,14 @@ import { Button } from '@/components/ui/button'
 import { RealtimeRefresh } from '@/components/admin/RealtimeRefresh'
 
 export default async function EditorDashboardPage() {
-  const supabase = await createClient()
+  // Auth is handled by admin layout - just get the data
+  const supabase = createAdminClient()
 
-  // Verify user is an editor
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/staff-login')
-  }
-
+  // Get all active editors
   const { data: staff } = await supabase
     .from('staff')
     .select('*')
-    .eq('email', user.email!)
+    .in('role', ['editor', 'admin'])
     .single()
 
   if (!staff || (staff.role !== 'editor' && staff.role !== 'admin')) {

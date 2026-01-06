@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface Agent {
   id: string
@@ -29,29 +30,13 @@ const TIERS: ReferralTier[] = [
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Check authentication via Clerk or Supabase session
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    const supabase = createAdminClient()
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search')
     const tier = searchParams.get('tier')
@@ -80,19 +65,33 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    // Get orders to count referrals (orders with referred_by matching agent's referral_code)
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('id, agent_id, total_cents, created_at')
+    // Get referrals data grouped by referrer
+    const { data: referrals } = await supabase
+      .from('referrals')
+      .select('referrer_id, status, credits_awarded')
 
-    // Calculate referral stats for each agent
+    // Build a map of referrer_id -> referral stats
+    const referralStats = new Map<string, { count: number; completedCount: number; creditsAwarded: number }>()
+    for (const ref of referrals || []) {
+      const existing = referralStats.get(ref.referrer_id) || { count: 0, completedCount: 0, creditsAwarded: 0 }
+      existing.count += 1
+      if (ref.status === 'completed' || ref.status === 'credited') {
+        existing.completedCount += 1
+        existing.creditsAwarded += ref.credits_awarded || 0
+      }
+      referralStats.set(ref.referrer_id, existing)
+    }
+
+    // Calculate referral stats for each agent using real data
     const agentsWithReferrals = (agents || []).map(agent => {
-      // Count referrals - orders from other agents that used this agent's referral code
-      // For now, simulate with sample data since we don't have referred_by field
-      const referralCount = Math.floor(Math.random() * 20) // Simulated
-      const totalEarnings = referralCount * 50 * 100 // $50 average commission per referral, in cents
+      const stats = referralStats.get(agent.id) || { count: 0, completedCount: 0, creditsAwarded: 0 }
+      const referralCount = stats.completedCount // Use completed referrals for tier calculation
 
-      // Determine tier based on referral count
+      // Estimate earnings: $25 per credit point earned (configurable)
+      const DOLLARS_PER_CREDIT = 25
+      const totalEarnings = stats.creditsAwarded * DOLLARS_PER_CREDIT * 100 // Convert to cents
+
+      // Determine tier based on completed referral count
       let currentTier = TIERS[0]
       for (const t of TIERS) {
         if (referralCount >= t.min_referrals) {
@@ -102,7 +101,9 @@ export async function GET(request: NextRequest) {
 
       return {
         ...agent,
-        referral_count: referralCount,
+        referral_count: stats.count, // Total referrals (including pending)
+        completed_referrals: stats.completedCount, // Completed referrals
+        credits_awarded: stats.creditsAwarded,
         referral_tier: currentTier.id,
         referral_earnings_cents: totalEarnings,
         tier_info: currentTier,
@@ -116,6 +117,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate overall stats
     const totalReferrals = agentsWithReferrals.reduce((sum, a) => sum + a.referral_count, 0)
+    const completedReferrals = agentsWithReferrals.reduce((sum, a) => sum + a.completed_referrals, 0)
     const totalEarnings = agentsWithReferrals.reduce((sum, a) => sum + a.referral_earnings_cents, 0)
     const agentsWithCodes = agentsWithReferrals.filter(a => a.referral_code).length
 
@@ -123,6 +125,7 @@ export async function GET(request: NextRequest) {
       totalAgents: count || 0,
       agentsWithCodes,
       totalReferrals,
+      completedReferrals,
       totalEarnings,
       byTier: {
         bronze: agentsWithReferrals.filter(a => a.referral_tier === 'bronze').length,
@@ -153,29 +156,13 @@ export async function GET(request: NextRequest) {
 // Generate referral code for an agent
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Check authentication via Clerk or Supabase session
+    const access = await getStaffAccess()
+    if (!access) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    const supabase = createAdminClient()
     const body = await request.json()
     const { agent_id, referral_code } = body
 

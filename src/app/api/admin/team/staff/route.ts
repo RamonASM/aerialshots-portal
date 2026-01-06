@@ -1,28 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import type { Database } from '@/lib/supabase/types'
 
 // GET /api/admin/team/staff - List all staff members
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify staff access
-    const { data: currentStaff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('auth_user_id', user.id)
-      .single()
-
-    if (!currentStaff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
 
     const adminSupabase = createAdminClient()
 

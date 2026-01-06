@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { executeWorkflow } from '@/lib/agents/orchestrator'
 import { qcLogger, formatError } from '@/lib/logger'
 import { processJobPayouts } from '@/lib/payments/payout-processor'
@@ -9,29 +10,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
     const { id } = await params
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, name')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     // Update listing status to delivered
     const { data: listing, error: updateError } = await supabase
@@ -66,7 +47,7 @@ export async function POST(
       listing_id: id,
       event_type: 'qc_approved',
       new_value: { ops_status: 'delivered' },
-      actor_id: staff.id,
+      actor_id: access.id,
       actor_type: 'staff',
     })
 
@@ -100,7 +81,7 @@ export async function POST(
           mediaTypes,
           photos: photoUrls,
           approvedAt: new Date().toISOString(),
-          approvedBy: staff.id,
+          approvedBy: access.id,
         },
       })
 

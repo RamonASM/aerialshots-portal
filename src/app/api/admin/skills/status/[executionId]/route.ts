@@ -5,9 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireStaff } from '@/lib/middleware/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 interface RouteParams {
   params: Promise<{ executionId: string }>
@@ -15,10 +14,7 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-
-    // Verify staff access
-    await requireStaff(supabase)
+    await requireStaffAccess()
 
     const { executionId } = await params
 
@@ -86,10 +82,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const supabase = await createClient()
-
-    // Verify staff access
-    await requireStaff(supabase)
+    await requireStaffAccess()
 
     const { executionId } = await params
 

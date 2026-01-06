@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { z } from 'zod'
 
 const StatusUpdateSchema = z.object({
@@ -28,30 +29,8 @@ interface RouteParams {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Verify staff authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Verify staff role
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: staff } = await (supabase as any)
-      .from('staff')
-      .select('id, role, team_role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Parse and validate request
     const rawBody = await request.json()
@@ -101,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       event_type: 'status_change',
       new_value: { status, previous_status: listing.ops_status },
       actor_type: 'staff',
-      actor_id: staff.id,
+      actor_id: access.id,
     })
 
     return NextResponse.json({

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import {
   ArrowLeft,
@@ -73,7 +73,7 @@ async function updateStatus(formData: FormData) {
   const id = formData.get('id') as string
   const status = formData.get('status') as string
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase
     .from('listings')
@@ -97,7 +97,7 @@ async function updateStatus(formData: FormData) {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: listingData, error } = await (supabase as any)

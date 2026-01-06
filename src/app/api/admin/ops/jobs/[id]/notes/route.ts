@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 type NoteType = 'general' | 'internal' | 'client_visible' | 'photographer' | 'editor' | 'qc' | 'scheduling' | 'issue' | 'resolution'
 
@@ -18,28 +19,8 @@ export async function GET(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const searchParams = request.nextUrl.searchParams
     const noteType = searchParams.get('note_type')
@@ -107,28 +88,8 @@ export async function POST(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const access = await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body: NoteInput = await request.json()
 
@@ -145,7 +106,7 @@ export async function POST(
       .from('job_notes')
       .insert({
         listing_id: listingId,
-        author_id: staff.id,
+        author_id: access.id,
         content: body.content,
         note_type: body.note_type || 'general',
         is_pinned: body.is_pinned || false,
@@ -165,7 +126,7 @@ export async function POST(
           note: {
             id: crypto.randomUUID(),
             listing_id: listingId,
-            author_id: staff.id,
+            author_id: access.id,
             content: body.content,
             note_type: body.note_type || 'general',
             is_pinned: body.is_pinned || false,
@@ -193,28 +154,8 @@ export async function PATCH(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const body = await request.json()
 
@@ -266,28 +207,8 @@ export async function DELETE(
 ) {
   try {
     const { id: listingId } = await params
-    const supabase = await createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is staff
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     const { searchParams } = new URL(request.url)
     const noteId = searchParams.get('note_id')

@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Layers, Camera, HeartHandshake, ArrowRight } from 'lucide-react'
 
 export default async function AdminPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get counts for dashboard
   const [

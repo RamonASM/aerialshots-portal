@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import {
   sendCampaign,
   getCampaignStats,
@@ -22,24 +23,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Verify admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Get campaign
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,24 +64,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Verify admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
 
     // Get current campaign
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,24 +120,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Verify admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const access = await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
 
     const { action, ...actionParams } = await request.json()
 
@@ -184,7 +137,7 @@ export async function POST(
           campaignId: id,
           sentCount: result.sentCount,
           failedCount: result.failedCount,
-          staffEmail: user.email,
+          staffEmail: access.email,
         }, 'Campaign sent')
 
         return NextResponse.json({
@@ -262,24 +215,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    // Verify admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff || !['admin', 'owner'].includes(staff.role)) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    await requireStaffAccess(['admin'])
+    const supabase = createAdminClient()
 
     // Only allow deleting draft or cancelled campaigns
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

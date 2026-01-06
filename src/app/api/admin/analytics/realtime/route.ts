@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
+    await requireStaffAccess()
+    const supabase = createAdminClient()
     const now = new Date()
     const today = now.toISOString().split('T')[0]
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]

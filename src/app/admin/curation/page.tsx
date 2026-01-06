@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Plus, Trash2, Edit, MapPin, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getCuratedCategoryInfo } from '@/lib/utils/category-info'
@@ -9,7 +9,7 @@ async function deleteItem(formData: FormData) {
   'use server'
 
   const id = formData.get('id') as string
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   await supabase.from('curated_items').delete().eq('id', id)
 
@@ -17,7 +17,7 @@ async function deleteItem(formData: FormData) {
 }
 
 export default async function CurationPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: items } = await supabase
     .from('curated_items')

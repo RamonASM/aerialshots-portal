@@ -23,11 +23,13 @@ import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detecti
 // Force dynamic rendering - admin routes require authentication
 export const dynamic = 'force-dynamic'
 
-// Allowed partner emails - same list as in Clerk webhook and admin layout
+// Auth bypass for development/testing - must be explicitly enabled via env var
+const authBypassEnabled = process.env.AUTH_BYPASS === 'true'
+
+// Allowed partner emails - production list only (no test emails)
 const ALLOWED_PARTNER_EMAILS = [
   'ramon@aerialshots.media',
   'alex@aerialshots.media',
-  'test@aerialshots.media', // TEMPORARY: For testing without auth
 ]
 
 export default async function TeamOverviewPage() {
@@ -35,12 +37,26 @@ export default async function TeamOverviewPage() {
   try {
     user = await currentUser()
   } catch (error) {
-    console.error('Clerk currentUser() error:', error)
-    // TEMPORARY: Don't redirect, allow testing without auth
+    console.error('Clerk currentUser() error in team page:', error)
+    // Only allow bypass if explicitly enabled
+    if (!authBypassEnabled) {
+      redirect('/sign-in/partner?error=clerk_error')
+    }
   }
 
-  // TEMPORARY: Allow access without authentication for testing
-  const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase() || 'test@aerialshots.media'
+  // Require authenticated user unless bypass is enabled
+  if (!user && !authBypassEnabled) {
+    redirect('/sign-in/partner')
+  }
+
+  // Get user email - require it unless bypass is enabled
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase()
+  if (!userEmail && !authBypassEnabled) {
+    redirect('/sign-in/partner?error=no_email')
+  }
+
+  // Fallback email only used when auth bypass is explicitly enabled
+  const effectiveEmail = userEmail || (authBypassEnabled ? 'bypass@aerialshots.media' : '')
 
   let supabase
   try {
@@ -57,7 +73,7 @@ export default async function TeamOverviewPage() {
     const result = await supabase
       .from('partners')
       .select('*')
-      .eq('email', userEmail)
+      .eq('email', effectiveEmail)
       .maybeSingle()
     partner = result.data
     partnerError = result.error
@@ -72,32 +88,32 @@ export default async function TeamOverviewPage() {
       message: partnerError?.message,
       details: partnerError?.details,
       hint: partnerError?.hint,
-      userEmail,
+      userEmail: effectiveEmail,
     })
   }
 
   // Generate fallback name for use in fallbacks
   const userName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
-    : user?.firstName || userEmail.split('@')[0]
+    : user?.firstName || effectiveEmail.split('@')[0]
 
   // Handle case where partner record doesn't exist
   let partnerData = partner
   if (!partner) {
     // Check if this email is an allowed partner email
-    const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(userEmail)
+    const isAllowedPartner = ALLOWED_PARTNER_EMAILS.includes(effectiveEmail)
 
-    if (isAllowedPartner) {
+    if (isAllowedPartner && user) {
       // Partner record doesn't exist but email is allowed - create it
-      console.log(`[Team Page] Creating partner record for allowed email: ${userEmail}`)
+      console.log(`[Team Page] Creating partner record for allowed email: ${effectiveEmail}`)
 
       try {
         const { data: newPartner, error: createError } = await supabase
           .from('partners')
           .insert({
             name: userName,
-            email: userEmail,
-            clerk_user_id: user?.id || 'test-user',
+            email: effectiveEmail,
+            clerk_user_id: user.id,
             is_active: true,
           })
           .select('*')
@@ -105,23 +121,36 @@ export default async function TeamOverviewPage() {
 
         if (createError) {
           console.error('[Team Page] Failed to create partner:', createError)
-          // Use fallback partner data so page can still render
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          partnerData = { name: userName, email: userEmail } as any
+          // Only use fallback if auth bypass is enabled
+          if (authBypassEnabled) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            partnerData = { name: userName, email: effectiveEmail } as any
+          } else {
+            redirect('/sign-in/partner?error=partner_create_failed')
+          }
         } else if (newPartner) {
           console.log(`[Team Page] Created partner record: ${newPartner.id}`)
           partnerData = newPartner
         }
       } catch (error) {
         console.error('[Team Page] Partner insert exception:', error)
-        // Use fallback partner data so page can still render
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        partnerData = { name: userName, email: userEmail } as any
+        // Only use fallback if auth bypass is enabled
+        if (authBypassEnabled) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          partnerData = { name: userName, email: effectiveEmail } as any
+        } else {
+          redirect('/sign-in/partner?error=partner_insert_exception')
+        }
       }
+    } else if (authBypassEnabled) {
+      // Auth bypass mode - create temporary partner data
+      console.warn('[Team Page] Auth bypass enabled - creating temporary partner data')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      partnerData = { name: 'Bypass User', email: effectiveEmail } as any
     } else {
-      // Not an allowed partner email - redirect to sign-in
-      console.log(`[Team Page] User ${userEmail} is not a partner, redirecting to sign-in`)
-      redirect('/sign-in')
+      // Not an allowed partner email - redirect to dashboard
+      console.log(`[Team Page] User ${effectiveEmail} is not a partner, redirecting to dashboard`)
+      redirect('/dashboard')
     }
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireStaffAccess } from '@/lib/auth/server-access'
 import { resend } from '@/lib/email/resend'
 import { z } from 'zod'
 
@@ -26,29 +27,8 @@ interface InvoiceRow {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication and staff status
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Verify staff member
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
+    await requireStaffAccess()
+    const supabase = createAdminClient()
 
     // Parse and validate request body with Zod
     const rawBody = await request.json()
