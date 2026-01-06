@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
@@ -10,9 +11,12 @@ import {
   Home,
   Calendar,
   Settings,
-  LogOut
+  LogOut,
+  Headphones,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { AdminThemeProvider } from '@/components/admin/theme/ThemeProvider'
+import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detection'
 
 // Team role navigation items
 const roleNavItems = {
@@ -36,20 +40,44 @@ const roleNavItems = {
     { href: '/team/qc/queue', label: 'QC Queue', icon: CheckCircle },
     { href: '/team/qc/settings', label: 'Settings', icon: Settings },
   ],
+  qc: [
+    { href: '/team/qc', label: 'Dashboard', icon: Home },
+    { href: '/team/qc/queue', label: 'QC Queue', icon: CheckCircle },
+    { href: '/team/qc/settings', label: 'Settings', icon: Settings },
+  ],
+  va: [
+    { href: '/team/va', label: 'Dashboard', icon: Home },
+    { href: '/team/va/tasks', label: 'Tasks', icon: CheckCircle },
+    { href: '/team/va/settings', label: 'Settings', icon: Settings },
+  ],
 }
 
-const roleIcons = {
+const roleIcons: Record<string, typeof Camera> = {
   photographer: Camera,
   videographer: Video,
   editor: Palette,
   qc_specialist: CheckCircle,
+  qc: CheckCircle,
+  va: Headphones,
 }
 
-const roleLabels = {
+const roleLabels: Record<string, string> = {
   photographer: 'Photographer',
   videographer: 'Videographer',
   editor: 'Editor',
   qc_specialist: 'QC Specialist',
+  qc: 'QC Specialist',
+  va: 'Virtual Assistant',
+}
+
+// Map pathname prefixes to roles
+function extractRoleFromPath(pathname: string): string | null {
+  if (pathname.startsWith('/team/photographer')) return 'photographer'
+  if (pathname.startsWith('/team/videographer')) return 'videographer'
+  if (pathname.startsWith('/team/editor')) return 'editor'
+  if (pathname.startsWith('/team/qc')) return 'qc'
+  if (pathname.startsWith('/team/va')) return 'va'
+  return null
 }
 
 export default async function TeamLayout({
@@ -71,6 +99,10 @@ export default async function TeamLayout({
 
   const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
 
+  // Get current pathname from headers
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || '/team'
+
   let supabase
   try {
     supabase = createAdminClient()
@@ -91,11 +123,69 @@ export default async function TeamLayout({
     console.error('Staff query error in team layout:', staffError)
   }
 
-  if (!staff) {
+  // Track if user is a partner with active roles
+  let isPartner = false
+  let partnerActiveRoles: PartnerRole[] = []
+  let teamUser: { id: string; name: string; email: string; role: string } | null = null
+
+  if (staff) {
+    // Regular staff member
+    teamUser = staff
+  } else {
+    // Not staff - check if partner with active roles
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('*')
+      .eq('email', userEmail)
+      .maybeSingle()
+
+    if (partner) {
+      // Type assertion for new columns (until migration applied and types regenerated)
+      const partnerWithRoles = partner as typeof partner & {
+        active_roles?: PartnerRole[]
+        designated_staff?: Record<string, string | null>
+        role_overrides?: Record<string, boolean>
+      }
+      const activeRoles = (partnerWithRoles.active_roles || []) as PartnerRole[]
+      const designatedStaff = (partnerWithRoles.designated_staff || {}) as Record<string, string | null>
+      const roleOverrides = (partnerWithRoles.role_overrides || {}) as Record<string, boolean>
+
+      // Get effective roles (not blocked by designated staff unless overridden)
+      const effectiveRoles = getEffectiveRoles(activeRoles, designatedStaff, roleOverrides)
+
+      if (effectiveRoles.length > 0) {
+        isPartner = true
+        partnerActiveRoles = effectiveRoles
+
+        // Extract role from current path
+        const currentRole = extractRoleFromPath(pathname)
+
+        // Validate partner has access to this role
+        if (currentRole && effectiveRoles.includes(currentRole as PartnerRole)) {
+          teamUser = {
+            id: partner.id,
+            name: partner.name || 'Partner',
+            email: partner.email,
+            role: currentRole,
+          }
+        } else if (effectiveRoles.length > 0) {
+          // Default to first effective role if path doesn't match
+          teamUser = {
+            id: partner.id,
+            name: partner.name || 'Partner',
+            email: partner.email,
+            role: effectiveRoles[0],
+          }
+        }
+      }
+    }
+  }
+
+  if (!teamUser) {
     redirect('/sign-in/staff')
   }
 
-  const teamRole = (staff.role as keyof typeof roleNavItems) || 'photographer'
+  const teamRole = (teamUser.role as keyof typeof roleNavItems) || 'photographer'
   const navItems = roleNavItems[teamRole] || roleNavItems.photographer
   const RoleIcon = roleIcons[teamRole] || Camera
   const roleLabel = roleLabels[teamRole] || 'Team Member'
@@ -113,7 +203,7 @@ export default async function TeamLayout({
               <span className="font-semibold text-foreground">ASM {roleLabel}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{staff.name}</span>
+              <span className="text-sm text-muted-foreground">{teamUser.name}</span>
             </div>
           </div>
         </header>
@@ -149,17 +239,57 @@ export default async function TeamLayout({
               })}
             </nav>
 
+            {/* Role Switcher for Partners with multiple roles */}
+            {isPartner && partnerActiveRoles.length > 1 && (
+              <div className="px-4 py-3 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <ArrowLeftRight className="h-3 w-3" />
+                  Switch Role
+                </p>
+                <div className="space-y-1">
+                  {partnerActiveRoles.map((role) => {
+                    const Icon = roleIcons[role] || Camera
+                    const label = roleLabels[role] || role
+                    const isCurrentRole = role === teamRole
+                    const href = `/team/${role === 'qc' ? 'qc' : role}`
+                    return (
+                      <Link
+                        key={role}
+                        href={href}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isCurrentRole
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                        {isCurrentRole && (
+                          <span className="ml-auto text-xs bg-primary/20 px-1.5 py-0.5 rounded">
+                            Active
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* User Info */}
             <div className="p-4 border-t border-border">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
                   <span className="text-sm font-semibold text-muted-foreground">
-                    {staff.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {teamUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{staff.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{staff.email}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{teamUser.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{teamUser.email}</p>
+                  {isPartner && (
+                    <p className="text-xs text-primary mt-0.5">Partner</p>
+                  )}
                 </div>
               </div>
               <form action="/api/auth/signout" method="POST">

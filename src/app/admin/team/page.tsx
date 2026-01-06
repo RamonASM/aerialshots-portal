@@ -10,8 +10,15 @@ import {
   TrendingUp,
   ArrowRight,
   Server,
+  Camera,
+  Video,
+  CheckCircle,
+  Headphones,
+  Shield,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detection'
 
 // Force dynamic rendering - admin routes require authentication
 export const dynamic = 'force-dynamic'
@@ -130,6 +137,59 @@ export default async function TeamOverviewPage() {
     console.error('Error fetching staff count:', error)
   }
 
+  // Get partner's active roles
+  // Type assertion needed until migration is applied and types regenerated
+  const partnerWithRoles = partnerData as {
+    active_roles?: PartnerRole[]
+    designated_staff?: Record<string, string | null>
+    role_overrides?: Record<string, boolean>
+  } | null
+  const activeRoles = (partnerWithRoles?.active_roles || []) as PartnerRole[]
+  const designatedStaff = (partnerWithRoles?.designated_staff || {}) as Record<string, string | null>
+  const roleOverrides = (partnerWithRoles?.role_overrides || {}) as Record<string, boolean>
+  const effectiveRoles = getEffectiveRoles(activeRoles, designatedStaff, roleOverrides)
+
+  // Role dashboard config
+  const roleDashboards = [
+    {
+      role: 'photographer' as PartnerRole,
+      title: 'Photographer Dashboard',
+      description: 'View jobs, upload photos, manage schedule',
+      href: '/team/photographer',
+      icon: Camera,
+      color: 'bg-blue-500',
+    },
+    {
+      role: 'videographer' as PartnerRole,
+      title: 'Videographer Dashboard',
+      description: 'Video production queue and editing',
+      href: '/team/videographer',
+      icon: Video,
+      color: 'bg-purple-500',
+    },
+    {
+      role: 'qc' as PartnerRole,
+      title: 'QC Dashboard',
+      description: 'Quality control review queue',
+      href: '/team/qc',
+      icon: CheckCircle,
+      color: 'bg-green-500',
+    },
+    {
+      role: 'va' as PartnerRole,
+      title: 'VA Dashboard',
+      description: 'Task management and communications',
+      href: '/team/va',
+      icon: Headphones,
+      color: 'bg-amber-500',
+    },
+  ]
+
+  // Filter to only show active role dashboards
+  const activeRoleDashboards = roleDashboards.filter((rd) =>
+    effectiveRoles.includes(rd.role)
+  )
+
   const quickLinks = [
     {
       title: 'StashDR Processing',
@@ -195,7 +255,79 @@ export default async function TeamOverviewPage() {
             </div>
           </CardContent>
         </Card>
+        <Card variant="glass">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-[28px] font-semibold text-white">{effectiveRoles.length}</p>
+                <p className="text-[13px] text-[#a1a1a6]">Active Roles</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Active Role Dashboards */}
+      {activeRoleDashboards.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[17px] font-semibold text-white">Your Active Roles</h2>
+            <Link
+              href="/admin/team/roles"
+              className="text-[13px] text-blue-400 hover:text-blue-300"
+            >
+              Manage Roles
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {activeRoleDashboards.map((rd) => (
+              <Link key={rd.role} href={rd.href}>
+                <Card variant="interactive" className="h-full">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${rd.color}`}>
+                        <rd.icon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-[15px]">{rd.title.replace(' Dashboard', '')}</CardTitle>
+                        <CardDescription className="text-[12px]">{rd.description}</CardDescription>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-[#636366]" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Roles CTA */}
+      {effectiveRoles.length === 0 && (
+        <Card variant="glass">
+          <CardContent className="py-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1c1c1e]">
+                <Shield className="h-6 w-6 text-[#636366]" />
+              </div>
+            </div>
+            <h3 className="text-[17px] font-semibold text-white mb-2">No Active Roles</h3>
+            <p className="text-[14px] text-[#a1a1a6] mb-4">
+              Enable roles to access their dashboards and start working on jobs.
+            </p>
+            <Link
+              href="/admin/team/roles"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+              <Shield className="h-4 w-4" />
+              Configure Roles
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Links */}
       <div>

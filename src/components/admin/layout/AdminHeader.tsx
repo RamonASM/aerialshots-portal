@@ -123,18 +123,20 @@ export function AdminHeader({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin/settings/profile" className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => router.push('/admin/settings/profile')}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Profile
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/admin/settings" className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-                <DropdownMenuShortcut>G S</DropdownMenuShortcut>
-              </Link>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => router.push('/admin/settings')}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+              <DropdownMenuShortcut>G S</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
@@ -147,11 +149,12 @@ export function AdminHeader({
                 Main Site
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/admin/help" className="cursor-pointer">
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
-              </Link>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => router.push('/admin/help')}
+            >
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Help & Support
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
