@@ -24,11 +24,16 @@ export async function GET(request: NextRequest) {
 
     const table = type === 'staff' ? 'staff' : 'partners'
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: entity } = await (supabase as any)
+    const { data: entity, error: entityError } = await (supabase as any)
       .from(table)
       .select('stripe_connect_id')
       .eq('id', entityId)
-      .single()
+      .maybeSingle()
+
+    if (entityError) {
+      console.error('[Connect] Entity lookup error:', entityError)
+      return NextResponse.redirect(`${APP_URL}/team?error=database_error`)
+    }
 
     if (!entity?.stripe_connect_id) {
       return NextResponse.redirect(`${APP_URL}/team?error=account_not_found`)

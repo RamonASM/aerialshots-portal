@@ -157,12 +157,17 @@ async function getTemplate(
   templateSlug?: string
 ): Promise<TemplateDefinition | null> {
   if (templateId) {
-    const { data } = await asRenderClient(supabase)
+    const { data, error } = await asRenderClient(supabase)
       .from('render_templates')
       .select('*')
       .eq('id', templateId)
       .eq('status', 'published')
-      .single()
+      .maybeSingle()
+
+    if (error) {
+      console.error('[Render API] Template lookup error:', error)
+      return null
+    }
 
     if (data) {
       return mapDbToTemplate(data)
@@ -218,9 +223,14 @@ async function resolveTemplateInheritance(
   }
 
   // Use database function for resolved template
-  const { data } = await asRenderClient(supabase)
+  const { data, error } = await asRenderClient(supabase)
     .rpc('get_resolved_template', { template_slug: template.slug })
-    .single()
+    .maybeSingle()
+
+  if (error) {
+    console.error('[Render API] Template resolution error:', error)
+    return template
+  }
 
   if (data) {
     return {
@@ -259,7 +269,8 @@ async function createRenderJob(
     .single()
 
   if (error) throw error
-  return data!.id
+  if (!data) throw new Error('Failed to create render job - no data returned')
+  return data.id
 }
 
 async function updateJobStatus(

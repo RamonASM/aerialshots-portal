@@ -32,9 +32,14 @@ export async function GET(
         partner_id
       `)
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
-    if (error || !staff) {
+    if (error) {
+      console.error('[Payouts] Staff lookup error:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
     }
 
@@ -100,10 +105,15 @@ export async function PUT(
       .update(updateData)
       .eq('id', id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
-      throw error
+      console.error('[Payouts] Staff update error:', error)
+      return NextResponse.json({ error: 'Failed to update staff member' }, { status: 500 })
+    }
+
+    if (!staff) {
+      return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, staff })

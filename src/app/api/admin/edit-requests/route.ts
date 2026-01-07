@@ -59,16 +59,16 @@ export async function GET(request: NextRequest) {
       requestsData.map(async (req: { agent_id?: string | null; listing_id?: string | null; assigned_to?: string | null; resolved_by?: string | null; [key: string]: unknown }) => {
         const [agentResult, listingResult, assignedStaffResult, resolverResult] = await Promise.all([
           req.agent_id
-            ? supabase.from('agents').select('id, name, email').eq('id', req.agent_id).single()
+            ? supabase.from('agents').select('id, name, email').eq('id', req.agent_id).maybeSingle()
             : { data: null },
           req.listing_id
-            ? supabase.from('listings').select('id, address, city, state').eq('id', req.listing_id).single()
+            ? supabase.from('listings').select('id, address, city, state').eq('id', req.listing_id).maybeSingle()
             : { data: null },
           req.assigned_to
-            ? supabase.from('staff').select('id, name, avatar_url').eq('id', req.assigned_to).single()
+            ? supabase.from('staff').select('id, name, avatar_url').eq('id', req.assigned_to).maybeSingle()
             : { data: null },
           req.resolved_by
-            ? supabase.from('staff').select('id, name').eq('id', req.resolved_by).single()
+            ? supabase.from('staff').select('id, name').eq('id', req.resolved_by).maybeSingle()
             : { data: null },
         ])
 

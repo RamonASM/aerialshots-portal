@@ -19,12 +19,17 @@ export async function GET() {
     }
 
     // Get staff record
-    const { data: staff } = await anySupabase
+    const { data: staff, error: staffError } = await anySupabase
       .from('staff')
       .select('id, name, email, stripe_connect_id, stripe_connect_status, stripe_payouts_enabled, payout_type, default_payout_percent')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Connect] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
@@ -96,12 +101,17 @@ export async function POST() {
     }
 
     // Get staff record
-    const { data: staff } = await anySupabase
+    const { data: staff, error: staffError } = await anySupabase
       .from('staff')
       .select('id, name, email, stripe_connect_id, payout_type')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Connect] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })

@@ -53,14 +53,22 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
   const supabase = createAdminClient()
 
   try {
-    // Check if there's already an active entry
-    const { data: activeEntry } = await supabase
+    // Check if there's already an active entry (use maybeSingle - not finding one is OK)
+    const { data: activeEntry, error: activeError } = await supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from('time_entries' as any)
       .select('id')
       .eq('staff_id', staffId)
       .eq('status', 'active')
-      .single()
+      .maybeSingle()
+
+    if (activeError) {
+      console.error('[TimeTracking] Error checking active entry:', activeError)
+      return {
+        success: false,
+        error: 'Database error while checking clock-in status.',
+      }
+    }
 
     if (activeEntry) {
       return {
@@ -71,11 +79,19 @@ export async function clockIn(staffId: string, notes?: string): Promise<ClockInR
 
     // Get staff's hourly rate
     // Note: hourly_rate column may not be in generated types
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('hourly_rate')
       .eq('id', staffId)
-      .single() as { data: { hourly_rate: number | null } | null }
+      .single() as { data: { hourly_rate: number | null } | null; error: unknown }
+
+    if (staffError) {
+      console.error('[TimeTracking] Error fetching staff hourly rate:', staffError)
+      return {
+        success: false,
+        error: 'Failed to fetch staff information.',
+      }
+    }
 
     if (!staff?.hourly_rate) {
       return {
@@ -144,9 +160,19 @@ export async function clockOut(
       query = query.eq('id', entryId)
     }
 
-    const { data: activeEntry, error: findError } = await query.single() as { data: TimeEntry | null; error: Error | null }
+    const { data: activeEntry, error: findError } = await query
+      .maybeSingle()
+      .returns<TimeEntry>()
 
-    if (findError || !activeEntry) {
+    if (findError) {
+      console.error('[TimeTracking] Error finding active entry for clock out:', findError)
+      return {
+        success: false,
+        error: 'Database error while checking clock-out status.',
+      }
+    }
+
+    if (!activeEntry) {
       return {
         success: false,
         error: 'No active time entry found.',
@@ -205,14 +231,19 @@ export async function clockOut(
 export async function getActiveEntry(staffId: string): Promise<TimeEntry | null> {
   const supabase = createAdminClient()
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('time_entries' as any)
+    .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .eq('status', 'active')
-    .single()
+    .maybeSingle()
     .returns<TimeEntry>()
+
+  if (error) {
+    console.error('[TimeTracking] Error getting active entry:', error)
+    return null
+  }
 
   return data
 }
@@ -261,16 +292,21 @@ export async function getCurrentPayPeriod(): Promise<PayPeriod | null> {
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
 
-  // Check for existing open period
-  const { data: existingPeriod } = await supabase
+  // Check for existing open period (use maybeSingle - not finding one is OK)
+  const { data: existingPeriod, error: periodError } = await supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('pay_periods' as any)
+    .from('pay_periods' as any)
     .select('*')
     .lte('start_date', todayStr)
     .gte('end_date', todayStr)
     .eq('status', 'open')
-    .single()
+    .maybeSingle()
     .returns<PayPeriod>()
+
+  if (periodError) {
+    console.error('[TimeTracking] Error checking existing pay period:', periodError)
+    // Don't return null here - try to create a new period
+  }
 
   if (existingPeriod) {
     return existingPeriod
@@ -342,14 +378,19 @@ export async function getTimesheetForPeriod(
 }> {
   const supabase = createAdminClient()
 
-  // Get pay period
-  const { data: period } = await supabase
+  // Get pay period (use maybeSingle - period might not exist)
+  const { data: period, error: periodError } = await supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('pay_periods' as any)
+    .from('pay_periods' as any)
     .select('*')
     .eq('id', periodId)
-    .single()
+    .maybeSingle()
     .returns<PayPeriod>()
+
+  if (periodError) {
+    console.error('[TimeTracking] Error getting pay period for timesheet:', periodError)
+    return { entries: [], totalMinutes: 0, totalPayCents: 0 }
+  }
 
   if (!period) {
     return { entries: [], totalMinutes: 0, totalPayCents: 0 }
@@ -386,14 +427,19 @@ export async function closePayPeriod(
   const supabase = createAdminClient()
 
   try {
-    // Get period
-    const { data: period } = await supabase
+    // Get period (use maybeSingle - period might not exist)
+    const { data: period, error: periodError } = await supabase
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .from('pay_periods' as any)
       .select('*')
       .eq('id', periodId)
-      .single()
+      .maybeSingle()
       .returns<PayPeriod>()
+
+    if (periodError) {
+      console.error('[TimeTracking] Error getting pay period to close:', periodError)
+      return { success: false, error: 'Database error while retrieving pay period.' }
+    }
 
     if (!period) {
       return { success: false, error: 'Pay period not found' }
@@ -479,15 +525,19 @@ export async function getTodaySummary(staffId: string): Promise<{
   weekStart.setHours(0, 0, 0, 0)
   const weekStr = weekStart.toISOString()
 
-  // Get active entry
-  const { data: activeEntry } = await supabase
+  // Get active entry (use maybeSingle - it's OK if no active entry exists)
+  const { data: activeEntry, error: activeError } = await supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .from('time_entries' as any)
+    .from('time_entries' as any)
     .select('*')
     .eq('staff_id', staffId)
     .eq('status', 'active')
-    .single()
+    .maybeSingle()
     .returns<TimeEntry>()
+
+  if (activeError) {
+    console.error('[TimeTracking] Error getting active entry in summary:', activeError)
+  }
 
   // Get today's completed entries
   const { data: todayEntries } = await supabase

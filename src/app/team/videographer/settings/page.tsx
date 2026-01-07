@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import {
   User,
@@ -13,14 +12,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StripeConnectCard } from '@/components/team/StripeConnectCard'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Check if staff has videographer access
  * Supports: role = 'videographer' or role = 'admin'
  */
-function hasVideographerAccess(staff: { role: string | null }): boolean {
-  if (staff.role === 'admin') return true
-  if (staff.role === 'videographer') return true
+function hasVideographerAccess(role: string): boolean {
+  if (role === 'admin') return true
+  if (role === 'videographer') return true
   return false
 }
 
@@ -34,23 +35,22 @@ interface PageProps {
  * Display profile information, skills, and Stripe Connect payout setup.
  */
 export default async function VideographerSettingsPage({ searchParams }: PageProps) {
-  const supabase = await createClient()
   const params = await searchParams
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Check authentication via Clerk (or Supabase fallback)
+  const staffAccess = await getStaffAccess()
 
-  if (!user) {
-    redirect('/staff-login')
+  if (!staffAccess || !hasVideographerAccess(staffAccess.role)) {
+    redirect('/sign-in/staff')
   }
 
-  // Get staff member with payout info
+  // Get full staff member with payout info
+  const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: staff } = await (supabase as any)
     .from('staff')
     .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
-    .eq('email', user.email!)
+    .eq('id', staffAccess.id)
     .single() as { data: {
       id: string
       name: string
@@ -63,8 +63,8 @@ export default async function VideographerSettingsPage({ searchParams }: PagePro
       default_payout_percent: number | null
     } | null }
 
-  if (!staff || !hasVideographerAccess(staff)) {
-    redirect('/staff-login')
+  if (!staff) {
+    redirect('/sign-in/staff')
   }
 
   const displayRole = staff.role || 'videographer'

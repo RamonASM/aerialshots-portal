@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import {
@@ -16,28 +15,23 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { PhotographerCheckIn } from '@/components/team/PhotographerCheckIn'
 import { DailyRouteMap } from '@/components/team/DailyRouteMap'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function PhotographerDashboard() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
-  }
-
-  // Get staff member
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name')
-    .eq('email', user.email!)
-    .single()
+  // Check authentication via Clerk (or Supabase fallback)
+  const staff = await getStaffAccess()
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
+
+  // Verify photographer or admin role
+  if (staff.role !== 'photographer' && staff.role !== 'admin') {
+    redirect('/sign-in/staff')
+  }
+
+  const supabase = createAdminClient()
 
   const today = new Date()
   const todayStart = startOfDay(today).toISOString()

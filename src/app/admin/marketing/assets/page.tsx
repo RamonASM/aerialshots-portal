@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,11 +43,11 @@ interface MarketingAsset {
   id: string
   listing_id: string | null
   agent_id: string | null
-  name: string
-  type: string
-  asset_type?: string
-  format: string
-  status: string
+  name?: string | null
+  type?: string | null
+  asset_type?: string | null
+  format?: string | null
+  status?: string | null
   bannerbear_uid: string | null
   image_url: string | null
   image_url_png: string | null
@@ -57,7 +56,7 @@ interface MarketingAsset {
   error_message: string | null
   created_at: string | null
   completed_at: string | null
-  template_data?: Record<string, unknown>
+  template_data?: Record<string, unknown> | null
   file_url?: string | null
   // UI display properties
   description?: string | null
@@ -105,117 +104,99 @@ export default function MarketingAssetsPage() {
   const [showFavorites, setShowFavorites] = useState(false)
 
   const fetchAssets = useCallback(async () => {
-    const supabase = createClient()
-
     try {
-      // marketing_assets table may not be in generated types yet - use any cast
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (supabase as any)
-        .from('marketing_assets')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (typeFilter !== 'all') {
-        query = query.eq('asset_type', typeFilter)
+      setLoading(true)
+      const response = await fetch('/api/admin/marketing/assets')
+      if (!response.ok) {
+        throw new Error('Failed to fetch assets')
       }
-
-      if (showFavorites) {
-        query = query.eq('is_favorite', true)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Error fetching assets:', error)
-        return
-      }
-
-      // Convert to MarketingAsset with computed properties from template_data
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const convertedAssets: MarketingAsset[] = ((data || []) as any[]).map((row) => ({
-        ...row,
-        description: (row.template_data as Record<string, unknown>)?.description as string | null ?? null,
-        file_type: (row.template_data as Record<string, unknown>)?.file_type as string ?? 'unknown',
-        file_size: (row.template_data as Record<string, unknown>)?.file_size as number ?? null,
-        width: (row.template_data as Record<string, unknown>)?.width as number ?? null,
-        height: (row.template_data as Record<string, unknown>)?.height as number ?? null,
-        tags: (row.template_data as Record<string, unknown>)?.tags as string[] ?? [],
-        is_favorite: (row.template_data as Record<string, unknown>)?.is_favorite as boolean ?? false,
-        download_count: (row.template_data as Record<string, unknown>)?.download_count as number ?? 0,
-      }))
-      setAssets(convertedAssets)
+      const data = await response.json()
+      setAssets(data.assets || [])
     } catch (error) {
       console.error('Error:', error)
+      setAssets([])
     } finally {
       setLoading(false)
     }
-  }, [typeFilter, showFavorites])
+  }, [])
 
   useEffect(() => {
     fetchAssets()
   }, [fetchAssets])
 
-  const filteredAssets = assets.filter(
-    (asset) =>
-      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const visibleAssets = assets.filter((asset) => {
+    const name = (asset.name || 'Untitled Asset').toLowerCase()
+    const tags = asset.tags || []
+    const assetType = asset.asset_type || asset.type || 'unknown'
+    const matchesSearch = !searchQuery
+      || name.includes(searchQuery.toLowerCase())
+      || tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    const matchesType = typeFilter === 'all' || assetType === typeFilter
+    const matchesFavorites = !showFavorites || asset.is_favorite
+    return matchesSearch && matchesType && matchesFavorites
+  })
 
   const toggleFavorite = async (assetId: string) => {
     const asset = assets.find((a) => a.id === assetId)
     if (!asset) return
 
-    const supabase = createClient()
+    try {
+      const response = await fetch(`/api/admin/marketing/assets/${assetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_favorite: !asset.is_favorite }),
+      })
 
-    // Update is_favorite in template_data
-    const updatedTemplateData = {
-      ...(asset.template_data as Record<string, unknown>),
-      is_favorite: !asset.is_favorite,
-    }
+      if (!response.ok) {
+        throw new Error('Failed to update asset')
+      }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('marketing_assets')
-      .update({ template_data: updatedTemplateData })
-      .eq('id', assetId)
-
-    if (!error) {
       setAssets(
         assets.map((a) =>
-          a.id === assetId ? { ...a, is_favorite: !a.is_favorite, template_data: updatedTemplateData } : a
+          a.id === assetId ? { ...a, is_favorite: !a.is_favorite } : a
         )
       )
+    } catch (error) {
+      console.error('Error updating asset:', error)
     }
   }
 
   const handleDelete = async (assetId: string) => {
     if (!confirm('Are you sure you want to delete this asset?')) return
 
-    const supabase = createClient()
+    try {
+      const response = await fetch(`/api/admin/marketing/assets/${assetId}`, {
+        method: 'DELETE',
+      })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('marketing_assets')
-      .delete()
-      .eq('id', assetId)
+      if (!response.ok) {
+        throw new Error('Failed to delete asset')
+      }
 
-    if (!error) {
       setAssets(assets.filter((a) => a.id !== assetId))
+    } catch (error) {
+      console.error('Error deleting asset:', error)
     }
   }
 
   const handleDownload = async (asset: MarketingAsset) => {
-    // Increment download count in template_data
-    const supabase = createClient()
-    const updatedTemplateData = {
-      ...(asset.template_data as Record<string, unknown>),
-      download_count: (asset.download_count ?? 0) + 1,
+    try {
+      await fetch(`/api/admin/marketing/assets/${asset.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ download_count: (asset.download_count ?? 0) + 1 }),
+      })
+
+      setAssets(
+        assets.map((a) =>
+          a.id === asset.id
+            ? { ...a, download_count: (a.download_count ?? 0) + 1 }
+            : a
+        )
+      )
+    } catch (error) {
+      console.error('Error updating download count:', error)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
-      .from('marketing_assets')
-      .update({ template_data: updatedTemplateData })
-      .eq('id', asset.id)
 
     // Open file URL
     if (asset.file_url) {
@@ -368,7 +349,7 @@ export default function MarketingAssetsPage() {
             </Card>
           ))}
         </div>
-      ) : filteredAssets.length === 0 ? (
+      ) : visibleAssets.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FolderOpen className="h-12 w-12 text-muted-foreground/50" />
@@ -386,7 +367,7 @@ export default function MarketingAssetsPage() {
         </Card>
       ) : viewMode === 'grid' ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {filteredAssets.map((asset) => {
+          {visibleAssets.map((asset) => {
             const FileIcon = getFileIcon(asset.file_type)
 
             return (
@@ -397,7 +378,7 @@ export default function MarketingAssetsPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={asset.file_url}
-                      alt={asset.name}
+                      alt={asset.name || 'Marketing asset'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -432,7 +413,7 @@ export default function MarketingAssetsPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-sm font-medium line-clamp-1">
-                      {asset.name}
+                      {asset.name || 'Untitled Asset'}
                     </CardTitle>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -497,7 +478,7 @@ export default function MarketingAssetsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="divide-y">
-              {filteredAssets.map((asset) => {
+              {visibleAssets.map((asset) => {
                 const FileIcon = getFileIcon(asset.file_type)
 
                 return (
@@ -510,7 +491,7 @@ export default function MarketingAssetsPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={asset.file_url}
-                          alt={asset.name}
+                          alt={asset.name || 'Marketing asset'}
                           className="w-full h-full object-cover rounded"
                         />
                       ) : (
@@ -519,7 +500,7 @@ export default function MarketingAssetsPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{asset.name}</p>
+                      <p className="font-medium truncate">{asset.name || 'Untitled Asset'}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Badge variant="secondary" className="text-xs">
                           {(asset.asset_type || asset.type || 'unknown').replace('_', ' ')}

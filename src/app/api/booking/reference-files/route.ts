@@ -227,11 +227,16 @@ export async function GET(request: NextRequest) {
 
     // If listing ID provided, verify ownership or staff access
     if (listingId) {
-      const { data: listing } = await supabase
+      const { data: listing, error: listingError } = await supabase
         .from('listings')
         .select('id, agent_id')
         .eq('id', listingId)
-        .single()
+        .maybeSingle()
+
+      if (listingError) {
+        console.error('[Reference Files] Listing lookup error:', listingError)
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
 
       if (!listing) {
         return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -332,9 +337,14 @@ export async function DELETE(request: NextRequest) {
       .from('booking_reference_files')
       .select('storage_path, storage_bucket, listing_id, uploaded_by_email')
       .eq('id', fileId)
-      .single()
+      .maybeSingle()
 
-    if (fetchError || !file) {
+    if (fetchError) {
+      console.error('[Reference Files] File lookup error:', fetchError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!file) {
       return NextResponse.json(
         { error: 'File not found' },
         { status: 404 }
@@ -352,11 +362,15 @@ export async function DELETE(request: NextRequest) {
 
       // Check if user owns the listing
       if (file.listing_id && user.userTable === 'agents') {
-        const { data: listing } = await supabase
+        const { data: listing, error: listingError } = await supabase
           .from('listings')
           .select('agent_id')
           .eq('id', file.listing_id)
-          .single()
+          .maybeSingle()
+
+        if (listingError) {
+          console.error('[Reference Files] Listing lookup error:', listingError)
+        }
 
         if (listing && listing.agent_id === user.userId) {
           hasAccess = true

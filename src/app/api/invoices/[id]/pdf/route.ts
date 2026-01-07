@@ -42,11 +42,16 @@ export async function GET(
     }
 
     // Try to find a generated invoice first
-    const { data: generatedInvoice } = await supabase
+    const { data: generatedInvoice, error: invoiceLookupError } = await supabase
       .from('generated_invoices')
       .select('*, orders(*), invoice_templates(*)')
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (invoiceLookupError) {
+      console.error('Invoice lookup error:', invoiceLookupError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     let invoiceNumber: string
     let order: {
@@ -97,28 +102,40 @@ export async function GET(
         .from('orders')
         .select('*')
         .eq('id', id)
-        .single()
+        .maybeSingle()
 
-      if (orderError || !orderData) {
+      if (orderError) {
+        console.error('Order lookup error:', orderError)
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
+
+      if (!orderData) {
         return NextResponse.json({ error: 'Invoice or order not found' }, { status: 404 })
       }
 
       // Check authorization - staff or order owner
-      const { data: staff } = await supabase
+      const { data: staff, error: staffError } = await supabase
         .from('staff')
         .select('id')
         .eq('email', user.email!)
         .eq('is_active', true)
-        .single()
+        .maybeSingle()
+
+      if (staffError) {
+        console.error('Staff lookup error:', staffError)
+      }
 
       let agent = null
       if (orderData.agent_id) {
-        const { data: agentData } = await supabase
+        const { data: agentData, error: agentError } = await supabase
           .from('agents')
           .select('id')
           .eq('email', user.email!)
           .eq('id', orderData.agent_id)
-          .single()
+          .maybeSingle()
+        if (agentError) {
+          console.error('Agent lookup error:', agentError)
+        }
         agent = agentData
       }
 
@@ -150,12 +167,16 @@ export async function GET(
       }
 
       // Get default template
-      const { data: defaultTemplate } = await supabase
+      const { data: defaultTemplate, error: defaultTemplateError } = await supabase
         .from('invoice_templates')
         .select('*')
         .is('agent_id', null)
         .eq('is_default', true)
-        .single()
+        .maybeSingle()
+
+      if (defaultTemplateError) {
+        console.error('Default template lookup error:', defaultTemplateError)
+      }
 
       template = defaultTemplate as InvoiceTemplate | undefined
     }
@@ -215,12 +236,17 @@ export async function POST(
     }
 
     // Check if user is staff
-    const { data: staff } = await supabase
+    const { data: staff, error: staffLookupError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffLookupError) {
+      console.error('Staff lookup error:', staffLookupError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
@@ -231,9 +257,14 @@ export async function POST(
       .from('orders')
       .select('*')
       .eq('id', orderId)
-      .single()
+      .maybeSingle()
 
-    if (orderError || !orderData) {
+    if (orderError) {
+      console.error('Order lookup error:', orderError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!orderData) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -243,21 +274,29 @@ export async function POST(
     // Get template if specified
     let template: InvoiceTemplate | undefined
     if (template_id) {
-      const { data: templateData } = await supabase
+      const { data: templateData, error: templateError } = await supabase
         .from('invoice_templates')
         .select('*')
         .eq('id', template_id)
-        .single()
+        .maybeSingle()
+
+      if (templateError) {
+        console.error('Template lookup error:', templateError)
+      }
 
       template = templateData as InvoiceTemplate | undefined
     } else {
       // Get default template
-      const { data: defaultTemplate } = await supabase
+      const { data: defaultTemplate, error: defaultTemplateError } = await supabase
         .from('invoice_templates')
         .select('*')
         .is('agent_id', null)
         .eq('is_default', true)
-        .single()
+        .maybeSingle()
+
+      if (defaultTemplateError) {
+        console.error('Default template lookup error:', defaultTemplateError)
+      }
 
       template = defaultTemplate as InvoiceTemplate | undefined
     }

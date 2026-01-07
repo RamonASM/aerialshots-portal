@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select('id, listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         photographer_id
       `)
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
 
     if (listingError || !listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -60,17 +60,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get photographer name if assigned
     let photographerName = null
     if (listing.photographer_id) {
-      const { data: staff } = await supabase
+      const { data: staff, error: staffError } = await supabase
         .from('staff')
         .select('name')
         .eq('id', listing.photographer_id)
-        .single()
-      photographerName = staff?.name
+        .maybeSingle()
+
+      if (staffError) {
+        console.error('Failed to fetch photographer:', staffError)
+      } else {
+        photographerName = staff?.name
+      }
     }
 
     // Get seller schedule if exists (additional scheduling info)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: sellerSchedule } = await (supabase as any)
+    const { data: sellerSchedule, error: scheduleError } = await (supabase as any)
       .from('seller_schedules')
       .select(`
         status,
@@ -78,7 +83,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         notes
       `)
       .eq('share_link_id', shareLink.id)
-      .single() as { data: { status: string; selected_slot: unknown; notes: string | null } | null }
+      .maybeSingle() as { data: { status: string; selected_slot: unknown; notes: string | null } | null; error: Error | null }
+
+    if (scheduleError) {
+      console.error('Failed to fetch seller schedule:', scheduleError)
+    }
 
     // Get any pending reschedule requests
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

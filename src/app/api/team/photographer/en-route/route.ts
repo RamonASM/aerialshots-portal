@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getStaffAccess } from '@/lib/auth/server-access'
 import { z } from 'zod'
 
 const enRouteSchema = z.object({
@@ -16,26 +17,14 @@ const enRouteSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Check authentication via Clerk (or Supabase fallback)
+    const staff = await getStaffAccess()
 
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!staff) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff member
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id, name')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff member not found' }, { status: 403 })
-    }
+    const supabase = await createClient()
 
     // Parse request body
     const body = await request.json()
@@ -51,11 +40,16 @@ export async function POST(request: NextRequest) {
     const { listingId, latitude, longitude, eta_minutes } = parseResult.data
 
     // Verify this photographer is assigned to this listing
-    const { data: listing } = await supabase
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('id, photographer_id')
       .eq('id', listingId)
-      .single()
+      .maybeSingle()
+
+    if (listingError) {
+      console.error('Listing lookup error:', listingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -88,11 +82,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Update listing ops_status if still scheduled
-    const { data: currentListing } = await supabase
+    const { data: currentListing, error: currentListingError } = await supabase
       .from('listings')
       .select('ops_status')
       .eq('id', listingId)
-      .single()
+      .maybeSingle()
+
+    if (currentListingError) {
+      console.error('Status check error:', currentListingError)
+    }
 
     if (currentListing?.ops_status === 'scheduled') {
       await supabase

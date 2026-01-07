@@ -30,11 +30,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to this agent (owns the agent or is staff)
-    const { data: agent } = await supabaseClient
+    const { data: agent, error: agentError } = await supabaseClient
       .from('agents')
       .select('id, email')
       .eq('id', agentId)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('[Instagram Publish] Agent lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     const isOwner = agent?.email === user.email
     const isStaff = user.email?.endsWith('@aerialshots.media')

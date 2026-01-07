@@ -187,7 +187,8 @@ async function createCarouselJob(
     .single()
 
   if (error) throw error
-  return data!.id
+  if (!data) throw new Error('Failed to create carousel job - no data returned')
+  return data.id
 }
 
 async function updateCarouselJobStatus(

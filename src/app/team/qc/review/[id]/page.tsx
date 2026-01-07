@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { QCReviewClient } from '@/components/qc/QCReviewClient'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -63,33 +65,20 @@ async function rejectPhoto(assetId: string, notes?: string) {
 
 export default async function QCReviewPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
 
-  // Verify staff authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
-  }
-
-  // Verify staff role
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name, role')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
+  // Check authentication via Clerk (or Supabase fallback)
+  const staff = await getStaffAccess()
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
 
   // Allow QC specialists and admins
-  if (staff.role !== 'qc_specialist' && staff.role !== 'qc' && staff.role !== 'admin') {
+  if (staff.role !== 'qc' && staff.role !== 'admin') {
     redirect('/team/qc')
   }
+
+  const supabase = createAdminClient()
 
   // Get listing with agent info
   const { data: listing, error: listingError } = await supabase

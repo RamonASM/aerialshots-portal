@@ -1,31 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getStaffAccess } from '@/lib/auth/server-access'
 import { notifyStatusUpdate } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Check authentication via Clerk (or Supabase fallback)
+    const staff = await getStaffAccess()
 
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!staff) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff member
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single()
-
-    if (!staff) {
-      return NextResponse.json({ error: 'Staff member not found' }, { status: 403 })
-    }
+    const supabase = await createClient()
 
     const body = await request.json()
     const { assignmentId, listingId, type, lat, lng } = body
@@ -39,11 +26,16 @@ export async function POST(request: NextRequest) {
 
     // Verify the assignment belongs to this staff member
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: assignment } = await (supabase as any)
+    const { data: assignment, error: assignmentError } = await (supabase as any)
       .from('photographer_assignments')
       .select('id, photographer_id, status, listing_id')
       .eq('id', assignmentId)
-      .single() as { data: { id: string; photographer_id: string; status: string; listing_id: string } | null }
+      .maybeSingle() as { data: { id: string; photographer_id: string; status: string; listing_id: string } | null; error: Error | null }
+
+    if (assignmentError) {
+      console.error('Assignment lookup error:', assignmentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!assignment) {
       return NextResponse.json(
@@ -87,24 +79,28 @@ export async function POST(request: NextRequest) {
 
         // Send notification to agent that shoot has started
         try {
-          const { data: listing } = await supabase
+          const { data: listing, error: listingFetchError } = await supabase
             .from('listings')
             .select('address, agents(name, email)')
             .eq('id', listingId)
-            .single()
+            .maybeSingle()
 
-          const agent = listing?.agents as { name: string; email: string } | null
-          if (agent?.email) {
-            notifyStatusUpdate(
-              { email: agent.email, name: agent.name },
-              {
-                agentName: agent.name,
-                listingAddress: listing?.address || 'Your property',
-                previousStatus: 'scheduled',
-                newStatus: 'in_progress',
-                message: 'Your photographer has arrived and the shoot is now in progress.',
-              }
-            ).catch(err => console.error('Notification error:', err))
+          if (listingFetchError) {
+            console.error('Failed to fetch listing for notification:', listingFetchError)
+          } else if (listing) {
+            const agent = listing.agents as { name: string; email: string } | null
+            if (agent?.email) {
+              notifyStatusUpdate(
+                { email: agent.email, name: agent.name },
+                {
+                  agentName: agent.name,
+                  listingAddress: listing.address || 'Your property',
+                  previousStatus: 'scheduled',
+                  newStatus: 'in_progress',
+                  message: 'Your photographer has arrived and the shoot is now in progress.',
+                }
+              ).catch(err => console.error('Notification error:', err))
+            }
           }
         } catch (notifyError) {
           console.error('Failed to send check-in notification:', notifyError)
@@ -152,24 +148,28 @@ export async function POST(request: NextRequest) {
 
         // Send notification to agent that shoot is complete
         try {
-          const { data: listing } = await supabase
+          const { data: listing, error: listingFetchError } = await supabase
             .from('listings')
             .select('address, agents(name, email)')
             .eq('id', listingId)
-            .single()
+            .maybeSingle()
 
-          const agent = listing?.agents as { name: string; email: string } | null
-          if (agent?.email) {
-            notifyStatusUpdate(
-              { email: agent.email, name: agent.name },
-              {
-                agentName: agent.name,
-                listingAddress: listing?.address || 'Your property',
-                previousStatus: 'in_progress',
-                newStatus: 'staged',
-                message: 'The photoshoot is complete! Your photos are now being uploaded and will go into editing shortly.',
-              }
-            ).catch(err => console.error('Notification error:', err))
+          if (listingFetchError) {
+            console.error('Failed to fetch listing for notification:', listingFetchError)
+          } else if (listing) {
+            const agent = listing.agents as { name: string; email: string } | null
+            if (agent?.email) {
+              notifyStatusUpdate(
+                { email: agent.email, name: agent.name },
+                {
+                  agentName: agent.name,
+                  listingAddress: listing.address || 'Your property',
+                  previousStatus: 'in_progress',
+                  newStatus: 'staged',
+                  message: 'The photoshoot is complete! Your photos are now being uploaded and will go into editing shortly.',
+                }
+              ).catch(err => console.error('Notification error:', err))
+            }
           }
         } catch (notifyError) {
           console.error('Failed to send check-out notification:', notifyError)

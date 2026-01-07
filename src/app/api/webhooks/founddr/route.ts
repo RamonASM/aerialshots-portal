@@ -57,9 +57,13 @@ export async function POST(request: NextRequest) {
       .from('processing_jobs')
       .select('*')
       .eq('founddr_job_id', payload.founddr_job_id)
-      .single()
+      .maybeSingle()
 
     if (jobError) {
+      webhookLogger.warn({ source: 'founddr', jobId: payload.founddr_job_id, error: jobError }, 'Processing job lookup error')
+    }
+
+    if (!processingJob) {
       webhookLogger.warn({ source: 'founddr', jobId: payload.founddr_job_id }, 'Processing job not found')
       // Still process the webhook even if local record not found
     }

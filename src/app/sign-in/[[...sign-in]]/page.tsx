@@ -91,23 +91,48 @@ export default function AgentSignInPage() {
 
         {/* Role switcher */}
         <div className="mt-8 pt-6 border-t border-white/[0.08]">
-          <p className="text-center text-[13px] text-[#636366] mb-4">
-            Looking for a different portal?
+          <p className="text-center text-[14px] font-medium text-white mb-2">
+            Not a real estate agent?
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <p className="text-center text-[13px] text-[#636366] mb-4">
+            Choose the portal that matches your role
+          </p>
+          <div className="space-y-2">
             <Link
               href="/sign-in/seller"
-              className="inline-flex items-center gap-2 px-4 py-2 text-[13px] text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-white/[0.08] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
             >
-              <Building2 className="h-4 w-4" />
-              Homeowner
+              <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-4 w-4 text-green-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Homeowner Portal</p>
+                <p className="text-[11px] text-[#636366]">View your property photos & media</p>
+              </div>
             </Link>
             <Link
               href="/sign-in/staff"
-              className="inline-flex items-center gap-2 px-4 py-2 text-[13px] text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-white/[0.08] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
             >
-              <Camera className="h-4 w-4" />
-              ASM Team
+              <div className="h-8 w-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <Camera className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Team Portal</p>
+                <p className="text-[11px] text-[#636366]">For ASM photographers, videographers & QC</p>
+              </div>
+            </Link>
+            <Link
+              href="/sign-in/partner"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
+            >
+              <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Partner Portal</p>
+                <p className="text-[11px] text-[#636366]">Business partners & team managers</p>
+              </div>
             </Link>
           </div>
         </div>

@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       agent_contact_history: {
@@ -1960,11 +1935,14 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          approved_storage_path: string | null
           aryeo_url: string
           category: string | null
           created_at: string | null
           id: string
           listing_id: string
+          media_url: string | null
+          processed_storage_path: string | null
           qc_notes: string | null
           qc_status: string | null
           sort_order: number | null
@@ -1973,11 +1951,14 @@ export type Database = {
           type: string
         }
         Insert: {
+          approved_storage_path?: string | null
           aryeo_url: string
           category?: string | null
           created_at?: string | null
           id?: string
           listing_id: string
+          media_url?: string | null
+          processed_storage_path?: string | null
           qc_notes?: string | null
           qc_status?: string | null
           sort_order?: number | null
@@ -1986,11 +1967,14 @@ export type Database = {
           type: string
         }
         Update: {
+          approved_storage_path?: string | null
           aryeo_url?: string
           category?: string | null
           created_at?: string | null
           id?: string
           listing_id?: string
+          media_url?: string | null
+          processed_storage_path?: string | null
           qc_notes?: string | null
           qc_status?: string | null
           sort_order?: number | null
@@ -3055,6 +3039,7 @@ export type Database = {
       staff: {
         Row: {
           auth_user_id: string | null
+          certifications: string[] | null
           clerk_user_id: string | null
           created_at: string | null
           email: string
@@ -3064,11 +3049,14 @@ export type Database = {
           name: string
           phone: string | null
           role: string
+          skills: string[] | null
+          team_role: string | null
           timezone: string | null
           weekly_report_enabled: boolean | null
         }
         Insert: {
           auth_user_id?: string | null
+          certifications?: string[] | null
           clerk_user_id?: string | null
           created_at?: string | null
           email: string
@@ -3078,11 +3066,14 @@ export type Database = {
           name: string
           phone?: string | null
           role: string
+          skills?: string[] | null
+          team_role?: string | null
           timezone?: string | null
           weekly_report_enabled?: boolean | null
         }
         Update: {
           auth_user_id?: string | null
+          certifications?: string[] | null
           clerk_user_id?: string | null
           created_at?: string | null
           email?: string
@@ -3092,6 +3083,8 @@ export type Database = {
           name?: string
           phone?: string | null
           role?: string
+          skills?: string[] | null
+          team_role?: string | null
           timezone?: string | null
           weekly_report_enabled?: boolean | null
         }
@@ -3621,18 +3614,6 @@ export type Database = {
         }
         Relationships: []
       }
-      [key: string]: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-        Relationships: {
-          foreignKeyName: string
-          columns: string[]
-          isOneToOne?: boolean
-          referencedRelation: string
-          referencedColumns: string[]
-        }[]
-      }
     }
     Views: {
       agent_activity_summary: {
@@ -3648,16 +3629,6 @@ export type Database = {
           total_revenue_cents: number | null
         }
         Relationships: []
-      }
-      [key: string]: {
-        Row: Record<string, any>
-        Relationships: {
-          foreignKeyName: string
-          columns: string[]
-          isOneToOne?: boolean
-          referencedRelation: string
-          referencedColumns: string[]
-        }[]
       }
     }
     Functions: {
@@ -3917,60 +3888,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
 
-// Re-export custom types for tables not in generated schema
-export type {
-  IntegrationStatus,
-  Zillow3DStatus,
-  CommunityQuickFacts,
-  CommunityMarketSnapshot,
-  CommunitySubdivision,
-  CommunitySchoolInfo,
-  CommunitySchoolsInfo,
-  CommunityOverviewContent,
-  CommunityOverviewContentBlock,
-  GeneratedQuestion,
-  CarouselSlide,
-  BookingSessionRow,
-  SellerScheduleRow,
-  SellerAccessControlRow,
-  RescheduleRequestRow,
-  ShareLinkRow,
-  ShareLinkType,
-  ShareLinkInsert,
-  ClientMessageRow,
-  PayPeriodRow,
-  TimeEntryRow,
-  PayoutSettingsRow,
-  CompanyPoolRow,
-  PayoutIdempotencyRow,
-  StaffPayoutRow,
-  PartnerPayoutRow,
-  RenderCacheRow,
-  RenderTemplateRow,
-  SkillExecutionRow,
-  AgentActivitySummaryRow,
-  CommunityRow,
-  ProofingSessionRow,
-  ProofingSelectionRow,
-  ProofingCommentRow,
-  ProofingShareRow,
-  DripCampaignRow,
-  DripCampaignStepRow,
-  DripEnrollmentRow,
-  WaitlistEntryRow,
-  TerritoryAvailabilityRow,
-  CouponRow,
-  CouponUsageRow,
-  LoyaltyTierRow,
-  LoyaltyPointsRow,
-  PunchCardRow,
-  PunchCardPunchRow,
-} from './types-custom'
+// Re-export custom types for tables/views not in generated schema
+// These are maintained manually in types-custom.ts
+export * from './types-custom'

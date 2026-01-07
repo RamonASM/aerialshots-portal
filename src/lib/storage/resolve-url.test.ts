@@ -12,45 +12,23 @@ import {
   getMediaStats,
   isNativeUrl,
 } from './resolve-url'
-// Test-specific type that matches the actual database schema + extended fields
-// This ensures compatibility with resolve-url.ts MediaAsset type
-type TestMediaAsset = {
-  // Base database fields (from media_assets table)
-  id: string
-  listing_id: string
-  aryeo_url: string  // Required in DB schema
-  type: string
-  category: string | null
-  sort_order: number | null
-  tip_text: string | null
-  storage_path: string | null
-  qc_status: string | null
-  qc_notes: string | null
-  created_at: string | null
-  // Extended fields (may not be in generated types)
-  media_url?: string | null
-  storage_bucket?: string | null
-  processing_job_id?: string | null
-  processed_storage_path?: string | null
-  approved_storage_path?: string | null
-  edit_history?: unknown[]
-  qc_assigned_to?: string | null
-  needs_editing?: boolean
-  original_filename?: string | null
-  file_size_bytes?: number | null
-  image_width?: number | null
-  image_height?: number | null
+import type { Database } from '@/lib/supabase/types'
+
+// Use the actual type from the database schema (already has media_url, approved_storage_path, processed_storage_path)
+type BaseMediaAsset = Database['public']['Tables']['media_assets']['Row']
+
+// Extended type for migration_status (not in generated types yet)
+type MediaAsset = BaseMediaAsset & {
   migration_status?: string | null
-  migrated_at?: string | null
 }
 
 // Factory for creating test media assets
-function createAsset(overrides: Partial<TestMediaAsset> = {}): TestMediaAsset {
+function createAsset(overrides: Partial<MediaAsset> = {}): MediaAsset {
   return {
-    // Required base fields
+    // Fields matching media_assets Row type
     id: 'test-id',
     listing_id: 'listing-123',
-    aryeo_url: '',  // Required string field
+    aryeo_url: '',
     type: 'photo',
     category: null,
     sort_order: null,
@@ -59,21 +37,11 @@ function createAsset(overrides: Partial<TestMediaAsset> = {}): TestMediaAsset {
     qc_status: 'pending',
     qc_notes: null,
     created_at: new Date().toISOString(),
-    // Optional extended fields
     media_url: null,
-    storage_bucket: null,
-    processing_job_id: null,
     processed_storage_path: null,
     approved_storage_path: null,
-    edit_history: [],
-    qc_assigned_to: null,
-    needs_editing: false,
-    original_filename: null,
-    file_size_bytes: null,
-    image_width: null,
-    image_height: null,
+    // Extended field
     migration_status: 'pending',
-    migrated_at: null,
     ...overrides,
   }
 }

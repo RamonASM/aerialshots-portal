@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
 import {
@@ -14,28 +13,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function EditorDashboard() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
-  }
-
-  // Get staff member
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name')
-    .eq('email', user.email!)
-    .single()
+  // Check authentication via Clerk (or Supabase fallback)
+  const staff = await getStaffAccess()
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
+
+  // Verify editor or admin role
+  if (staff.role !== 'editor' && staff.role !== 'admin') {
+    redirect('/sign-in/staff')
+  }
+
+  const supabase = createAdminClient()
 
   // Get editing queue - listings in awaiting_editing or in_editing status
   const { data: editingQueue } = await supabase

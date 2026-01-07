@@ -41,13 +41,17 @@ export async function POST(request: NextRequest) {
     const roundedLng = Math.round(lng * 10000) / 10000
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cached } = await (supabase as any)
+    const { data: cached, error: cacheError } = await (supabase as any)
       .from('airspace_checks')
       .select('*')
       .eq('lat', roundedLat)
       .eq('lng', roundedLng)
       .gt('expires_at', new Date().toISOString())
-      .single()
+      .maybeSingle()
+
+    if (cacheError) {
+      console.warn('[Airspace Qualify] Cache lookup error:', cacheError)
+    }
 
     if (cached) {
       // Transform cached data to booking qualification format

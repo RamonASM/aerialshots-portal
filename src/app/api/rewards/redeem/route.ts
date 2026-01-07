@@ -34,11 +34,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this agent account or is staff
-    const { data: agent } = await supabaseClient
+    const { data: agent, error: agentError } = await supabaseClient
       .from('agents')
       .select('id, email')
       .eq('id', agent_id)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('Agent lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     const isOwner = agent?.email === user.email
     const isStaff = user.email?.endsWith('@aerialshots.media')
@@ -57,9 +62,14 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('credit_balance')
       .eq('id', agent_id)
-      .single()
+      .maybeSingle()
 
-    if (selectError || !agentData) {
+    if (selectError) {
+      console.error('Agent balance lookup error:', selectError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!agentData) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 

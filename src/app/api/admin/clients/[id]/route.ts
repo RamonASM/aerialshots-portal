@@ -65,11 +65,16 @@ export async function PUT(
     const { name, email, phone, brand_color, headshot_url, logo_url, bio } = body
 
     // Check if agent exists
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('agents')
       .select('id')
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('Error checking agent:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!existing) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
@@ -77,12 +82,17 @@ export async function PUT(
 
     // If email is changing, check for duplicates
     if (email) {
-      const { data: duplicate } = await supabase
+      const { data: duplicate, error: duplicateError } = await supabase
         .from('agents')
         .select('id')
         .eq('email', email)
         .neq('id', id)
-        .single()
+        .maybeSingle()
+
+      if (duplicateError) {
+        console.error('Error checking duplicate email:', duplicateError)
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
 
       if (duplicate) {
         return NextResponse.json(

@@ -51,23 +51,33 @@ export async function GET(
     }
 
     // Get agent for this user
-    const { data: agent } = await supabase
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('id')
       .eq('email', user.email!)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('Agent lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
     // Verify this order belongs to the agent
-    const { data: order } = await supabase
+    const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('id, agent_id, listing_id')
       .eq('id', orderId)
       .eq('agent_id', agent.id)
-      .single()
+      .maybeSingle()
+
+    if (orderError) {
+      console.error('Order lookup error:', orderError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -146,23 +156,33 @@ export async function POST(
     }
 
     // Get agent for this user
-    const { data: agent } = await supabase
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('id')
       .eq('email', user.email!)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('Agent lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
     // Verify this order belongs to the agent and is delivered
-    const { data: order } = await supabase
+    const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('id, agent_id, listing_id, status')
       .eq('id', orderId)
       .eq('agent_id', agent.id)
-      .single()
+      .maybeSingle()
+
+    if (orderError) {
+      console.error('Order lookup error:', orderError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })

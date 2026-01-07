@@ -94,12 +94,16 @@ export async function POST(
     // Process team payouts (photographers, videographers, partners)
     try {
       // Get order for this listing
-      const { data: order } = await supabase
+      const { data: order, error: orderError } = await supabase
         .from('orders')
         .select('id, listing_id, total_cents, payment_status, payment_intent_id')
         .eq('listing_id', id)
         .eq('payment_status', 'succeeded')
-        .single()
+        .maybeSingle()
+
+      if (orderError) {
+        qcLogger.warn({ listingId: id, ...formatError(orderError) }, 'Order lookup failed for payouts')
+      }
 
       if (order) {
         qcLogger.info({ listingId: id, orderId: order.id }, 'Processing team payouts')

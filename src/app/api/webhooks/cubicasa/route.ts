@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       .from('listings')
       .select('id, address, cubicasa_status')
       .eq('cubicasa_order_id', order_id)
-      .single() as { data: { id: string; address: string; cubicasa_status: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { id: string; address: string; cubicasa_status: string | null } | null; error: Error | null }
 
     if (findError || !listing) {
       webhookLogger.warn({ source: 'cubicasa', orderId: order_id }, 'No listing found for Cubicasa order')
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
           .select('id')
           .eq('listing_id', listing.id)
           .eq('category', 'floor_plan')
-          .single()
+          .maybeSingle()
 
         if (existingAsset) {
           // Update existing asset

@@ -53,11 +53,15 @@ export async function POST(request: NextRequest) {
 
     if (user) {
       // Check if user is agent
-      const { data: agent } = await supabase
+      const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('id, name, email')
         .eq('email', user.email!)
-        .single()
+        .maybeSingle()
+
+      if (agentError) {
+        console.error('[Messages] Agent lookup error:', agentError)
+      }
 
       if (agent) {
         senderType = 'agent'
@@ -66,11 +70,15 @@ export async function POST(request: NextRequest) {
         senderEmailFinal = agent.email
       } else {
         // Check if user is staff/admin
-        const { data: staff } = await supabase
+        const { data: staff, error: staffError } = await supabase
           .from('staff')
           .select('id, name, email, role')
           .eq('email', user.email!)
-          .single()
+          .maybeSingle()
+
+        if (staffError) {
+          console.error('[Messages] Staff lookup error:', staffError)
+        }
 
         if (staff) {
           senderType = 'admin'

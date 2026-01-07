@@ -24,11 +24,16 @@ export async function POST(request: Request) {
     if (webhook_id) {
       const adminSupabase = createAdminClient()
       // Use type cast since zapier_webhooks is a new table
-      const { data: webhook } = await (adminSupabase as any)
+      const { data: webhook, error: webhookError } = await (adminSupabase as any)
         .from('zapier_webhooks')
         .select('webhook_url, secret_key')
         .eq('id', webhook_id)
-        .single()
+        .maybeSingle()
+
+      if (webhookError) {
+        console.error('[Zapier Test] Webhook lookup error:', webhookError)
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
 
       if (!webhook) {
         return NextResponse.json({ error: 'Webhook not found' }, { status: 404 })

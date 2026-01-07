@@ -87,9 +87,14 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('id, name, email, credit_balance')
       .eq('email', user.email)
-      .single()
+      .maybeSingle()
 
-    if (agentError || !agent) {
+    if (agentError) {
+      console.error('Agent profile lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!agent) {
       return NextResponse.json({ error: 'Agent profile not found' }, { status: 404 })
     }
 
@@ -110,11 +115,16 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('id', packageId)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
     const selectedPackage = selectedPackageData as CreditPackage | null
 
-    if (pkgError || !selectedPackage) {
+    if (pkgError) {
+      console.error('Package lookup error:', pkgError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!selectedPackage) {
       return NextResponse.json({ error: 'Package not found' }, { status: 404 })
     }
 

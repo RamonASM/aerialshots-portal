@@ -120,11 +120,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if agent with email already exists
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('agents')
       .select('id')
       .eq('email', email)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('Error checking existing agent:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (existing) {
       return NextResponse.json(

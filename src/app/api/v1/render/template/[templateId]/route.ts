@@ -165,9 +165,13 @@ export async function GET(
     let template = data
     if (resolved && data.extends_slug) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: resolvedData } = await (asRenderClient(supabase) as any)
+      const { data: resolvedData, error: rpcError } = await (asRenderClient(supabase) as any)
         .rpc('get_resolved_template', { template_slug: data.slug })
-        .single()
+        .maybeSingle()
+
+      if (rpcError) {
+        console.error('[Template API] RPC resolution error:', rpcError)
+      }
 
       if (resolvedData) {
         template = {
@@ -244,11 +248,16 @@ export async function PUT(
     const supabase = createAdminClient()
 
     // Check if template exists
-    const { data: existing } = await asRenderClient(supabase)
+    const { data: existing, error: existingError } = await asRenderClient(supabase)
       .from('render_templates')
       .select('id, is_system')
       .eq('id', templateId)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[Template API] Template lookup error:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!existing) {
       return NextResponse.json(
@@ -331,11 +340,16 @@ export async function DELETE(
     const supabase = createAdminClient()
 
     // Check if template exists and is not a system template
-    const { data: existing } = await asRenderClient(supabase)
+    const { data: existing, error: existingError } = await asRenderClient(supabase)
       .from('render_templates')
       .select('id, is_system, slug')
       .eq('id', templateId)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[Template API] Template lookup error:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!existing) {
       return NextResponse.json(

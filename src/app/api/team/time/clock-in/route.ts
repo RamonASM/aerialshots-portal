@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStaffAccess } from '@/lib/auth/server-access'
 import { clockIn } from '@/lib/time-tracking/service'
+import type { StaffWithPayoutInfo } from '@/lib/supabase/types-custom'
 
 /**
  * POST /api/team/time/clock-in
@@ -8,22 +10,26 @@ import { clockIn } from '@/lib/time-tracking/service'
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Check authentication via Clerk (or Supabase fallback)
+    const staffAccess = await getStaffAccess()
 
-    // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    if (!staffAccess) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get staff record with payout info
+    const supabase = createAdminClient()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: staff } = await (supabase as any)
+    const { data: staff, error: staffError } = await (supabase as any)
       .from('staff')
       .select('id, payout_type, hourly_rate')
-      .eq('email', user.email!)
-      .eq('is_active', true)
-      .single() as { data: { id: string; payout_type: string | null; hourly_rate: number | null } | null }
+      .eq('id', staffAccess.id)
+      .maybeSingle() as { data: Pick<StaffWithPayoutInfo, 'id' | 'payout_type' | 'hourly_rate'> | null; error: Error | null }
+
+    if (staffError) {
+      console.error('[Time] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })

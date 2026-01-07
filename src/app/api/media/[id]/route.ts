@@ -131,7 +131,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .select()
       .single()
 
-    if (error) {
+    if (error || !asset) {
+      console.error('[Media API] Update error:', error)
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
     }
 

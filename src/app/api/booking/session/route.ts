@@ -142,9 +142,17 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('session_id', sessionId)
       .eq('is_converted', false)
-      .single() as { data: import('@/lib/supabase/types').BookingSessionRow | null; error: Error | null }
+      .maybeSingle() as { data: import('@/lib/supabase/types').BookingSessionRow | null; error: Error | null }
 
-    if (error || !data) {
+    if (error) {
+      console.error('Session lookup error:', error)
+      return NextResponse.json(
+        { error: 'Database error', found: false },
+        { status: 500 }
+      )
+    }
+
+    if (!data) {
       return NextResponse.json(
         { error: 'Session not found', found: false },
         { status: 404 }

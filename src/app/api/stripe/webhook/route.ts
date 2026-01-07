@@ -44,13 +44,19 @@ export async function POST(request: NextRequest) {
 
   // Record event before processing
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  const { error: insertError } = await (supabase as any)
     .from('processed_events')
     .insert({
       event_id: event.id,
       provider: 'stripe',
       metadata: { type: event.type }
     })
+
+  if (insertError) {
+    // Log but continue - better to process the event than fail completely
+    // Duplicate processing is handled by the check above
+    console.error('Failed to record event for idempotency:', insertError)
+  }
 
   // Handle the event
   switch (event.type) {

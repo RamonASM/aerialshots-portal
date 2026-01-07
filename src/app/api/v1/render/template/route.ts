@@ -154,12 +154,17 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     // Check if slug already exists for this version
-    const { data: existing } = await asRenderClient(supabase)
+    const { data: existing, error: existingError } = await asRenderClient(supabase)
       .from('render_templates')
       .select('id')
       .eq('slug', input.slug)
       .eq('version', input.version)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[Template API] Slug check error:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (existing) {
       return NextResponse.json(

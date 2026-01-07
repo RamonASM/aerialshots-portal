@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -8,24 +8,20 @@ import {
   Image,
   Clock,
   CheckCircle,
-  Upload,
   Play,
   AlertTriangle,
   User,
-  MapPin,
   Home,
   Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { use } from 'react'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export default function EditorJobDetailPage({ params }: PageProps) {
-  const { id } = use(params)
+  const { id } = params
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
@@ -33,97 +29,89 @@ export default function EditorJobDetailPage({ params }: PageProps) {
   const [job, setJob] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Load job data
-  useState(() => {
+  useEffect(() => {
+    let isMounted = true
+
     const loadJob = async () => {
       setIsLoading(true)
-      const supabase = createClient()
+      setError(null)
 
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*, agents!listings_agent_id_fkey(id, name, phone, email)')
-        .eq('id', id)
-        .single()
+      try {
+        const response = await fetch(`/api/admin/ops/editor/jobs/${id}`)
+        if (!response.ok) {
+          const data = await response.json().catch(() => null)
+          throw new Error(data?.error || 'Failed to load job')
+        }
 
-      if (error) {
-        setError('Failed to load job')
-        setIsLoading(false)
-        return
+        const data = await response.json()
+        if (isMounted) {
+          setJob(data.job)
+        }
+      } catch (error) {
+        if (isMounted) {
+          setError(error instanceof Error ? error.message : 'Failed to load job')
+          setJob(null)
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
-
-      setJob(data)
-      setIsLoading(false)
     }
 
     loadJob()
-  })
+
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   const handleStartEditing = async () => {
     setIsStarting(true)
-    const supabase = createClient()
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/staff-login')
-      return
-    }
-
-    // Get staff record
-    const { data: staff } = await supabase
-      .from('staff')
-      .select('id')
-      .eq('email', user.email!)
-      .single()
-
-    if (!staff) {
-      setError('Staff record not found')
-      setIsStarting(false)
-      return
-    }
-
-    // Update listing status
-    const { error } = await supabase
-      .from('listings')
-      .update({
-        ops_status: 'in_editing',
-        editor_id: staff.id,
-        editing_started_at: new Date().toISOString(),
+    try {
+      const response = await fetch(`/api/admin/ops/editor/jobs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' }),
       })
-      .eq('id', id)
 
-    if (error) {
-      setError('Failed to start editing')
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to start editing')
+      }
+
+      const data = await response.json()
+      setJob(data.job)
+      router.refresh()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to start editing')
+    } finally {
       setIsStarting(false)
-      return
     }
-
-    // Refresh the page
-    router.refresh()
-    setIsStarting(false)
   }
 
   const handleCompleteEditing = async () => {
     setIsCompleting(true)
-    const supabase = createClient()
 
-    // Update listing status
-    const { error } = await supabase
-      .from('listings')
-      .update({
-        ops_status: 'ready_for_qc',
-        editing_completed_at: new Date().toISOString(),
+    try {
+      const response = await fetch(`/api/admin/ops/editor/jobs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'complete' }),
       })
-      .eq('id', id)
 
-    if (error) {
-      setError('Failed to complete editing')
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to complete editing')
+      }
+
+      router.push('/admin/ops/editor')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to complete editing')
+    } finally {
       setIsCompleting(false)
-      return
     }
-
-    // Redirect back to editor dashboard
-    router.push('/admin/ops/editor')
   }
 
   if (isLoading) {

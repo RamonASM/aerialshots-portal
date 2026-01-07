@@ -69,11 +69,16 @@ export async function PATCH(
 
     // Get current campaign
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingCampaign } = await (supabase as any)
+    const { data: existingCampaign, error: campaignError } = await (supabase as any)
       .from('marketing_campaigns')
       .select('status')
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (campaignError) {
+      apiLogger.error({ error: formatError(campaignError) }, 'Campaign lookup error')
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!existingCampaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })

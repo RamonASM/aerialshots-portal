@@ -92,11 +92,15 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.toLowerCase()
 
     // Check if staff already exists
-    const { data: existingStaff } = await supabase
+    const { data: existingStaff, error: existingError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', normalizedEmail)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      throw databaseError(existingError, 'checking existing staff')
+    }
 
     if (existingStaff) {
       throw resourceConflict('Staff member', 'A staff member with this email already exists')

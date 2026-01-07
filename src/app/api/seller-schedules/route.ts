@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { apiLogger, formatError } from '@/lib/logger'
 import { sendSellerAvailabilityEmail, sendSellerConfirmationEmail } from '@/lib/email/resend'
 import type { Json } from '@/lib/supabase/types'
+import type { ShareLinkRow, SellerScheduleRow } from '@/lib/supabase/types-custom'
 
 // Local types for seller schedules
 interface AvailableSlot {
@@ -78,14 +79,20 @@ export async function POST(request: NextRequest) {
 
     // Validate share link if provided
     if (share_link_id) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: shareLink, error: linkError } = await (supabase as any)
-        .from('share_links')
+      const { data: shareLink, error: linkError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('share_links' as any)
         .select('id, is_active, expires_at, link_type')
         .eq('id', share_link_id)
-        .single() as { data: { id: string; is_active: boolean; expires_at: string | null; link_type: string } | null; error: Error | null }
+        .maybeSingle()
+        .returns<Pick<ShareLinkRow, 'id' | 'is_active' | 'expires_at' | 'link_type'>>()
 
-      if (linkError || !shareLink) {
+      if (linkError) {
+        apiLogger.error({ error: formatError(linkError) }, 'Share link lookup error')
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
+
+      if (!shareLink) {
         return NextResponse.json({ error: 'Invalid share link' }, { status: 400 })
       }
 
@@ -103,9 +110,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing schedule
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let existingQuery = (supabase as any)
-      .from('seller_schedules')
+    let existingQuery = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select('id')
       .eq('listing_id', listing_id)
 
@@ -115,7 +122,15 @@ export async function POST(request: NextRequest) {
       existingQuery = existingQuery.is('share_link_id', null)
     }
 
-    const { data: existing } = await existingQuery.single() as { data: { id: string } | null }
+    // Use maybeSingle() since no existing schedule is a valid case
+    const { data: existing, error: existingError } = await existingQuery
+      .maybeSingle()
+      .returns<Pick<SellerScheduleRow, 'id'>>()
+
+    if (existingError) {
+      apiLogger.error({ error: formatError(existingError), listingId: listing_id }, 'Error checking existing schedule')
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     const scheduleData = {
       listing_id,
@@ -129,12 +144,12 @@ export async function POST(request: NextRequest) {
       submitted_at: new Date().toISOString(),
     }
 
-    let result
+    let result: SellerScheduleRow | null = null
     if (existing) {
       // Update existing schedule
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('seller_schedules')
+      const { data, error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('seller_schedules' as any)
         .update({
           ...scheduleData,
           updated_at: new Date().toISOString(),
@@ -142,6 +157,7 @@ export async function POST(request: NextRequest) {
         .eq('id', existing.id)
         .select()
         .single()
+        .returns<SellerScheduleRow>()
 
       if (error) {
         apiLogger.error({ error: formatError(error), listingId: listing_id }, 'Error updating seller schedule')
@@ -150,12 +166,13 @@ export async function POST(request: NextRequest) {
       result = data
     } else {
       // Create new schedule
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('seller_schedules')
+      const { data, error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('seller_schedules' as any)
         .insert(scheduleData)
         .select()
         .single()
+        .returns<SellerScheduleRow>()
 
       if (error) {
         apiLogger.error({ error: formatError(error), listingId: listing_id }, 'Error creating seller schedule')
@@ -165,11 +182,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Send notification email to agent about new availability
-    const { data: listing } = await supabase
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('address, city, state, agent:agents(name, email)')
       .eq('id', listing_id)
-      .single()
+      .maybeSingle()
+
+    if (listingError) {
+      // Log but don't fail the request - schedule was already saved
+      apiLogger.warn({ error: formatError(listingError), listingId: listing_id }, 'Failed to fetch listing for notification')
+    }
 
     if (listing?.agent?.email) {
       const availableDates = available_slots.map((slot) =>
@@ -220,9 +242,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     // Build query
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('seller_schedules')
+    let query = supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .select(`
         *,
         listing:listings(id, address, city, state),
@@ -305,13 +327,14 @@ export async function PATCH(request: NextRequest) {
       updates.status = status
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: schedule, error: updateError } = await (supabase as any)
-      .from('seller_schedules')
+    const { data: schedule, error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .from('seller_schedules' as any)
       .update(updates)
       .eq('id', schedule_id)
       .select()
-      .single() as { data: { id: string; seller_email: string; seller_name: string; listing_id: string } | null; error: Error | null }
+      .single()
+      .returns<SellerScheduleRow>()
 
     if (updateError) {
       apiLogger.error({ error: formatError(updateError), scheduleId: schedule_id }, 'Error updating seller schedule')
@@ -320,11 +343,15 @@ export async function PATCH(request: NextRequest) {
 
     // Send confirmation email to seller when schedule is confirmed
     if (selected_slot && schedule?.seller_email && schedule?.seller_name) {
-      const { data: listing } = await supabase
+      const { data: listing, error: listingFetchError } = await supabase
         .from('listings')
         .select('address, city, state, agent:agents(name)')
         .eq('id', schedule.listing_id)
-        .single()
+        .maybeSingle()
+
+      if (listingFetchError) {
+        apiLogger.warn({ error: formatError(listingFetchError), listingId: schedule.listing_id }, 'Failed to fetch listing for confirmation email')
+      }
 
       if (listing) {
         const scheduledDate = `${selected_slot.date}T${selected_slot.start_time}`

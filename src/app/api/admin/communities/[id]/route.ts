@@ -33,7 +33,8 @@ export async function PATCH(
 
     updates.updated_at = new Date().toISOString()
 
-    const { data: community, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: community, error } = await (supabase as any)
       .from('communities')
       .update(updates)
       .eq('id', id)
@@ -61,7 +62,8 @@ export async function DELETE(
     const supabase = createAdminClient()
     const { id } = await params
 
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
       .from('communities')
       .delete()
       .eq('id', id)

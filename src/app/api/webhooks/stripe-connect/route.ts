@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       .from('processed_events')
       .select('event_id')
       .eq('event_id', event.id)
-      .single() as { data: { event_id: string } | null }
+      .maybeSingle() as { data: { event_id: string } | null }
 
     if (existingEvent) {
       webhookLogger.info({ eventId: event.id }, 'Event already processed, skipping')
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
             .from('staff')
             .select('id')
             .eq('stripe_connect_id', account.id)
-            .single() as { data: { id: string } | null }
+            .maybeSingle() as { data: { id: string } | null }
 
           if (staff) {
             entityType = 'staff'
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
               .from('partners')
               .select('id')
               .eq('stripe_connect_id', account.id)
-              .single() as { data: { id: string } | null }
+              .maybeSingle() as { data: { id: string } | null }
 
             if (partner) {
               entityType = 'partner'

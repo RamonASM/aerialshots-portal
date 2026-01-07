@@ -16,12 +16,17 @@ async function isEventProcessed(
   supabase: ReturnType<typeof createAdminClient>,
   eventId: string
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('webhook_events')
     .select('id')
     .eq('aryeo_event_id', `stripe:${eventId}`)
     .eq('status', 'success')
-    .single()
+    .maybeSingle()
+
+  if (error) {
+    logger.error({ ...formatError(error), eventId }, 'Error checking if event was processed')
+    return false // Assume not processed on error, let processing continue
+  }
 
   return !!data
 }
@@ -118,11 +123,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Add to status history
-        const { data: order } = await supabase
+        const { data: order, error: orderLookupError } = await supabase
           .from('orders')
           .select('id')
           .eq('payment_intent_id', paymentIntent.id)
-          .single()
+          .maybeSingle()
+
+        if (orderLookupError) {
+          logger.error({ paymentIntentId: paymentIntent.id, ...formatError(orderLookupError) }, 'Error looking up order for status history')
+        }
 
         if (order) {
           await supabase.from('order_status_history').insert({

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .select('id, listing_id, client_name, client_email, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { id: string; listing_id: string; client_name: string | null; client_email: string | null; is_active: boolean; expires_at: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { id: string; listing_id: string; client_name: string | null; client_email: string | null; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -64,21 +64,29 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { requested_slots, reason, requester_name, requester_email, requester_phone } = parseResult.data
 
     // Get current listing info
-    const { data: listing } = await supabase
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('scheduled_at, ops_status')
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
+
+    if (listingError) {
+      console.error('Failed to fetch listing:', listingError)
+    }
 
     // Check if already has pending reschedule request
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingRequest } = await (supabase as any)
+    const { data: existingRequest, error: existingError } = await (supabase as any)
       .from('reschedule_requests')
       .select('id')
       .eq('listing_id', shareLink.listing_id)
       .eq('share_link_id', shareLink.id)
       .eq('status', 'pending')
-      .single() as { data: { id: string } | null }
+      .maybeSingle() as { data: { id: string } | null; error: Error | null }
+
+    if (existingError) {
+      console.error('Failed to check existing reschedule request:', existingError)
+    }
 
     if (existingRequest) {
       return NextResponse.json({
@@ -118,11 +126,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Send notification to admin/staff about reschedule request
-    const { data: listingDetails } = await supabase
+    const { data: listingDetails, error: detailsError } = await supabase
       .from('listings')
       .select('address, city, state')
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
+
+    if (detailsError) {
+      console.error('Failed to fetch listing details for notification:', detailsError)
+    }
 
     // Get first requested slot for the email
     const firstSlot = requested_slots[0]
@@ -179,7 +191,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .select('id, listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { id: string; listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -191,13 +203,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Find pending reschedule request
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: pendingRequest } = await (supabase as any)
+    const { data: pendingRequest, error: pendingError } = await (supabase as any)
       .from('reschedule_requests')
       .select('id')
       .eq('listing_id', shareLink.listing_id)
       .eq('share_link_id', shareLink.id)
       .eq('status', 'pending')
-      .single() as { data: { id: string } | null }
+      .maybeSingle() as { data: { id: string } | null; error: Error | null }
+
+    if (pendingError) {
+      console.error('Failed to find pending reschedule request:', pendingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!pendingRequest) {
       return NextResponse.json({ error: 'No pending reschedule request found' }, { status: 404 })

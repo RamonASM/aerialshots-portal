@@ -63,11 +63,16 @@ export async function POST(request: NextRequest) {
 
     // Check if this session was already fulfilled (idempotency)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingTxn } = await (adminSupabase as any)
+    const { data: existingTxn, error: txnError } = await (adminSupabase as any)
       .from('credit_transactions')
       .select('id')
       .eq('stripe_session_id', sessionId)
-      .single()
+      .maybeSingle()
+
+    if (txnError) {
+      console.error('Transaction lookup error:', txnError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (existingTxn) {
       // Already fulfilled - return success without double-crediting
@@ -84,9 +89,14 @@ export async function POST(request: NextRequest) {
       .from('agents')
       .select('credit_balance, lifetime_credits')
       .eq('id', agentId)
-      .single()
+      .maybeSingle()
 
-    if (agentError || !agent) {
+    if (agentError) {
+      console.error('Agent credits lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 

@@ -1935,11 +1935,14 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          approved_storage_path: string | null
           aryeo_url: string
           category: string | null
           created_at: string | null
           id: string
           listing_id: string
+          media_url: string | null
+          processed_storage_path: string | null
           qc_notes: string | null
           qc_status: string | null
           sort_order: number | null
@@ -1948,11 +1951,14 @@ export type Database = {
           type: string
         }
         Insert: {
+          approved_storage_path?: string | null
           aryeo_url: string
           category?: string | null
           created_at?: string | null
           id?: string
           listing_id: string
+          media_url?: string | null
+          processed_storage_path?: string | null
           qc_notes?: string | null
           qc_status?: string | null
           sort_order?: number | null
@@ -1961,11 +1967,14 @@ export type Database = {
           type: string
         }
         Update: {
+          approved_storage_path?: string | null
           aryeo_url?: string
           category?: string | null
           created_at?: string | null
           id?: string
           listing_id?: string
+          media_url?: string | null
+          processed_storage_path?: string | null
           qc_notes?: string | null
           qc_status?: string | null
           sort_order?: number | null
@@ -3030,6 +3039,7 @@ export type Database = {
       staff: {
         Row: {
           auth_user_id: string | null
+          certifications: string[] | null
           clerk_user_id: string | null
           created_at: string | null
           email: string
@@ -3039,11 +3049,14 @@ export type Database = {
           name: string
           phone: string | null
           role: string
+          skills: string[] | null
+          team_role: string | null
           timezone: string | null
           weekly_report_enabled: boolean | null
         }
         Insert: {
           auth_user_id?: string | null
+          certifications?: string[] | null
           clerk_user_id?: string | null
           created_at?: string | null
           email: string
@@ -3053,11 +3066,14 @@ export type Database = {
           name: string
           phone?: string | null
           role: string
+          skills?: string[] | null
+          team_role?: string | null
           timezone?: string | null
           weekly_report_enabled?: boolean | null
         }
         Update: {
           auth_user_id?: string | null
+          certifications?: string[] | null
           clerk_user_id?: string | null
           created_at?: string | null
           email?: string
@@ -3067,6 +3083,8 @@ export type Database = {
           name?: string
           phone?: string | null
           role?: string
+          skills?: string[] | null
+          team_role?: string | null
           timezone?: string | null
           weekly_report_enabled?: boolean | null
         }

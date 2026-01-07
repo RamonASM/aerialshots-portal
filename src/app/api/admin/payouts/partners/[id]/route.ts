@@ -30,9 +30,14 @@ export async function GET(
         stripe_payouts_enabled
       `)
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
-    if (error || !partner) {
+    if (error) {
+      console.error('[Payouts] Partner lookup error:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!partner) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
@@ -88,10 +93,15 @@ export async function PUT(
       .update(updateData)
       .eq('id', id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
-      throw error
+      console.error('[Payouts] Partner update error:', error)
+      return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 })
+    }
+
+    if (!partner) {
+      return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, partner })

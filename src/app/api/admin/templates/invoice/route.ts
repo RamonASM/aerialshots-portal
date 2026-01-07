@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
       .select('*')
       .is('agent_id', null)
       .eq('is_default', true)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = no rows returned
-      throw error
+    if (error) {
+      console.error('[Invoice Template] Lookup error:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
     if (!template) {
@@ -94,10 +94,15 @@ export async function PATCH(request: NextRequest) {
       })
       .eq('id', id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
-      throw error
+      console.error('[Invoice Template] Update error:', error)
+      return NextResponse.json({ error: 'Failed to update template' }, { status: 500 })
+    }
+
+    if (!template) {
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
     return NextResponse.json({ template })

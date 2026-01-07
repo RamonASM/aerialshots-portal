@@ -35,19 +35,19 @@ export async function GET(
     // Fetch related data separately
     const [agentResult, listingResult, orderResult, assignedStaffResult, resolverResult] = await Promise.all([
       editRequestData.agent_id
-        ? supabase.from('agents').select('id, name, email, phone').eq('id', editRequestData.agent_id).single()
+        ? supabase.from('agents').select('id, name, email, phone').eq('id', editRequestData.agent_id).maybeSingle()
         : { data: null },
       editRequestData.listing_id
-        ? supabase.from('listings').select('id, address, city, state, mls_id').eq('id', editRequestData.listing_id).single()
+        ? supabase.from('listings').select('id, address, city, state, mls_id').eq('id', editRequestData.listing_id).maybeSingle()
         : { data: null },
       editRequestData.order_id
-        ? supabase.from('orders').select('id, created_at, total').eq('id', editRequestData.order_id).single()
+        ? supabase.from('orders').select('id, created_at, total').eq('id', editRequestData.order_id).maybeSingle()
         : { data: null },
       editRequestData.assigned_to
-        ? supabase.from('staff').select('id, name, email, avatar_url').eq('id', editRequestData.assigned_to).single()
+        ? supabase.from('staff').select('id, name, email, avatar_url').eq('id', editRequestData.assigned_to).maybeSingle()
         : { data: null },
       editRequestData.resolved_by
-        ? supabase.from('staff').select('id, name').eq('id', editRequestData.resolved_by).single()
+        ? supabase.from('staff').select('id, name').eq('id', editRequestData.resolved_by).maybeSingle()
         : { data: null },
     ])
 
@@ -147,13 +147,13 @@ export async function PATCH(
     // Fetch related data separately to avoid deep type issues
     const [agentResult, assignedStaffResult, resolverResult] = await Promise.all([
       updatedRequest.agent_id
-        ? supabase.from('agents').select('id, name, email').eq('id', updatedRequest.agent_id).single()
+        ? supabase.from('agents').select('id, name, email').eq('id', updatedRequest.agent_id).maybeSingle()
         : { data: null },
       updatedRequest.assigned_to
-        ? supabase.from('staff').select('id, name, avatar_url').eq('id', updatedRequest.assigned_to).single()
+        ? supabase.from('staff').select('id, name, avatar_url').eq('id', updatedRequest.assigned_to).maybeSingle()
         : { data: null },
       updatedRequest.resolved_by
-        ? supabase.from('staff').select('id, name').eq('id', updatedRequest.resolved_by).single()
+        ? supabase.from('staff').select('id, name').eq('id', updatedRequest.resolved_by).maybeSingle()
         : { data: null },
     ])
 

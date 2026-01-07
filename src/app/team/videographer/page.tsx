@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { format, startOfDay, endOfDay } from 'date-fns'
 import {
@@ -16,6 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { getStaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Videographer Portal Dashboard
@@ -24,26 +25,19 @@ import Link from 'next/link'
  * Mirrors the photographer portal but focused on video services.
  */
 export default async function VideographerDashboard() {
-  const supabase = await createClient()
+  // Check authentication via Clerk (or Supabase fallback)
+  const staff = await getStaffAccess()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
+  if (!staff) {
+    redirect('/sign-in/staff')
   }
 
-  // Get staff member
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name, role')
-    .eq('email', user.email!)
-    .single()
-
-  if (!staff || (staff.role !== 'videographer' && staff.role !== 'admin')) {
-    redirect('/staff-login')
+  // Verify videographer or admin role
+  if (staff.role !== 'videographer' && staff.role !== 'admin') {
+    redirect('/sign-in/staff')
   }
+
+  const supabase = createAdminClient()
 
   const today = new Date()
   const todayStart = startOfDay(today).toISOString()

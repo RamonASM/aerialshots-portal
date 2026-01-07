@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data: listing, error: findError } = await query.single() as { data: { id: string; address: string; zillow_3d_status: string | null } | null; error: Error | null }
+    const { data: listing, error: findError } = await query.maybeSingle() as { data: { id: string; address: string; zillow_3d_status: string | null } | null; error: Error | null }
 
     if (findError || !listing) {
       console.warn(`[Zillow 3D Webhook] No listing found for: ${listing_id || mls_id}`)
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           .select('id')
           .eq('listing_id', listing.id)
           .eq('category', '3d_tour')
-          .single()
+          .maybeSingle()
 
         if (existingAsset) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

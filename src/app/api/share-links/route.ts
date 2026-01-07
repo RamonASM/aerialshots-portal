@@ -35,9 +35,14 @@ export async function POST(request: NextRequest) {
       .from('listings')
       .select('id, agent_id, address')
       .eq('id', listing_id)
-      .single()
+      .maybeSingle()
 
-    if (listingError || !listing) {
+    if (listingError) {
+      console.error('Listing lookup error:', listingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 

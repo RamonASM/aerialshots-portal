@@ -15,11 +15,16 @@ export async function GET(request: Request, { params }: RouteParams) {
     const adminSupabase = createAdminClient()
 
     // Get listing with primary agent
-    const { data: listing } = await adminSupabase
+    const { data: listing, error: listingError } = await adminSupabase
       .from('listings')
       .select('id, agent_id, agents(id, name, email, phone)')
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (listingError) {
+      console.error('[Listing Customers] Listing lookup error:', listingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -84,11 +89,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     const adminSupabase = createAdminClient()
 
     // Check if listing exists
-    const { data: listing } = await adminSupabase
+    const { data: listing, error: listingError } = await adminSupabase
       .from('listings')
       .select('id, agent_id')
       .eq('id', id)
-      .single()
+      .maybeSingle()
+
+    if (listingError) {
+      console.error('[Listing Customers] Listing lookup error:', listingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -103,11 +113,16 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // Check if agent exists
-    const { data: agent } = await adminSupabase
+    const { data: agent, error: agentError } = await adminSupabase
       .from('agents')
       .select('id, name')
       .eq('id', agent_id)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('[Listing Customers] Agent lookup error:', agentError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })

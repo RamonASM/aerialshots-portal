@@ -87,11 +87,16 @@ export async function POST(request: NextRequest) {
 
     // Check if slug exists
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existing } = await (supabase as any)
+    const { data: existing, error: existingError } = await (supabase as any)
       .from('communities')
       .select('id')
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[Communities] Slug check error:', existingError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (existing) {
       return NextResponse.json(

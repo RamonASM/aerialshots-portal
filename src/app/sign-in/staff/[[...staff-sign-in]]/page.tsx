@@ -2,7 +2,7 @@
 
 import { SignIn } from '@clerk/nextjs'
 import Link from 'next/link'
-import { Camera, ArrowLeft, Users, Video, CheckSquare, Shield } from 'lucide-react'
+import { Camera, ArrowLeft, Users, Video, CheckSquare, Shield, Home, Briefcase } from 'lucide-react'
 
 const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
 
@@ -116,21 +116,48 @@ export default function StaffSignInPage() {
 
         {/* Role switcher */}
         <div className="mt-8 pt-6 border-t border-white/[0.08]">
-          <p className="text-center text-[13px] text-[#636366] mb-4">
-            Not a team member?
+          <p className="text-center text-[14px] font-medium text-white mb-2">
+            Not an ASM team member?
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <p className="text-center text-[13px] text-[#636366] mb-4">
+            Choose the portal that matches your role
+          </p>
+          <div className="space-y-2">
             <Link
               href="/sign-in"
-              className="inline-flex items-center gap-2 px-4 py-2 text-[13px] text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-white/[0.08] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
             >
-              Agent Sign In
+              <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <Camera className="h-4 w-4 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Agent Portal</p>
+                <p className="text-[11px] text-[#636366]">Real estate agents managing listings</p>
+              </div>
+            </Link>
+            <Link
+              href="/sign-in/seller"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
+            >
+              <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <Home className="h-4 w-4 text-green-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Homeowner Portal</p>
+                <p className="text-[11px] text-[#636366]">View your property photos & media</p>
+              </div>
             </Link>
             <Link
               href="/sign-in/partner"
-              className="inline-flex items-center gap-2 px-4 py-2 text-[13px] text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-white/[0.08] transition-colors"
+              className="flex items-center gap-3 px-4 py-3 text-[#a1a1a6] hover:text-white bg-white/[0.02] hover:bg-white/[0.05] rounded-xl border border-white/[0.08] transition-colors"
             >
-              Partner Sign In
+              <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium">Partner Portal</p>
+                <p className="text-[11px] text-[#636366]">Business partners & team managers</p>
+              </div>
             </Link>
           </div>
         </div>

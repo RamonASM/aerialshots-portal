@@ -16,11 +16,16 @@ export async function POST() {
     }
 
     // Check if user is staff
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar Disconnect] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff access required' }, { status: 403 })

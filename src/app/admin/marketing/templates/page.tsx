@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,10 +38,8 @@ interface SocialTemplate {
   platform: string
   width: number
   height: number
+  template_data: Record<string, unknown> | null
   template_type?: string
-  template_data: Record<string, unknown>
-  content?: string | null
-  variables?: Record<string, unknown> | null
   preview_url: string | null
   is_active: boolean
   is_featured: boolean
@@ -91,55 +88,22 @@ export default function SocialTemplatesPage() {
   const [platformFilter, setPlatformFilter] = useState('all')
 
   const fetchTemplates = useCallback(async () => {
-    const supabase = createClient()
-
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (supabase as any)
-        .from('social_templates')
-        .select('*')
-        .order('created_at', { ascending: false })
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (categoryFilter !== 'all') params.set('category', categoryFilter)
+      if (platformFilter !== 'all') params.set('platform', platformFilter)
 
-      if (categoryFilter !== 'all') {
-        query = query.eq('template_type', categoryFilter)
+      const response = await fetch(`/api/admin/marketing/templates?${params}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch templates')
       }
 
-      if (platformFilter !== 'all') {
-        query = query.eq('platform', platformFilter)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Error fetching templates:', error)
-        return
-      }
-
-      // Convert to SocialTemplate with computed properties from content
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const convertedTemplates: SocialTemplate[] = ((data || []) as any[]).map((row) => {
-        // Parse content as JSON if possible for additional fields
-        let parsed: Record<string, unknown> = {}
-        try {
-          parsed = typeof row.content === 'string' ? JSON.parse(row.content) : {}
-        } catch {
-          parsed = {}
-        }
-        return {
-          ...row,
-          description: parsed.description as string | null ?? null,
-          category: row.template_type || 'general',
-          width: parsed.width as number ?? 1080,
-          height: parsed.height as number ?? 1080,
-          template_data: parsed,
-          preview_url: parsed.preview_url as string ?? null,
-          is_featured: parsed.is_featured as boolean ?? false,
-          use_count: parsed.use_count as number ?? 0,
-        }
-      })
-      setTemplates(convertedTemplates)
+      const data = await response.json()
+      setTemplates(data.templates || [])
     } catch (error) {
       console.error('Error:', error)
+      setTemplates([])
     } finally {
       setLoading(false)
     }
@@ -150,45 +114,56 @@ export default function SocialTemplatesPage() {
   }, [fetchTemplates])
 
   const filteredTemplates = templates.filter((template) =>
-    template.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (template.name || 'Untitled Template').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleDuplicate = async (templateId: string) => {
     const template = templates.find((t) => t.id === templateId)
     if (!template) return
 
-    const supabase = createClient()
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('social_templates')
-      .insert({
-        name: `${template.name} (Copy)`,
-        platform: template.platform,
-        template_type: template.template_type,
-        content: template.content,
-        variables: template.variables,
-        is_active: true,
+    try {
+      const response = await fetch('/api/admin/marketing/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${template.name} (Copy)`,
+          description: template.description,
+          category: template.category || template.template_type || 'general',
+          platform: template.platform,
+          width: template.width,
+          height: template.height,
+          template_data: template.template_data || {},
+          preview_url: template.preview_url,
+          is_active: true,
+          is_featured: false,
+        }),
       })
 
-    if (!error) {
+      if (!response.ok) {
+        throw new Error('Failed to duplicate template')
+      }
+
       fetchTemplates()
+    } catch (error) {
+      console.error('Error duplicating template:', error)
     }
   }
 
   const handleDelete = async (templateId: string) => {
     if (!confirm('Are you sure you want to delete this template?')) return
 
-    const supabase = createClient()
+    try {
+      const response = await fetch(`/api/admin/marketing/templates/${templateId}`, {
+        method: 'DELETE',
+      })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from('social_templates')
-      .delete()
-      .eq('id', templateId)
+      if (!response.ok) {
+        throw new Error('Failed to delete template')
+      }
 
-    if (!error) {
       setTemplates(templates.filter((t) => t.id !== templateId))
+    } catch (error) {
+      console.error('Error deleting template:', error)
     }
   }
 
@@ -363,7 +338,7 @@ export default function SocialTemplatesPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={template.preview_url}
-                      alt={template.name}
+                      alt={template.name || 'Template preview'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -394,7 +369,7 @@ export default function SocialTemplatesPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-base">{template.name}</CardTitle>
+                      <CardTitle className="text-base">{template.name || 'Untitled Template'}</CardTitle>
                       <p className="text-sm text-muted-foreground line-clamp-1">
                         {template.description || 'No description'}
                       </p>

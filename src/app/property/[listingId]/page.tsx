@@ -5,6 +5,8 @@ import { getCuratedItemsNearLocation } from '@/lib/queries/curated-items'
 import { getAllNearbyPlaces } from '@/lib/integrations/google-places/client'
 import { searchLocalEvents } from '@/lib/integrations/ticketmaster/client'
 import { getLifeHereData } from '@/lib/queries/life-here'
+import { MarketingFooter } from '@/components/marketing/footer/MarketingFooter'
+import type { AgentSocialLinks } from '@/lib/supabase/types-custom'
 import {
   PropertyHero,
   PropertyDetails,
@@ -296,21 +298,35 @@ export default async function PropertyPage({ params }: PageProps) {
       </Suspense>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#0a0a0a] pb-20 lg:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-10 text-center sm:px-6 lg:px-8">
-          <p className="text-[13px] text-[#636366]">
-            Property website powered by{' '}
-            <a
-              href="https://www.aerialshots.media"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
-            >
-              Aerial Shots Media
-            </a>
-          </p>
+      {listing.agent ? (
+        <div className="pb-20 lg:pb-0">
+          <MarketingFooter
+            agent={{
+              name: listing.agent.name,
+              email: listing.agent.email,
+              phone: listing.agent.phone ?? undefined,
+              socialLinks: (listing.agent as { social_links?: AgentSocialLinks }).social_links ?? undefined,
+              showPoweredBy: true,
+            }}
+          />
         </div>
-      </footer>
+      ) : (
+        <footer className="border-t border-white/[0.08] bg-[#0a0a0a] pb-20 lg:pb-0">
+          <div className="mx-auto max-w-7xl px-4 py-10 text-center sm:px-6 lg:px-8">
+            <p className="text-[13px] text-[#636366]">
+              Property website powered by{' '}
+              <a
+                href="https://www.aerialshots.media"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#0077ff] hover:text-[#3395ff] transition-colors"
+              >
+                Aerial Shots Media
+              </a>
+            </p>
+          </div>
+        </footer>
+      )}
 
       {/* Mobile Floating CTA */}
       <MobileContactCTA

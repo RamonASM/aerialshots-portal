@@ -397,6 +397,22 @@ export interface ShareLinkInsert {
   expires_at?: string | null
 }
 
+// Portal Settings Types
+export interface PortalSettingsRow {
+  id: string
+  agent_id: string
+  logo_url?: string | null
+  primary_color?: string | null
+  secondary_color?: string | null
+  font_family?: string | null
+  custom_css?: string | null
+  welcome_message?: string | null
+  footer_text?: string | null
+  show_powered_by?: boolean | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
 // Seller Access Control Types
 export interface SellerAccessControlRow {
   id: string
@@ -504,6 +520,17 @@ export interface PayoutIdempotencyRow {
   completed_at?: string
 }
 
+// Staff with payout info (for time-tracking queries)
+export interface StaffWithPayoutInfo {
+  id: string
+  name: string
+  email: string
+  role: string
+  payout_type: 'w2' | '1099' | 'hourly'
+  hourly_rate?: number
+  stripe_account_id?: string
+}
+
 // Staff Payout Types
 export interface StaffPayoutRow {
   id: string
@@ -605,6 +632,39 @@ export interface ClientMessageRow {
   created_at?: string | null
 }
 
+// Package System Types (for service_packages, package_items, package_tiers)
+export interface ServicePackageRow {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  features: string[]
+  display_order: number
+  is_featured: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PackageItemRow {
+  id: string
+  package_id: string
+  service_id: string
+  is_optional: boolean
+  quantity: number
+  created_at: string
+}
+
+export interface PackageTierRow {
+  id: string
+  package_id: string
+  min_sqft: number
+  max_sqft: number | null
+  price_cents: number
+  tier_name: string | null
+  created_at: string
+}
+
 // Community Row Type (for communities table not in generated types)
 export interface CommunityRow {
   id: string
@@ -632,4 +692,41 @@ export interface CommunityRow {
   featured_agent_ids?: string[] | null
   created_at?: string
   updated_at?: string
+}
+
+// Agent Social Links JSONB type
+export interface AgentSocialLinks {
+  instagram?: string
+  facebook?: string
+  linkedin?: string
+  twitter?: string
+  youtube?: string
+  tiktok?: string
+  website?: string
+}
+
+// Extended Agent Row with social_links
+export interface AgentRowExtended {
+  id: string
+  name: string
+  email: string
+  slug: string
+  phone?: string | null
+  bio?: string | null
+  headshot_url?: string | null
+  logo_url?: string | null
+  brand_color?: string | null
+  instagram_url?: string | null
+  social_links?: AgentSocialLinks | null
+  credit_balance?: number | null
+  lifetime_credits?: number | null
+  referral_code?: string | null
+  referral_tier?: string | null
+  referred_by_id?: string | null
+  clerk_user_id?: string | null
+  auth_user_id?: string | null
+  aryeo_customer_id?: string | null
+  last_contacted_at?: string | null
+  created_at?: string | null
+  updated_at?: string | null
 }

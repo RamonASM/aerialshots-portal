@@ -17,11 +17,16 @@ export async function POST() {
     }
 
     // Check if user is staff
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar Sync] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
@@ -52,23 +57,33 @@ export async function GET() {
     }
 
     // Check if user is staff
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar Sync] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
     }
 
     // Get connection status (use type cast since calendar_connections is a new table)
-    const { data: connection } = await (supabase as any)
+    const { data: connection, error: connectionError } = await (supabase as any)
       .from('calendar_connections')
       .select('id, provider, calendar_name, sync_enabled, last_sync_at, sync_errors')
       .eq('staff_id', staff.id)
       .eq('provider', 'google')
-      .single()
+      .maybeSingle()
+
+    if (connectionError) {
+      console.error('[Calendar Sync] Connection lookup error:', connectionError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!connection) {
       return NextResponse.json({ connected: false })

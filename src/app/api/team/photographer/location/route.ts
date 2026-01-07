@@ -29,12 +29,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get staff member
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 403 })
@@ -139,12 +144,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get staff member
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 403 })

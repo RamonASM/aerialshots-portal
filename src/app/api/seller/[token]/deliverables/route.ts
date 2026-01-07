@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select('listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -40,11 +40,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Check media access permissions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: accessControl } = await (supabase as any)
+    const { data: accessControl, error: accessError } = await (supabase as any)
       .from('seller_access_controls')
       .select('media_access_enabled, granted_at, notes')
       .eq('listing_id', shareLink.listing_id)
-      .single() as { data: { media_access_enabled: boolean; granted_at: string | null; notes: string | null } | null }
+      .maybeSingle() as { data: { media_access_enabled: boolean; granted_at: string | null; notes: string | null } | null; error: Error | null }
+
+    if (accessError) {
+      console.error('Failed to fetch access control:', accessError)
+    }
 
     let hasMediaAccess = accessControl?.media_access_enabled || false
     let accessReason: 'agent_granted' | 'payment' | 'none' = 'none'
@@ -70,11 +74,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // If no access, return locked state
     if (!hasMediaAccess) {
       // Check listing status for better messaging
-      const { data: listing } = await supabase
+      const { data: listing, error: listingError } = await supabase
         .from('listings')
         .select('ops_status, delivered_at')
         .eq('id', shareLink.listing_id)
-        .single()
+        .maybeSingle()
+
+      if (listingError) {
+        console.error('Failed to fetch listing status:', listingError)
+      }
 
       let lockMessage = 'Media access has not been granted for this listing.'
 
@@ -123,11 +131,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const floorPlans = mediaAssets?.filter(a => a.type === 'floor_plan') || []
 
     // Get listing info for context
-    const { data: listing } = await supabase
+    const { data: listing, error: listingInfoError } = await supabase
       .from('listings')
       .select('address, city, state, delivered_at')
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
+
+    if (listingInfoError) {
+      console.error('Failed to fetch listing info:', listingInfoError)
+    }
 
     return NextResponse.json({
       success: true,

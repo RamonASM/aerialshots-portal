@@ -105,11 +105,15 @@ export async function POST(request: NextRequest) {
     // Check if user is staff or the listing's agent
     const isStaff = user.email?.endsWith('@aerialshots.media') || false
     if (!isStaff) {
-      const { data: agent } = await supabase
+      const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('id')
         .eq('auth_user_id', user.id)
-        .single()
+        .maybeSingle()
+
+      if (agentError) {
+        console.error('[Media Upload] Agent lookup error:', agentError)
+      }
 
       if (!agent || agent.id !== listing.agent_id) {
         return NextResponse.json(

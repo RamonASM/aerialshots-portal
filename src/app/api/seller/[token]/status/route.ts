@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select('listing_id, is_active, expires_at')
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
+      .maybeSingle() as { data: { listing_id: string; is_active: boolean; expires_at: string | null } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 404 })
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get listing with photographer assignment
-    const { data: listing } = await supabase
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select(`
         id,
@@ -47,9 +47,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         photographer_id
       `)
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
 
-    if (!listing) {
+    if (listingError || !listing) {
+      if (listingError) console.error('Listing fetch error:', listingError)
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
@@ -58,16 +59,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     let location = null
 
     if (listing.photographer_id) {
-      const { data: staff } = await supabase
+      const { data: staff, error: staffError } = await supabase
         .from('staff')
         .select('id, name, phone')
         .eq('id', listing.photographer_id)
-        .single()
+        .maybeSingle()
 
-      photographer = staff
+      if (staffError) {
+        console.error('Failed to fetch photographer:', staffError)
+      } else {
+        photographer = staff
+      }
 
       // Get latest location for this photographer and listing
-      const { data: loc } = await supabase
+      const { data: loc, error: locationError } = await supabase
         .from('photographer_locations')
         .select(`
           latitude,
@@ -77,9 +82,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           last_updated_at
         `)
         .eq('staff_id', listing.photographer_id)
-        .single()
+        .maybeSingle()
 
-      if (loc) {
+      if (locationError) {
+        console.error('Failed to fetch photographer location:', locationError)
+      } else if (loc) {
         location = loc
       }
     }

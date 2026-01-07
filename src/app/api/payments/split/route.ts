@@ -52,9 +52,14 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .select('id, total_cents, contact_email, contact_name, payment_status')
       .eq('id', body.orderId)
-      .single()
+      .maybeSingle()
 
-    if (orderError || !order) {
+    if (orderError) {
+      console.error('Order lookup error:', orderError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -99,11 +104,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Get agent ID if user is an agent
-    const { data: agent } = await supabase
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('id')
       .eq('email', user.email!)
-      .single()
+      .maybeSingle()
+
+    if (agentError) {
+      console.error('Error looking up agent:', agentError)
+    }
 
     // Create split payment record
     const { data: splitPayment, error: splitError } = await supabase
@@ -262,9 +271,14 @@ export async function PATCH(request: NextRequest) {
       .select('*, split_payments(order_id, total_amount_cents)')
       .eq('id', body.portionId)
       .eq('split_payment_id', body.splitPaymentId)
-      .single()
+      .maybeSingle()
 
-    if (portionError || !portion) {
+    if (portionError) {
+      console.error('Portion lookup error:', portionError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    if (!portion) {
       return NextResponse.json({ error: 'Payment portion not found' }, { status: 404 })
     }
 
@@ -281,11 +295,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Split payment not found' }, { status: 404 })
     }
 
-    const { data: order } = await supabase
+    const { data: order, error: orderFetchError } = await supabase
       .from('orders')
       .select('contact_email, contact_name')
       .eq('id', splitPaymentData.order_id)
-      .single()
+      .maybeSingle()
+
+    if (orderFetchError) {
+      console.error('Error fetching order:', orderFetchError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })

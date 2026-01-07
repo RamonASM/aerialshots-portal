@@ -19,12 +19,17 @@ export async function GET() {
     }
 
     // Get partner record by user_id or email
-    const { data: partner } = await anySupabase
+    const { data: partner, error: partnerError } = await anySupabase
       .from('partners')
       .select('id, name, email, stripe_connect_id, stripe_connect_status, stripe_payouts_enabled, default_profit_percent, payout_schedule')
       .or(`user_id.eq.${user.id},email.eq.${user.email}`)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (partnerError) {
+      console.error('[Connect] Partner lookup error:', partnerError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!partner) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
@@ -96,12 +101,17 @@ export async function POST() {
     }
 
     // Get partner record
-    const { data: partner } = await anySupabase
+    const { data: partner, error: partnerError } = await anySupabase
       .from('partners')
       .select('id, name, email, stripe_connect_id')
       .or(`user_id.eq.${user.id},email.eq.${user.email}`)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (partnerError) {
+      console.error('[Connect] Partner lookup error:', partnerError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!partner) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })

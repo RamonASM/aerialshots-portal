@@ -55,17 +55,27 @@ export async function POST(request: Request) {
     const adminSupabase = createAdminClient()
 
     // Verify both listings exist
-    const { data: primaryListing } = await adminSupabase
+    const { data: primaryListing, error: primaryError } = await adminSupabase
       .from('listings')
       .select('id, address, agent_id')
       .eq('id', primary_listing_id)
-      .single()
+      .maybeSingle()
 
-    const { data: mergedListing } = await adminSupabase
+    if (primaryError) {
+      console.error('[Merge] Primary listing lookup error:', primaryError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
+
+    const { data: mergedListing, error: mergedError } = await adminSupabase
       .from('listings')
       .select('id, address, agent_id')
       .eq('id', merged_listing_id)
-      .single()
+      .maybeSingle()
+
+    if (mergedError) {
+      console.error('[Merge] Merged listing lookup error:', mergedError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!primaryListing || !mergedListing) {
       return NextResponse.json(
@@ -227,11 +237,16 @@ export async function DELETE(request: Request) {
 
     // Get merge record
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: mergeData } = await (adminSupabase as any)
+    const { data: mergeData, error: mergeError } = await (adminSupabase as any)
       .from('merged_orders')
       .select('*')
       .eq('id', mergeId)
-      .single()
+      .maybeSingle()
+
+    if (mergeError) {
+      console.error('[Merge] Merge record lookup error:', mergeError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     const merge = mergeData as MergedOrder | null
 

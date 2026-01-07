@@ -25,12 +25,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Get staff member
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json(
@@ -55,12 +60,17 @@ export async function GET(request: NextRequest) {
 
     // List calendars for connected account
     if (action === 'calendars') {
-      const { data: connection } = await anySupabase
+      const { data: connection, error: connectionError } = await anySupabase
         .from('calendar_connections')
         .select('*')
         .eq('staff_id', staff.id)
         .eq('provider', 'google')
-        .single()
+        .maybeSingle()
+
+      if (connectionError) {
+        console.error('[Calendar] Connection lookup error:', connectionError)
+        return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      }
 
       if (!connection) {
         return NextResponse.json(
@@ -110,12 +120,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get staff member
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json(
@@ -185,12 +200,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get staff member
-    const { data: staff } = await supabase
+    const { data: staff, error: staffError } = await supabase
       .from('staff')
       .select('id')
       .eq('email', user.email!)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
+
+    if (staffError) {
+      console.error('[Calendar] Staff lookup error:', staffError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     if (!staff) {
       return NextResponse.json(

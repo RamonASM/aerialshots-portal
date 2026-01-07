@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       `)
       .eq('share_token', token)
       .eq('link_type', 'seller')
-      .single() as { data: { id: string; listing_id: string; link_type: string; client_name: string | null; client_email: string | null; expires_at: string | null; is_active: boolean; access_count: number } | null; error: Error | null }
+      .maybeSingle() as { data: { id: string; listing_id: string; link_type: string; client_name: string | null; client_email: string | null; expires_at: string | null; is_active: boolean; access_count: number } | null; error: Error | null }
 
     if (linkError || !shareLink) {
       return NextResponse.json({ error: 'Invalid or expired link' }, { status: 404 })
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         )
       `)
       .eq('id', shareLink.listing_id)
-      .single()
+      .maybeSingle()
 
     if (listingError || !listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
@@ -97,23 +97,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     let photographerLocation = null
 
     if (listing.photographer_id) {
-      const { data: staff } = await supabase
+      const { data: staff, error: staffError } = await supabase
         .from('staff')
         .select('id, name, phone')
         .eq('id', listing.photographer_id)
-        .single()
+        .maybeSingle()
 
-      photographer = staff
+      if (staffError) {
+        console.error('Failed to fetch photographer:', staffError)
+      } else {
+        photographer = staff
+      }
 
       // Fetch photographer location if en_route or on_site
-      const { data: location } = await supabase
+      const { data: location, error: locationError } = await supabase
         .from('photographer_locations')
         .select('latitude, longitude, status, eta_minutes, last_updated_at')
         .eq('staff_id', listing.photographer_id)
         .eq('listing_id', listing.id)
-        .single()
+        .maybeSingle()
 
-      if (location) {
+      if (locationError) {
+        console.error('Failed to fetch photographer location:', locationError)
+      } else if (location) {
         photographerLocation = location
       }
     }
@@ -124,7 +130,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('seller_access_controls')
       .select('media_access_enabled, granted_at')
       .eq('listing_id', listing.id)
-      .single() as { data: { media_access_enabled: boolean; granted_at: string | null } | null }
+      .maybeSingle() as { data: { media_access_enabled: boolean; granted_at: string | null } | null }
 
     let hasMediaAccess = accessControl?.media_access_enabled || false
 

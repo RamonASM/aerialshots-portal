@@ -56,12 +56,17 @@ async function checkInstagramConnection(agentId: string) {
   const supabase = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
+  const { data, error } = await (supabase as any)
     .from('instagram_connections')
     .select('id, status, token_expires_at')
     .eq('agent_id', agentId)
     .eq('status', 'active')
-    .single() as { data: { id: string; status: string; token_expires_at: string | null } | null }
+    .maybeSingle() as { data: { id: string; status: string; token_expires_at: string | null } | null; error: unknown }
+
+  if (error) {
+    console.error('[Carousels] Instagram connection lookup error:', error)
+    return false
+  }
 
   if (!data) return false
 

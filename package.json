@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit --pretty false --incremental false",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "supabase:types": "supabase gen types typescript --project-id awoabqaszgeqdlvcevmd > src/lib/supabase/types-generated.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
