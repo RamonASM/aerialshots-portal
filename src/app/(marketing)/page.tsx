@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import dynamic from 'next/dynamic'
 import { HeroSection } from '@/components/marketing/hero/HeroSection'
 import { TrustBar } from '@/components/marketing/sections/TrustBar'
-import { ValuePropositionGrid } from '@/components/marketing/sections/ValuePropositionGrid'
+import { ServicesGrid } from '@/components/marketing/sections/ServicesGrid'
 import { HomePageJsonLd, FAQPageJsonLd } from '@/lib/seo/json-ld'
 import { marketingFaqs } from '@/lib/data/marketing-faqs'
 
@@ -11,12 +11,16 @@ const ProcessTimeline = dynamic(
   () => import('@/components/marketing/sections/ProcessTimeline').then(mod => mod.ProcessTimeline),
   { ssr: true }
 )
-const PackagesPreview = dynamic(
-  () => import('./components/PackagesPreview').then(mod => mod.PackagesPreview),
+const PricingPreview = dynamic(
+  () => import('@/components/marketing/sections/PricingPreview').then(mod => mod.PricingPreview),
   { ssr: true }
 )
-const PortfolioPreview = dynamic(
-  () => import('./components/PortfolioPreview').then(mod => mod.PortfolioPreview),
+const PortfolioShowcase = dynamic(
+  () => import('@/components/marketing/sections/PortfolioShowcase').then(mod => mod.PortfolioShowcase),
+  { ssr: true }
+)
+const Testimonials = dynamic(
+  () => import('@/components/marketing/sections/Testimonials').then(mod => mod.Testimonials),
   { ssr: true }
 )
 const FAQAccordion = dynamic(
@@ -43,33 +47,46 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#00D4FF] focus:text-black focus:rounded-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Structured Data for SEO */}
       <HomePageJsonLd />
       <FAQPageJsonLd questions={marketingFaqs} />
 
-      {/* Hero Section */}
-      <HeroSection />
+      <main id="main-content">
+        {/* Hero Section - Full viewport with gradient mesh */}
+        <HeroSection />
 
-      {/* Trust Bar */}
-      <TrustBar />
+        {/* Trust Bar - Infinite scroll brokerage logos */}
+        <TrustBar />
 
-      {/* Value Propositions */}
-      <ValuePropositionGrid />
+        {/* Services Grid - 6 service cards */}
+        <ServicesGrid />
 
-      {/* Packages Preview */}
-      <PackagesPreview />
+        {/* How It Works - 4-step timeline */}
+        <ProcessTimeline />
 
-      {/* How It Works */}
-      <ProcessTimeline />
+        {/* Portfolio Showcase - Bento grid */}
+        <PortfolioShowcase />
 
-      {/* Portfolio Preview */}
-      <PortfolioPreview />
+        {/* Pricing Preview - 3 package tiers */}
+        <PricingPreview />
 
-      {/* FAQ */}
-      <FAQAccordion />
+        {/* Testimonials - Carousel with ratings */}
+        <Testimonials />
 
-      {/* Final CTA */}
-      <CTASection />
+        {/* FAQ Accordion - Two-column layout */}
+        <FAQAccordion />
+
+        {/* Final CTA - Gradient background */}
+        <CTASection />
+      </main>
     </>
   )
 }

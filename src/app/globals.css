@@ -1,3 +1,6 @@
+/* Fonts: Inter for body, Plus Jakarta Sans for headlines */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -165,6 +168,43 @@
   --surface-2: #141414;
   --surface-3: #1c1c1e;
   --surface-4: #2c2c2e;
+
+  /* ========== Revolut-Style Marketing Accents ========== */
+  /* Primary marketing colors - energetic, tech-forward */
+  --accent-cyan: #00D4FF;
+  --accent-cyan-hover: #33DDFF;
+  --accent-cyan-muted: rgba(0, 212, 255, 0.15);
+  --accent-orange: #FF6B35;
+  --accent-orange-hover: #FF8555;
+  --accent-orange-muted: rgba(255, 107, 53, 0.15);
+  --accent-purple: #7C3AED;
+  --accent-purple-muted: rgba(124, 58, 237, 0.15);
+
+  /* Marketing backgrounds */
+  --bg-marketing: #0A0A0B;
+  --bg-marketing-surface: #141416;
+  --bg-marketing-accent: #1C1C1F;
+
+  /* Marketing gradients */
+  --gradient-hero: linear-gradient(135deg, #00D4FF 0%, #7C3AED 50%, #FF6B35 100%);
+  --gradient-hero-subtle: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(124, 58, 237, 0.1) 50%, rgba(255, 107, 53, 0.15) 100%);
+  --gradient-cyan-purple: linear-gradient(135deg, #00D4FF 0%, #7C3AED 100%);
+  --gradient-text: linear-gradient(to right, #ffffff, #00D4FF);
+
+  /* Marketing text */
+  --text-marketing-accent: #00D4FF;
+  --text-marketing-secondary: #A1A1AA;
+
+  /* Animation timing */
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 800ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-stripe: cubic-bezier(0.2, 1, 0.2, 1);
 
   /* Glass morphism */
   --glass-bg: rgba(28, 28, 30, 0.72);
@@ -430,6 +470,39 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes gradient-mesh {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes border-glow {
+  0%, 100% {
+    border-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 212, 255, 0.6);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+  }
+}
+
+@keyframes logo-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-100% - 2rem)); }
+}
+
 /* ============================================
    Marketing Site Utility Classes
    ============================================ */
@@ -585,8 +658,9 @@
     color: var(--accent-warm);
   }
 
-  /* Reduced motion support */
+  /* Reduced motion support - comprehensive accessibility */
   @media (prefers-reduced-motion: reduce) {
+    /* Disable all animations */
     .animate-fade-in-up,
     .animate-fade-in,
     .animate-slide-in-right,
@@ -594,10 +668,260 @@
     .animate-float,
     .animate-glow,
     .animate-gradient,
-    .animate-marquee {
-      animation: none;
-      opacity: 1;
-      transform: none;
+    .animate-marquee,
+    .animate-reveal-up,
+    .animate-gradient-mesh,
+    .animate-logo-scroll,
+    .animate-border-glow,
+    .animate-ping,
+    .animate-pulse,
+    [class*="animation-delay-"] {
+      animation: none !important;
+      animation-delay: 0ms !important;
+      opacity: 1 !important;
+      transform: none !important;
     }
+
+    /* Disable transitions for reveal effects */
+    .reveal-on-scroll,
+    .glass-card-marketing,
+    [class*="transition-"] {
+      transition: none !important;
+    }
+
+    /* Remove scroll behavior animations */
+    html {
+      scroll-behavior: auto !important;
+    }
+
+    /* Trust bar - stop scrolling */
+    .animate-logo-scroll {
+      transform: translateX(0) !important;
+    }
+
+    /* Gradient mesh - static */
+    .gradient-mesh-animated {
+      background-size: 100% 100% !important;
+    }
+
+    /* Ensure content is visible */
+    .reveal-on-scroll {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+  }
+
+  /* ========== Revolut-Style Marketing Utilities ========== */
+
+  /* Marketing gradients */
+  .gradient-hero-bg {
+    background: var(--gradient-hero);
+    background-size: 200% 200%;
+    animation: gradient-mesh 15s ease infinite;
+  }
+
+  .gradient-hero-subtle-bg {
+    background: var(--gradient-hero-subtle);
+  }
+
+  .gradient-mesh-animated {
+    background:
+      radial-gradient(at 40% 20%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+      radial-gradient(at 80% 50%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+    background-color: var(--bg-marketing);
+  }
+
+  .text-gradient-cyan {
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-hero {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Marketing glass card */
+  .glass-card-marketing {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+
+  .glass-card-marketing:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Gradient border effect */
+  .gradient-border {
+    position: relative;
+    background: var(--bg-marketing-surface);
+    border-radius: 1rem;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-hero);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Marketing button styles */
+  .btn-marketing-primary {
+    background: var(--accent-cyan);
+    color: #000000;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+  }
+
+  .btn-marketing-primary:hover {
+    background: var(--accent-cyan-hover);
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+  }
+
+  .btn-marketing-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-marketing-ghost {
+    background: transparent;
+    color: #ffffff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+    font-size: 1rem;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .btn-marketing-ghost:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Animation utilities */
+  .animate-reveal-up {
+    animation: reveal-up 0.6s var(--ease-out) forwards;
+  }
+
+  .animate-gradient-mesh {
+    animation: gradient-mesh 15s ease infinite;
+  }
+
+  .animate-logo-scroll {
+    animation: logo-scroll 30s linear infinite;
+  }
+
+  .animate-border-glow {
+    animation: border-glow 2s ease-in-out infinite;
+  }
+
+  /* Scroll reveal - initial hidden state */
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  }
+
+  .reveal-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Staggered children animations */
+  .reveal-on-scroll.visible > *:nth-child(1) { transition-delay: 0ms; }
+  .reveal-on-scroll.visible > *:nth-child(2) { transition-delay: 100ms; }
+  .reveal-on-scroll.visible > *:nth-child(3) { transition-delay: 200ms; }
+  .reveal-on-scroll.visible > *:nth-child(4) { transition-delay: 300ms; }
+  .reveal-on-scroll.visible > *:nth-child(5) { transition-delay: 400ms; }
+  .reveal-on-scroll.visible > *:nth-child(6) { transition-delay: 500ms; }
+
+  /* Marketing typography - Plus Jakarta Sans for headlines */
+  .font-marketing {
+    font-family: 'Plus Jakarta Sans', var(--font-satoshi), sans-serif;
+  }
+
+  .font-marketing-body {
+    font-family: 'Inter', var(--font-satoshi), sans-serif;
+  }
+
+  .text-marketing-hero {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+
+  .text-marketing-section {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  .text-marketing-subhead {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--text-marketing-secondary);
+  }
+
+  /* Trust bar logos - grayscale with color on hover */
+  .logo-grayscale {
+    filter: grayscale(100%) brightness(0.6);
+    opacity: 0.6;
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+
+  .logo-grayscale:hover {
+    filter: grayscale(0%) brightness(1);
+    opacity: 1;
+  }
+
+  /* Stats counter style */
+  .stat-number {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--accent-cyan);
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-marketing-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 }

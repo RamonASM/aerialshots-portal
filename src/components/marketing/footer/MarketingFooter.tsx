@@ -99,9 +99,9 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
   }
 
   return (
-    <footer className="bg-[#0a0a0a] border-t border-white/[0.06]">
+    <footer className="bg-[#0A0A0B] border-t border-white/[0.06]">
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:py-20">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-7">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
@@ -113,12 +113,12 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 height={40}
                 className="transition-opacity group-hover:opacity-80"
               />
-              <span className="text-[15px] font-medium text-[#B5ADA6]">
+              <span className="text-[15px] font-semibold text-white font-marketing">
                 Aerial Shots Media
               </span>
             </Link>
 
-            <p className="mt-4 text-[14px] text-[#8A847F] leading-relaxed max-w-sm">
+            <p className="mt-4 text-[14px] text-[#A1A1AA] leading-relaxed max-w-sm font-marketing-body">
               Central Florida&apos;s premier real estate media company. Professional photography,
               drone, video, 3D tours, and virtual staging for top-producing agents.
             </p>
@@ -127,20 +127,20 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
             <div className="mt-6 space-y-3">
               <a
                 href="mailto:hello@aerialshots.media"
-                className="flex items-center gap-2.5 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                className="flex items-center gap-2.5 text-[14px] text-[#A1A1AA] hover:text-[#00D4FF] transition-colors font-marketing-body"
               >
-                <Mail className="h-4 w-4 text-[#A29991]" />
+                <Mail className="h-4 w-4 text-[#00D4FF]" />
                 hello@aerialshots.media
               </a>
               <a
-                href="tel:+14075551234"
-                className="flex items-center gap-2.5 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                href="tel:+14076926227"
+                className="flex items-center gap-2.5 text-[14px] text-[#A1A1AA] hover:text-[#00D4FF] transition-colors font-marketing-body"
               >
-                <Phone className="h-4 w-4 text-[#A29991]" />
-                (407) 555-1234
+                <Phone className="h-4 w-4 text-[#00D4FF]" />
+                (407) 692-6227
               </a>
-              <div className="flex items-center gap-2.5 text-[14px] text-[#8A847F]">
-                <MapPin className="h-4 w-4 text-[#A29991]" />
+              <div className="flex items-center gap-2.5 text-[14px] text-[#71717A] font-marketing-body">
+                <MapPin className="h-4 w-4 text-[#00D4FF]/60" />
                 Orlando, FL
               </div>
             </div>
@@ -153,7 +153,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center bg-white/[0.04] text-[#B5ADA6] transition-all hover:bg-[#A29991]/10 hover:text-[#A29991]"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#A1A1AA] transition-all hover:bg-[#00D4FF]/10 hover:border-[#00D4FF]/30 hover:text-[#00D4FF]"
                   aria-label={social.name}
                 >
                   <social.icon className="h-4 w-4" />
@@ -164,7 +164,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
           {/* Services */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#00D4FF] uppercase tracking-[0.15em] font-marketing">
               Services
             </h3>
             <ul className="mt-4 space-y-3">
@@ -172,7 +172,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
                   >
                     {link.name}
                   </Link>
@@ -183,7 +183,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
           {/* Company */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#00D4FF] uppercase tracking-[0.15em] font-marketing">
               Company
             </h3>
             <ul className="mt-4 space-y-3">
@@ -191,7 +191,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
                   >
                     {link.name}
                   </Link>
@@ -202,7 +202,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
           {/* Resources */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#00D4FF] uppercase tracking-[0.15em] font-marketing">
               Resources
             </h3>
             <ul className="mt-4 space-y-3">
@@ -210,7 +210,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
                   >
                     {link.name}
                   </Link>
@@ -221,7 +221,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
           {/* Portals */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#00D4FF] uppercase tracking-[0.15em] font-marketing">
               Portals
             </h3>
             <ul className="mt-4 space-y-3">
@@ -229,7 +229,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
                   >
                     {link.name}
                   </Link>
@@ -240,7 +240,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
           {/* Legal */}
           <div>
-            <h3 className="text-[12px] font-semibold text-[#A29991] uppercase tracking-wider">
+            <h3 className="text-[12px] font-semibold text-[#00D4FF] uppercase tracking-[0.15em] font-marketing">
               Legal
             </h3>
             <ul className="mt-4 space-y-3">
@@ -248,7 +248,7 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                    className="text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
                   >
                     {link.name}
                   </Link>
@@ -261,19 +261,23 @@ export function MarketingFooter({ agent }: MarketingFooterProps = {}) {
 
       {/* Bottom Bar */}
       <div className="border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-7xl px-6 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[13px] text-[#8A847F]">
+            <p className="text-[13px] text-[#71717A] font-marketing-body">
               &copy; {currentYear} Aerial Shots Media. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <span className="flex items-center gap-2 text-[13px] text-[#8A847F]">
-                <span className="h-2 w-2 rounded-full bg-[#A29991]" />
+              <span className="flex items-center gap-2 text-[13px] text-[#71717A] font-marketing-body">
+                <span className="h-2 w-2 rounded-full bg-[#00D4FF]" />
                 FAA Part 107 Licensed
               </span>
-              <span className="flex items-center gap-2 text-[13px] text-[#8A847F]">
-                <span className="h-2 w-2 rounded-full bg-[#B5ADA6]" />
+              <span className="flex items-center gap-2 text-[13px] text-[#71717A] font-marketing-body">
+                <span className="h-2 w-2 rounded-full bg-[#7C3AED]" />
                 Zillow Certified
+              </span>
+              <span className="flex items-center gap-2 text-[13px] text-[#A1A1AA] font-marketing-body">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-white/[0.05] text-[10px]">🏠</span>
+                Built in Orlando
               </span>
             </div>
           </div>
@@ -300,15 +304,15 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
     : []
 
   return (
-    <footer className="bg-[#0a0a0a] border-t border-white/[0.06]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-[#0A0A0B] border-t border-white/[0.06]">
+      <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex flex-col items-center text-center">
           {/* Agent Name */}
-          <h3 className="text-xl font-semibold text-white">{agent.name}</h3>
+          <h3 className="text-xl font-semibold text-white font-marketing">{agent.name}</h3>
 
           {/* Brokerage */}
           {agent.brokerage && (
-            <p className="mt-1 text-[14px] text-[#A29991]">{agent.brokerage}</p>
+            <p className="mt-1 text-[14px] text-[#A1A1AA] font-marketing-body">{agent.brokerage}</p>
           )}
 
           {/* Contact Info */}
@@ -316,18 +320,18 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
             {agent.email && (
               <a
                 href={`mailto:${agent.email}`}
-                className="flex items-center gap-2 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                className="flex items-center gap-2 text-[14px] text-[#A1A1AA] hover:text-[#00D4FF] transition-colors font-marketing-body"
               >
-                <Mail className="h-4 w-4" />
+                <Mail className="h-4 w-4 text-[#00D4FF]" />
                 {agent.email}
               </a>
             )}
             {agent.phone && (
               <a
                 href={`tel:${agent.phone}`}
-                className="flex items-center gap-2 text-[14px] text-[#B5ADA6] hover:text-white transition-colors"
+                className="flex items-center gap-2 text-[14px] text-[#A1A1AA] hover:text-[#00D4FF] transition-colors font-marketing-body"
               >
-                <Phone className="h-4 w-4" />
+                <Phone className="h-4 w-4 text-[#00D4FF]" />
                 {agent.phone}
               </a>
             )}
@@ -342,7 +346,7 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center bg-white/[0.04] text-[#B5ADA6] transition-all hover:bg-[#A29991]/10 hover:text-[#A29991]"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.05] border border-white/[0.08] text-[#A1A1AA] transition-all hover:bg-[#00D4FF]/10 hover:border-[#00D4FF]/30 hover:text-[#00D4FF]"
                   aria-label={social.name}
                 >
                   <social.icon className="h-4 w-4" />
@@ -353,7 +357,7 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
 
           {/* Custom Footer Text */}
           {agent.footerText && (
-            <p className="mt-6 text-[14px] text-[#8A847F] max-w-md">
+            <p className="mt-6 text-[14px] text-[#71717A] max-w-md font-marketing-body">
               {agent.footerText}
             </p>
           )}
@@ -361,13 +365,13 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
           {/* Powered By (conditional) */}
           {agent.showPoweredBy !== false && (
             <div className="mt-8 pt-6 border-t border-white/[0.06] w-full">
-              <p className="text-[12px] text-[#6B6660]">
+              <p className="text-[12px] text-[#52525B] font-marketing-body">
                 Media by{' '}
                 <a
                   href="https://aerialshots.media"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#A29991] hover:text-white transition-colors"
+                  className="text-[#00D4FF] hover:text-[#33DDFF] transition-colors"
                 >
                   Aerial Shots Media
                 </a>
@@ -379,8 +383,8 @@ function AgentFooter({ agent, currentYear }: { agent: AgentFooterProps; currentY
 
       {/* Bottom Bar */}
       <div className="border-t border-white/[0.06]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-[12px] text-[#6B6660]">
+        <div className="mx-auto max-w-7xl px-6 py-4">
+          <p className="text-center text-[12px] text-[#52525B] font-marketing-body">
             &copy; {currentYear} {agent.name}. All rights reserved.
           </p>
         </div>

@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowRight, Phone, Mail } from 'lucide-react'
 import { useScrollReveal } from '@/lib/hooks/use-scroll-reveal'
 import { cn } from '@/lib/utils'
 
@@ -24,27 +23,33 @@ export function CTASection({
       ref={ref as React.RefObject<HTMLElement>}
       className={cn(
         'relative overflow-hidden',
-        variant === 'default' ? 'py-32' : 'py-20'
+        variant === 'default' ? 'py-24 sm:py-32' : 'py-16'
       )}
     >
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] via-transparent to-transparent" />
+      {/* Gradient background */}
+      <div className="absolute inset-0 gradient-mesh-animated" />
+
+      {/* Accent gradients */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00D4FF]/[0.08] rounded-full blur-[150px]" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#7C3AED]/[0.06] rounded-full blur-[120px]" />
 
       <div className="relative mx-auto max-w-4xl px-6 text-center">
-        {/* Label */}
-        <p
+        {/* Badge */}
+        <div
           className={cn(
-            'text-sm uppercase tracking-[0.2em] text-[#A29991] mb-6 transition-all duration-700',
+            'inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.08] mb-8 transition-all duration-700',
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           )}
         >
-          Get Started
-        </p>
+          <span className="text-[12px] uppercase tracking-[0.15em] text-[#00D4FF] font-medium font-marketing">
+            Get Started Today
+          </span>
+        </div>
 
         {/* Headline */}
         <h2
           className={cn(
-            'font-serif text-4xl lg:text-5xl text-white mb-6 transition-all duration-700 delay-100',
+            'text-marketing-section text-white mb-6 transition-all duration-700 delay-100',
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           )}
         >
@@ -54,7 +59,7 @@ export function CTASection({
         {/* Subheadline */}
         <p
           className={cn(
-            'text-[15px] text-[#B5ADA6] max-w-xl mx-auto mb-10 transition-all duration-700 delay-200',
+            'text-marketing-subhead max-w-xl mx-auto mb-10 transition-all duration-700 delay-200',
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           )}
         >
@@ -64,19 +69,49 @@ export function CTASection({
         {/* CTA Button */}
         <div
           className={cn(
-            'transition-all duration-700 delay-300',
+            'flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 transition-all duration-700 delay-300',
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           )}
         >
           <Link href="/book">
-            <Button
-              size="lg"
-              className="h-14 px-10 bg-[#A29991] hover:bg-[#B5ADA6] text-black text-[15px] font-medium transition-colors"
+            <button
+              className="h-14 px-8 btn-marketing-primary font-marketing flex items-center gap-2 text-base"
             >
               Book Your Shoot
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+              <ArrowRight className="h-5 w-5" />
+            </button>
           </Link>
+          <Link href="/portfolio">
+            <button
+              className="h-14 px-8 btn-marketing-ghost font-marketing text-base"
+            >
+              View Portfolio
+            </button>
+          </Link>
+        </div>
+
+        {/* Contact info */}
+        <div
+          className={cn(
+            'flex flex-col sm:flex-row items-center justify-center gap-6 transition-all duration-700 delay-400',
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          )}
+        >
+          <a
+            href="tel:+14076926227"
+            className="flex items-center gap-2 text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
+          >
+            <Phone className="h-4 w-4 text-[#00D4FF]" />
+            (407) 692-6227
+          </a>
+          <span className="hidden sm:block w-px h-4 bg-white/[0.15]" />
+          <a
+            href="mailto:hello@aerialshots.media"
+            className="flex items-center gap-2 text-[14px] text-[#A1A1AA] hover:text-white transition-colors font-marketing-body"
+          >
+            <Mail className="h-4 w-4 text-[#00D4FF]" />
+            hello@aerialshots.media
+          </a>
         </div>
       </div>
     </section>
