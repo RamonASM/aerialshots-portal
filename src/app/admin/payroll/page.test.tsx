@@ -1,32 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
-// Mock redirect to throw like Next.js does
-vi.mock('next/navigation', () => ({
-  redirect: vi.fn((path: string) => {
-    throw new Error(`REDIRECT:${path}`)
-  }),
-}))
+// Mock Supabase admin client
+const mockPayPeriodsData = vi.fn()
+const mockStaffData = vi.fn()
 
-// Mock Supabase
-const mockGetUser = vi.fn()
-const mockSelect = vi.fn()
-const mockEq = vi.fn()
-const mockSingle = vi.fn()
-const mockOrder = vi.fn()
-const mockFrom = vi.fn(() => ({
-  select: mockSelect,
-}))
+const mockFrom = vi.fn((table: string) => {
+  if (table === 'pay_periods') {
+    return {
+      select: vi.fn().mockReturnThis(),
+      order: () => mockPayPeriodsData(),
+    }
+  }
+  if (table === 'staff') {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: () => mockStaffData(),
+    }
+  }
+  return {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: () => Promise.resolve({ data: null, error: null }),
+  }
+})
 
-mockSelect.mockReturnValue({ eq: mockEq, order: mockOrder })
-mockEq.mockReturnValue({ eq: mockEq, single: mockSingle, order: mockOrder })
-mockOrder.mockReturnValue({ data: [] })
-
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({
-    auth: { getUser: mockGetUser },
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
     from: mockFrom,
-  })),
+  }),
 }))
 
 // Mock PayrollClient
@@ -54,57 +57,17 @@ vi.mock('./PayrollClient', () => ({
 import PayrollPage from './page'
 
 describe('AdminPayrollPage', () => {
+  // Note: Authentication is handled by the admin layout, not this page component
+
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  describe('Authentication', () => {
-    it('redirects to login if not authenticated', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null } })
-
-      await expect(PayrollPage()).rejects.toThrow('REDIRECT:/login')
-    })
-
-    it('redirects to dashboard if not staff', async () => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'unknown@example.com' } },
-      })
-      mockSingle.mockResolvedValue({ data: null })
-
-      await expect(PayrollPage()).rejects.toThrow('REDIRECT:/dashboard')
-    })
-
-    it('redirects to dashboard if not admin', async () => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'photo@example.com' } },
-      })
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'staff-123',
-          role: 'photographer', // Not admin
-        },
-      })
-
-      await expect(PayrollPage()).rejects.toThrow('REDIRECT:/dashboard')
-    })
+    // Default to empty data
+    mockPayPeriodsData.mockResolvedValue({ data: [], error: null })
+    mockStaffData.mockResolvedValue({ data: [], error: null })
   })
 
   describe('Rendering', () => {
-    beforeEach(() => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'admin@aerialshots.media' } },
-      })
-    })
-
-    it('renders PayrollClient when admin is authenticated', async () => {
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'admin-123',
-          role: 'admin',
-        },
-      })
-      mockOrder.mockResolvedValue({ data: [] })
-
+    it('renders PayrollClient component', async () => {
       const page = await PayrollPage()
       render(page)
 
@@ -112,23 +75,12 @@ describe('AdminPayrollPage', () => {
     })
 
     it('passes pay periods to client', async () => {
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'admin-123',
-          role: 'admin',
-        },
-      })
-
-      // Mock pay periods query
       const mockPeriods = [
         { id: 'period-1', status: 'open', start_date: '2024-01-01', end_date: '2024-01-14' },
         { id: 'period-2', status: 'closed', start_date: '2023-12-18', end_date: '2023-12-31' },
       ]
 
-      mockOrder.mockImplementation(() => ({
-        data: mockPeriods,
-        eq: mockEq,
-      }))
+      mockPayPeriodsData.mockResolvedValue({ data: mockPeriods, error: null })
 
       const page = await PayrollPage()
       render(page)
@@ -136,36 +88,29 @@ describe('AdminPayrollPage', () => {
       expect(screen.getByTestId('periods-count')).toHaveTextContent('2 periods')
     })
 
-    it('includes staff with hourly payout type', async () => {
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'admin-123',
-          role: 'admin',
-        },
-      })
-
-      // Mock staff query for hourly workers
+    it('passes hourly staff to client', async () => {
       const mockStaff = [
-        { id: 'qc-1', name: 'QC Worker 1', payout_type: 'hourly' },
-        { id: 'qc-2', name: 'QC Worker 2', payout_type: 'hourly' },
+        { id: 'staff-1', name: 'Alice', email: 'alice@test.com', role: 'qc', hourly_rate: 15, payout_type: 'hourly' },
+        { id: 'staff-2', name: 'Bob', email: 'bob@test.com', role: 'qc', hourly_rate: 15, payout_type: 'hourly' },
       ]
 
-      // Chain mock for different queries
-      let callCount = 0
-      mockOrder.mockImplementation(() => {
-        callCount++
-        if (callCount === 1) {
-          // Pay periods
-          return { data: [], eq: mockEq }
-        }
-        // Staff
-        return { data: mockStaff, eq: mockEq }
-      })
+      mockStaffData.mockResolvedValue({ data: mockStaff, error: null })
 
       const page = await PayrollPage()
       render(page)
 
       expect(screen.getByTestId('staff-count')).toHaveTextContent('2 staff')
+    })
+
+    it('handles empty data gracefully', async () => {
+      mockPayPeriodsData.mockResolvedValue({ data: null, error: null })
+      mockStaffData.mockResolvedValue({ data: null, error: null })
+
+      const page = await PayrollPage()
+      render(page)
+
+      expect(screen.getByTestId('periods-count')).toHaveTextContent('0 periods')
+      expect(screen.getByTestId('staff-count')).toHaveTextContent('0 staff')
     })
   })
 })

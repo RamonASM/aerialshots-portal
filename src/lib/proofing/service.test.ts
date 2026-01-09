@@ -1,4 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+
+// Mock email service BEFORE importing the service (which imports it)
+vi.mock('@/lib/email/resend', () => ({
+  sendEmail: vi.fn(() => Promise.resolve({ success: true })),
+  sendProofingShareEmail: vi.fn(() => Promise.resolve({ success: true })),
+  createResendClient: vi.fn(() => ({
+    emails: { send: vi.fn() },
+  })),
+}))
+
 import {
   createProofingSession,
   getProofingSession,
@@ -32,16 +42,18 @@ const createChain = (finalResult: unknown) => {
       'eq', 'neq', 'is', 'in', 'contains',
       'gte', 'gt', 'lt', 'lte',
       'order', 'limit', 'range',
-      'single', 'maybeSingle', 'rpc'
+      'single', 'maybeSingle', 'rpc', 'returns'
     ]
     methods.forEach((method) => {
+      chain[method] = () => createNestedChain()
+    })
+    // Terminal methods return a thenable with .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
       chain[method] = () => {
-        // For terminal methods, return the result
-        if (method === 'single' || method === 'maybeSingle') {
-          return Promise.resolve(finalResult)
-        }
-        // For other methods, return a new nested chain
-        return createNestedChain()
+        const result = Promise.resolve(finalResult) as Promise<unknown> & { returns: () => Promise<unknown> }
+        result.returns = () => result
+        return result
       }
     })
     // Also allow direct promise resolution for non-single queries

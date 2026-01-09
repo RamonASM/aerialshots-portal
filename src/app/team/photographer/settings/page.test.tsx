@@ -11,21 +11,31 @@ vi.mock('next/navigation', () => ({
 
 // Mock Supabase
 const mockGetUser = vi.fn()
-const mockSelect = vi.fn()
-const mockEq = vi.fn()
-const mockSingle = vi.fn()
-const mockFrom = vi.fn(() => ({
-  select: mockSelect,
-}))
+const mockStaffData = vi.fn()
 
-mockSelect.mockReturnValue({ eq: mockEq })
-mockEq.mockReturnValue({ eq: mockEq, single: mockSingle })
+// Create a chainable mock that returns the configured staff data
+const createMockChain = () => ({
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: () => mockStaffData(),
+  maybeSingle: () => mockStaffData(),
+  order: vi.fn().mockReturnThis(),
+})
+
+const mockFrom = vi.fn(() => createMockChain())
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve({
     auth: { getUser: mockGetUser },
     from: mockFrom,
   })),
+}))
+
+// Mock Supabase admin client (used by getStaffAccess -> lookupStaffOrPartner)
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: mockFrom,
+  }),
 }))
 
 // Mock StripeConnectCard
@@ -48,29 +58,32 @@ describe('PhotographerSettingsPage', () => {
   describe('Authentication', () => {
     it('redirects to login if not authenticated', async () => {
       mockGetUser.mockResolvedValue({ data: { user: null } })
+      mockStaffData.mockResolvedValue({ data: null, error: null })
 
       await expect(
         PhotographerSettingsPage({ searchParams: Promise.resolve({}) })
-      ).rejects.toThrow('REDIRECT:/staff-login')
+      ).rejects.toThrow('REDIRECT:/sign-in/staff')
     })
 
     it('redirects if user is not a photographer', async () => {
       mockGetUser.mockResolvedValue({
         data: { user: { email: 'john@example.com' } },
       })
-      mockSingle.mockResolvedValue({
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'staff-123',
           name: 'John',
           email: 'john@example.com',
           role: 'videographer', // Not a photographer
           team_role: null,
+          is_active: true,
         },
+        error: null,
       })
 
       await expect(
         PhotographerSettingsPage({ searchParams: Promise.resolve({}) })
-      ).rejects.toThrow('REDIRECT:/staff-login')
+      ).rejects.toThrow('REDIRECT:/sign-in/staff')
     })
   })
 
@@ -79,7 +92,7 @@ describe('PhotographerSettingsPage', () => {
       mockGetUser.mockResolvedValue({
         data: { user: { email: 'photo@example.com' } },
       })
-      mockSingle.mockResolvedValue({
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'staff-123',
           name: 'John Photographer',
@@ -87,11 +100,13 @@ describe('PhotographerSettingsPage', () => {
           phone: '555-1234',
           role: 'photographer',
           team_role: null,
+          is_active: true,
           skills: ['Real Estate', 'Drone'],
           certifications: ['FAA Part 107'],
           payout_type: '1099',
           default_payout_percent: 40,
         },
+        error: null,
       })
     })
 
@@ -131,18 +146,20 @@ describe('PhotographerSettingsPage', () => {
       mockGetUser.mockResolvedValue({
         data: { user: { email: 'photo@example.com' } },
       })
-      mockSingle.mockResolvedValue({
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'staff-123',
           name: 'John Photographer',
           email: 'photo@example.com',
           role: 'photographer',
           team_role: null,
+          is_active: true,
           skills: [],
           certifications: [],
           payout_type: '1099',
           default_payout_percent: 40,
         },
+        error: null,
       })
     })
 

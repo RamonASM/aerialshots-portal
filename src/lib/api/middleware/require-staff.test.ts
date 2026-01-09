@@ -9,7 +9,8 @@ import { requireStaff, type StaffUser } from './require-staff'
 
 // Mock functions - will be wired up inside the mock factory
 const mockGetUser = vi.fn()
-const mockMaybeSingle = vi.fn()
+const mockStaffMaybeSingle = vi.fn()
+const mockPartnerMaybeSingle = vi.fn()
 const mockSingle = vi.fn()
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -17,17 +18,43 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: {
       getUser: () => mockGetUser(),
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: () => mockMaybeSingle(),
-        }),
-      }),
-      insert: vi.fn().mockReturnValue({
+    from: vi.fn().mockImplementation((table: string) => {
+      if (table === 'staff') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: () => mockStaffMaybeSingle(),
+              }),
+            }),
+          }),
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: () => mockSingle(),
+            }),
+          }),
+        }
+      }
+      if (table === 'partners') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: () => mockPartnerMaybeSingle(),
+              }),
+            }),
+          }),
+        }
+      }
+      return {
         select: vi.fn().mockReturnValue({
-          single: () => mockSingle(),
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            }),
+          }),
         }),
-      }),
+      }
     }),
   })),
 }))
@@ -58,6 +85,12 @@ describe('requireStaff', () => {
   })
 
   describe('Email Domain Validation', () => {
+    beforeEach(() => {
+      // Default: no staff or partner found
+      mockStaffMaybeSingle.mockResolvedValue({ data: null, error: null })
+      mockPartnerMaybeSingle.mockResolvedValue({ data: null, error: null })
+    })
+
     it('should throw error for non-staff email', async () => {
       mockGetUser.mockResolvedValue({
         data: {
@@ -69,7 +102,7 @@ describe('requireStaff', () => {
         error: null,
       })
 
-      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff')
+      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff or partner')
     })
 
     it('should throw error for similar but invalid domains', async () => {
@@ -83,7 +116,7 @@ describe('requireStaff', () => {
         error: null,
       })
 
-      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff')
+      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff or partner')
     })
 
     it('should throw error for subdomain attempts', async () => {
@@ -99,7 +132,7 @@ describe('requireStaff', () => {
 
       // This actually would pass since it ends with @aerialshots.media
       // The check is email.endsWith('@aerialshots.media')
-      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff')
+      await expect(requireStaff()).rejects.toThrow('Unauthorized: Not staff or partner')
     })
 
     it('should accept valid aerialshots.media email', async () => {
@@ -113,7 +146,7 @@ describe('requireStaff', () => {
         error: null,
       })
 
-      mockMaybeSingle.mockResolvedValue({
+      mockStaffMaybeSingle.mockResolvedValue({
         data: {
           id: 'staff-123',
           email: 'john@aerialshots.media',
@@ -139,6 +172,7 @@ describe('requireStaff', () => {
         },
         error: null,
       })
+      mockPartnerMaybeSingle.mockResolvedValue({ data: null, error: null })
     })
 
     it('should return existing staff record', async () => {
@@ -149,7 +183,7 @@ describe('requireStaff', () => {
         name: 'Jane Photographer',
       }
 
-      mockMaybeSingle.mockResolvedValue({
+      mockStaffMaybeSingle.mockResolvedValue({
         data: staffData,
         error: null,
       })
@@ -160,7 +194,7 @@ describe('requireStaff', () => {
     })
 
     it('should throw error on staff lookup failure', async () => {
-      mockMaybeSingle.mockResolvedValue({
+      mockStaffMaybeSingle.mockResolvedValue({
         data: null,
         error: { message: 'Database error' },
       })
@@ -181,8 +215,12 @@ describe('requireStaff', () => {
         error: null,
       })
 
-      // No existing staff record
-      mockMaybeSingle.mockResolvedValue({
+      // No existing staff or partner record
+      mockStaffMaybeSingle.mockResolvedValue({
+        data: null,
+        error: null,
+      })
+      mockPartnerMaybeSingle.mockResolvedValue({
         data: null,
         error: null,
       })
@@ -315,6 +353,7 @@ describe('requireStaff', () => {
         },
         error: null,
       })
+      mockPartnerMaybeSingle.mockResolvedValue({ data: null, error: null })
     })
 
     it('should return StaffUser with all fields', async () => {
@@ -325,7 +364,7 @@ describe('requireStaff', () => {
         name: 'Admin User',
       }
 
-      mockMaybeSingle.mockResolvedValue({
+      mockStaffMaybeSingle.mockResolvedValue({
         data: staffData,
         error: null,
       })
@@ -339,7 +378,7 @@ describe('requireStaff', () => {
     })
 
     it('should return StaffUser with optional fields undefined', async () => {
-      mockMaybeSingle.mockResolvedValue({
+      mockStaffMaybeSingle.mockResolvedValue({
         data: {
           id: 'staff-999',
           email: 'admin@aerialshots.media',

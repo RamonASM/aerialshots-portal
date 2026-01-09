@@ -19,6 +19,38 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
+// Helper to create fully chainable mock
+const createChain = (finalResult: unknown) => {
+  const createNestedChain = (): Record<string, unknown> => {
+    const chain: Record<string, unknown> = {
+      // Make the chain thenable
+      then: (resolve: (value: unknown) => void) => Promise.resolve(finalResult).then(resolve),
+    }
+    const methods = [
+      'select', 'insert', 'update', 'delete', 'upsert',
+      'eq', 'neq', 'is', 'in', 'contains',
+      'gte', 'gt', 'lt', 'lte',
+      'order', 'limit', 'range', 'rpc'
+    ]
+    methods.forEach((method) => {
+      chain[method] = vi.fn(() => createNestedChain())
+    })
+    // Terminal methods return a thenable with .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
+      chain[method] = vi.fn(() => {
+        const result = Promise.resolve(finalResult) as Promise<unknown> & { returns: () => Promise<unknown> }
+        result.returns = () => result
+        return result
+      })
+    })
+    // .returns() on the chain itself should also work
+    chain.returns = vi.fn(() => createNestedChain())
+    return chain
+  }
+  return createNestedChain()
+}
+
 describe('Go Anytime Scheduling', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -83,24 +115,19 @@ describe('Go Anytime Scheduling', () => {
 
   describe('createAnytimeBooking', () => {
     it('should create booking with date range', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        insert: () => ({
-          select: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: 'anytime-1',
-                  listing_id: 'listing-123',
-                  is_anytime: true,
-                  anytime_start_date: '2025-01-07',
-                  anytime_end_date: '2025-01-14',
-                  status: 'pending_claim',
-                },
-                error: null,
-              }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValue(
+        createChain({
+          data: {
+            id: 'anytime-1',
+            listing_id: 'listing-123',
+            is_anytime: true,
+            anytime_start_date: '2025-01-07',
+            anytime_end_date: '2025-01-14',
+            status: 'pending_claim',
+          },
+          error: null,
+        })
+      )
 
       const result = await createAnytimeBooking({
         listing_id: 'listing-123',
@@ -157,36 +184,27 @@ describe('Go Anytime Scheduling', () => {
 
   describe('getAnytimeSchedules', () => {
     it('should return unclaimed anytime bookings for a territory', async () => {
-      mockSupabaseFrom.mockReturnValue({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              is: () => ({
-                gte: () =>
-                  Promise.resolve({
-                    data: [
-                      {
-                        id: 'anytime-1',
-                        listing_id: 'listing-1',
-                        anytime_start_date: '2025-01-07',
-                        anytime_end_date: '2025-01-14',
-                        listing: { address: '123 Main St' },
-                      },
-                      {
-                        id: 'anytime-2',
-                        listing_id: 'listing-2',
-                        anytime_start_date: '2025-01-08',
-                        anytime_end_date: '2025-01-12',
-                        listing: { address: '456 Oak Ave' },
-                      },
-                    ],
-                    error: null,
-                  }),
-              }),
-            }),
-          }),
-        }),
-      })
+      mockSupabaseFrom.mockReturnValue(
+        createChain({
+          data: [
+            {
+              id: 'anytime-1',
+              listing_id: 'listing-1',
+              anytime_start_date: '2025-01-07',
+              anytime_end_date: '2025-01-14',
+              listing: { address: '123 Main St' },
+            },
+            {
+              id: 'anytime-2',
+              listing_id: 'listing-2',
+              anytime_start_date: '2025-01-08',
+              anytime_end_date: '2025-01-12',
+              listing: { address: '456 Oak Ave' },
+            },
+          ],
+          error: null,
+        })
+      )
 
       const schedules = await getAnytimeSchedules('territory-1')
 
@@ -195,27 +213,18 @@ describe('Go Anytime Scheduling', () => {
     })
 
     it('should filter by date range', async () => {
-      // Create a chainable mock that supports multiple gte/lte calls
-      const mockResult = Promise.resolve({
-        data: [
-          {
-            id: 'anytime-1',
-            anytime_start_date: '2025-01-07',
-            anytime_end_date: '2025-01-10',
-          },
-        ],
-        error: null,
-      })
-
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        is: vi.fn().mockReturnThis(),
-        gte: vi.fn().mockReturnThis(),
-        lte: vi.fn(() => mockResult),
-      }
-
-      mockSupabaseFrom.mockReturnValue(mockChain)
+      mockSupabaseFrom.mockReturnValue(
+        createChain({
+          data: [
+            {
+              id: 'anytime-1',
+              anytime_start_date: '2025-01-07',
+              anytime_end_date: '2025-01-10',
+            },
+          ],
+          error: null,
+        })
+      )
 
       const schedules = await getAnytimeSchedules('territory-1', {
         from: new Date('2025-01-07'),
@@ -230,37 +239,29 @@ describe('Go Anytime Scheduling', () => {
     it('should allow photographer to claim a slot', async () => {
       // Mock: First call to check if available, second to update
       mockSupabaseFrom
-        .mockReturnValueOnce({
-          select: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: {
-                    id: 'anytime-1',
-                    is_anytime: true,
-                    claimed_by: null,
-                    anytime_start_date: '2025-01-07',
-                    anytime_end_date: '2025-01-14',
-                  },
-                  error: null,
-                }),
-            }),
-          }),
-        })
-        .mockReturnValueOnce({
-          update: () => ({
-            eq: () =>
-              Promise.resolve({
-                data: {
-                  id: 'anytime-1',
-                  claimed_by: 'photographer-1',
-                  claimed_at: '2025-01-06T10:00:00',
-                  scheduled_date: '2025-01-08',
-                },
-                error: null,
-              }),
-          }),
-        })
+        .mockReturnValueOnce(
+          createChain({
+            data: {
+              id: 'anytime-1',
+              is_anytime: true,
+              claimed_by: null,
+              anytime_start_date: '2025-01-07',
+              anytime_end_date: '2025-01-14',
+            },
+            error: null,
+          })
+        )
+        .mockReturnValueOnce(
+          createChain({
+            data: {
+              id: 'anytime-1',
+              claimed_by: 'photographer-1',
+              claimed_at: '2025-01-06T10:00:00',
+              scheduled_date: '2025-01-08',
+            },
+            error: null,
+          })
+        )
 
       const result = await claimAnytimeSlot(
         'anytime-1',
@@ -276,14 +277,17 @@ describe('Go Anytime Scheduling', () => {
       mockSupabaseFrom.mockReturnValue({
         select: () => ({
           eq: () => ({
-            single: () =>
-              Promise.resolve({
+            single: () => {
+              const result = Promise.resolve({
                 data: {
                   id: 'anytime-1',
                   claimed_by: 'photographer-2', // Already claimed
                 },
                 error: null,
-              }),
+              }) as Promise<unknown> & { returns: () => Promise<unknown> }
+              result.returns = () => result
+              return result
+            },
           }),
         }),
       })
@@ -302,8 +306,8 @@ describe('Go Anytime Scheduling', () => {
       mockSupabaseFrom.mockReturnValue({
         select: () => ({
           eq: () => ({
-            single: () =>
-              Promise.resolve({
+            single: () => {
+              const result = Promise.resolve({
                 data: {
                   id: 'anytime-1',
                   is_anytime: true,
@@ -312,7 +316,10 @@ describe('Go Anytime Scheduling', () => {
                   anytime_end_date: '2025-01-10',
                 },
                 error: null,
-              }),
+              }) as Promise<unknown> & { returns: () => Promise<unknown> }
+              result.returns = () => result
+              return result
+            },
           }),
         }),
       })
@@ -334,14 +341,17 @@ describe('Go Anytime Scheduling', () => {
         .mockReturnValueOnce({
           select: () => ({
             eq: () => ({
-              single: () =>
-                Promise.resolve({
+              single: () => {
+                const result = Promise.resolve({
                   data: {
                     id: 'anytime-1',
                     claimed_by: 'photographer-1',
                   },
                   error: null,
-                }),
+                }) as Promise<unknown> & { returns: () => Promise<unknown> }
+                result.returns = () => result
+                return result
+              },
             }),
           }),
         })
@@ -364,14 +374,17 @@ describe('Go Anytime Scheduling', () => {
       mockSupabaseFrom.mockReturnValue({
         select: () => ({
           eq: () => ({
-            single: () =>
-              Promise.resolve({
+            single: () => {
+              const result = Promise.resolve({
                 data: {
                   id: 'anytime-1',
                   claimed_by: 'photographer-2', // Different owner
                 },
                 error: null,
-              }),
+              }) as Promise<unknown> & { returns: () => Promise<unknown> }
+              result.returns = () => result
+              return result
+            },
           }),
         }),
       })
@@ -389,8 +402,8 @@ describe('Go Anytime Scheduling', () => {
         select: () => ({
           eq: () => ({
             eq: () => ({
-              order: () =>
-                Promise.resolve({
+              order: () => {
+                const result = Promise.resolve({
                   data: [
                     {
                       id: 'anytime-1',
@@ -404,7 +417,10 @@ describe('Go Anytime Scheduling', () => {
                     },
                   ],
                   error: null,
-                }),
+                }) as Promise<unknown> & { returns: () => Promise<unknown> }
+                result.returns = () => result
+                return result
+              },
             }),
           }),
         }),
@@ -421,14 +437,17 @@ describe('Go Anytime Scheduling', () => {
         select: () => ({
           eq: () => ({
             eq: () => ({
-              order: () =>
-                Promise.resolve({
+              order: () => {
+                const result = Promise.resolve({
                   data: [
                     { id: 'anytime-1', scheduled_date: '2025-01-08' },
                     { id: 'anytime-2', scheduled_date: '2025-01-07' },
                   ],
                   error: null,
-                }),
+                }) as Promise<unknown> & { returns: () => Promise<unknown> }
+                result.returns = () => result
+                return result
+              },
             }),
           }),
         }),
@@ -458,15 +477,18 @@ describe('Go Anytime Edge Cases', () => {
     mockSupabaseFrom.mockReturnValue({
       insert: () => ({
         select: () => ({
-          single: () =>
-            Promise.resolve({
+          single: () => {
+            const result = Promise.resolve({
               data: {
                 id: 'anytime-1',
                 anytime_start_date: '2025-01-11', // Saturday
                 anytime_end_date: '2025-01-12', // Sunday
               },
               error: null,
-            }),
+            }) as Promise<unknown> & { returns: () => Promise<unknown> }
+            result.returns = () => result
+            return result
+          },
         }),
       }),
     })
@@ -486,15 +508,18 @@ describe('Go Anytime Edge Cases', () => {
     mockSupabaseFrom.mockReturnValue({
       insert: () => ({
         select: () => ({
-          single: () =>
-            Promise.resolve({
+          single: () => {
+            const result = Promise.resolve({
               data: {
                 id: 'anytime-1',
                 priority: 'high',
                 is_expedited: true,
               },
               error: null,
-            }),
+            }) as Promise<unknown> & { returns: () => Promise<unknown> }
+            result.returns = () => result
+            return result
+          },
         }),
       }),
     })

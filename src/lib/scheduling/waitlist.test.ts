@@ -28,27 +28,38 @@ vi.mock('@/lib/notifications', () => ({
 }))
 
 // Helper to create a chainable Supabase mock that supports any chain length
-// Creates a thenable object (can be awaited) with all chain methods
 const createChain = (finalResult: unknown) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const chain: any = {
-    // Make the chain thenable - this allows `await chain.eq().order()` to work
-    then(onFulfilled?: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) {
-      return Promise.resolve(finalResult).then(onFulfilled, onRejected)
-    },
-    // single() explicitly returns a promise
-    single() {
-      return Promise.resolve(finalResult)
-    },
+  const createNestedChain = (): Record<string, unknown> => {
+    const chain: Record<string, unknown> = {
+      // Make the chain thenable - this allows `await chain.eq().order()` to work
+      then(onFulfilled?: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) {
+        return Promise.resolve(finalResult).then(onFulfilled, onRejected)
+      },
+    }
+
+    // All chain methods return a new nested chain
+    const methods = ['select', 'insert', 'update', 'delete', 'eq', 'is', 'gte', 'gt', 'lt', 'lte', 'order', 'limit', 'contains', 'from', 'neq']
+    methods.forEach((method) => {
+      chain[method] = vi.fn(() => createNestedChain())
+    })
+
+    // Terminal methods return a thenable with .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
+      chain[method] = vi.fn(() => {
+        const result = Promise.resolve(finalResult) as Promise<unknown> & { returns: () => Promise<unknown> }
+        result.returns = () => result
+        return result
+      })
+    })
+
+    // .returns() on the chain itself
+    chain.returns = vi.fn(() => createNestedChain())
+
+    return chain
   }
 
-  // All chain methods return the chain itself
-  const methods = ['select', 'insert', 'update', 'delete', 'eq', 'is', 'gte', 'lt', 'lte', 'order', 'limit', 'contains', 'from']
-  methods.forEach((method) => {
-    chain[method] = () => chain
-  })
-
-  return chain
+  return createNestedChain()
 }
 
 describe('Appointment Waitlist', () => {

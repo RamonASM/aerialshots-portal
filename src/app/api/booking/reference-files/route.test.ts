@@ -30,6 +30,25 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
 }))
 
+// Mock Clerk auth
+vi.mock('@/lib/auth/clerk', () => ({
+  getCurrentUser: vi.fn(() =>
+    Promise.resolve({
+      userId: 'user-123',
+      email: 'test@example.com',
+      role: 'agent',
+      userTable: 'agents',
+    })
+  ),
+}))
+
+// Mock rate limiting
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn(() => Promise.resolve({ success: true })),
+  getIdentifier: vi.fn(() => 'test-identifier'),
+  createRateLimitResponse: vi.fn(() => new Response('Rate limited', { status: 429 })),
+}))
+
 describe('Reference Files API', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -244,7 +263,20 @@ describe('Reference Files API', () => {
     })
 
     it('should return files for a listing', async () => {
-      mockSupabaseFrom.mockReturnValue({
+      // First call: listings ownership verification
+      mockSupabaseFrom.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: { id: 'listing-123', agent_id: 'user-123' },
+                error: null,
+              }),
+          }),
+        }),
+      })
+      // Second call: get files
+      mockSupabaseFrom.mockReturnValueOnce({
         select: () => ({
           order: () => ({
             eq: () =>
@@ -252,13 +284,14 @@ describe('Reference Files API', () => {
                 data: [
                   {
                     id: 'file-1',
-                    file_name: 'property-line.jpg',
+                    original_filename: 'property-line.jpg',
                     file_type: 'property_line',
-                    file_size: 1024,
+                    file_size_bytes: 1024,
                     mime_type: 'image/jpeg',
-                    public_url: 'https://storage.example.com/file1.jpg',
+                    storage_bucket: 'booking-attachments',
+                    storage_path: 'test/file1.jpg',
                     notes: 'Front yard',
-                    created_at: '2024-12-29T10:00:00Z',
+                    uploaded_at: '2024-12-29T10:00:00Z',
                   },
                 ],
                 error: null,
@@ -282,7 +315,20 @@ describe('Reference Files API', () => {
     })
 
     it('should return empty array if no files', async () => {
-      mockSupabaseFrom.mockReturnValue({
+      // First call: listings ownership verification
+      mockSupabaseFrom.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: { id: 'listing-empty', agent_id: 'user-123' },
+                error: null,
+              }),
+          }),
+        }),
+      })
+      // Second call: get files
+      mockSupabaseFrom.mockReturnValueOnce({
         select: () => ({
           order: () => ({
             eq: () =>
@@ -320,13 +366,14 @@ describe('Reference Files API', () => {
     })
 
     it('should return 404 for non-existent file', async () => {
-      mockSupabaseFrom.mockReturnValue({
+      // File lookup returns null (not found)
+      mockSupabaseFrom.mockReturnValueOnce({
         select: () => ({
           eq: () => ({
-            single: () =>
+            maybeSingle: () =>
               Promise.resolve({
                 data: null,
-                error: { message: 'Not found' },
+                error: null,
               }),
           }),
         }),
@@ -344,27 +391,45 @@ describe('Reference Files API', () => {
     })
 
     it('should delete file successfully', async () => {
-      mockSupabaseFrom
-        .mockReturnValueOnce({
-          select: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: { storage_path: 'reference-files/test/file.jpg' },
-                  error: null,
-                }),
-            }),
-          }),
-        })
-        .mockReturnValueOnce({
-          delete: () => ({
-            eq: () =>
+      // First call: get file record
+      mockSupabaseFrom.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
               Promise.resolve({
-                data: null,
+                data: {
+                  storage_path: 'reference-files/test/file.jpg',
+                  storage_bucket: 'reference-files',
+                  listing_id: 'listing-123',
+                  uploaded_by_email: 'test@example.com',
+                },
                 error: null,
               }),
           }),
-        })
+        }),
+      })
+      // Second call: ownership verification (agent checks listing ownership)
+      mockSupabaseFrom.mockReturnValueOnce({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: { agent_id: 'user-123' },
+                error: null,
+              }),
+          }),
+        }),
+      })
+      // Third call: delete file record
+      mockSupabaseFrom.mockReturnValueOnce({
+        delete: () => ({
+          eq: () =>
+            Promise.resolve({
+              data: null,
+              error: null,
+            }),
+        }),
+      })
 
       const request = new NextRequest('http://localhost/api/booking/reference-files?id=file-123')
 
@@ -389,7 +454,7 @@ describe('Reference Files File Types', () => {
   ]
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     mockStorageUpload.mockResolvedValue({
       data: { path: 'reference-files/test/file' },
       error: null,

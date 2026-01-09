@@ -3,13 +3,13 @@ import { NextRequest } from 'next/server'
 import crypto from 'crypto'
 import { POST } from './route'
 
-// Mock Supabase server client
+// Mock Supabase admin client
 const mockSupabaseClient = {
   from: vi.fn(),
 }
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => mockSupabaseClient),
 }))
 
 // Mock the integration handoffs module
@@ -90,6 +90,8 @@ describe('Cubicasa Webhook Handler', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
           }),
         }),
       })
@@ -115,6 +117,8 @@ describe('Cubicasa Webhook Handler', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
           }),
         }),
       })
@@ -150,6 +154,7 @@ describe('Cubicasa Webhook Handler', () => {
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
           }),
         }),
       })
@@ -160,6 +165,8 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: mockUpdate,
@@ -227,6 +234,8 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: mockUpdate,
@@ -281,6 +290,8 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: mockUpdate,
@@ -292,6 +303,8 @@ describe('Cubicasa Webhook Handler', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   single: vi.fn().mockResolvedValue({ data: { id: 'asset-1' }, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'asset-1' }, error: null }),
+                  maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'asset-1' }, error: null }),
                 }),
               }),
             }),
@@ -346,6 +359,8 @@ describe('Cubicasa Webhook Handler', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
           }),
         }),
       })
@@ -391,6 +406,7 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: vi.fn().mockReturnValue({
@@ -404,6 +420,7 @@ describe('Cubicasa Webhook Handler', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
                 }),
               }),
             }),
@@ -468,6 +485,7 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: vi.fn().mockReturnValue({
@@ -481,6 +499,7 @@ describe('Cubicasa Webhook Handler', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   single: vi.fn().mockResolvedValue({ data: { id: 'existing-asset' }, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'existing-asset' }, error: null }),
                 }),
               }),
             }),
@@ -543,6 +562,7 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: vi.fn().mockReturnValue({
@@ -556,6 +576,7 @@ describe('Cubicasa Webhook Handler', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
                 }),
               }),
             }),
@@ -603,7 +624,7 @@ describe('Cubicasa Webhook Handler', () => {
 
       expect(mockInsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          media_url: 'https://cubicasa.com/2d-floorplan.png',
+          aryeo_url: 'https://cubicasa.com/2d-floorplan.png',
         })
       )
     })
@@ -631,6 +652,7 @@ describe('Cubicasa Webhook Handler', () => {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: mockListing, error: null }),
               }),
             }),
             update: mockUpdate,
@@ -642,6 +664,7 @@ describe('Cubicasa Webhook Handler', () => {
               eq: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
                   single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
                 }),
               }),
             }),

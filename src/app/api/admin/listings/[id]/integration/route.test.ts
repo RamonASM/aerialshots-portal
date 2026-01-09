@@ -2,18 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET, PATCH, POST } from './route'
 
-// Mock Supabase server client
+// Mock Supabase admin client
 const mockSupabaseClient = {
   from: vi.fn(),
 }
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => mockSupabaseClient),
 }))
 
 // Mock auth middleware
-vi.mock('@/lib/middleware/auth', () => ({
-  requireStaff: vi.fn(() => Promise.resolve({
+vi.mock('@/lib/auth/server-access', () => ({
+  requireStaffAccess: vi.fn(() => Promise.resolve({
     user: { id: 'test-user-id', email: 'staff@aerialshots.media' },
     staff: { id: 'test-staff-id', email: 'staff@aerialshots.media', role: 'admin' },
   })),

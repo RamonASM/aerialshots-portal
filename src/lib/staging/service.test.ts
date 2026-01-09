@@ -33,14 +33,18 @@ const createChain = (finalResult: unknown) => {
       'eq', 'neq', 'is', 'in', 'contains',
       'gte', 'gt', 'lt', 'lte',
       'order', 'limit', 'range',
-      'single', 'maybeSingle', 'rpc'
+      'single', 'maybeSingle', 'rpc', 'returns'
     ]
     methods.forEach((method) => {
+      chain[method] = () => createNestedChain()
+    })
+    // Terminal methods return a thenable with .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
       chain[method] = () => {
-        if (method === 'single' || method === 'maybeSingle') {
-          return Promise.resolve(finalResult)
-        }
-        return createNestedChain()
+        const result = Promise.resolve(finalResult) as Promise<unknown> & { returns: () => Promise<unknown> }
+        result.returns = () => result
+        return result
       }
     })
     chain.then = (resolve: (value: unknown) => void) => Promise.resolve(finalResult).then(resolve)

@@ -41,6 +41,15 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
+// Mock the render engine to avoid Satori initialization
+vi.mock('@/lib/render/engine', () => ({
+  renderWithSatori: vi.fn().mockResolvedValue({
+    buffer: Buffer.from('mock-image'),
+    width: 1080,
+    height: 1080,
+  }),
+}))
+
 // Helper to create a test skill
 function createTestSkill(id: string, overrides: Partial<SkillDefinition> = {}): SkillDefinition {
   return {

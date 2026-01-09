@@ -34,8 +34,11 @@ vi.mock('./providers/gemini', () => ({
   generateWithGemini: vi.fn(() =>
     Promise.resolve({
       success: true,
+      imageBase64: 'dGVzdC1pbWFnZS1kYXRh', // base64 encoded test data
       imageUrl: 'https://ai.example.com/staged/result.png',
       processingTime: 12500,
+      provider: 'gemini',
+      status: 'success',
     })
   ),
 }))
@@ -49,14 +52,18 @@ const createChain = (finalResult: unknown) => {
       'eq', 'neq', 'is', 'in', 'contains',
       'gte', 'gt', 'lt', 'lte',
       'order', 'limit', 'range',
-      'single', 'maybeSingle', 'rpc'
+      'single', 'maybeSingle', 'rpc', 'returns'
     ]
     methods.forEach((method) => {
+      chain[method] = () => createNestedChain()
+    })
+    // Terminal methods return a thenable with .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
       chain[method] = () => {
-        if (method === 'single' || method === 'maybeSingle') {
-          return Promise.resolve(finalResult)
-        }
-        return createNestedChain()
+        const result = Promise.resolve(finalResult) as Promise<unknown> & { returns: () => Promise<unknown> }
+        result.returns = () => result
+        return result
       }
     })
     chain.then = (resolve: (value: unknown) => void) => Promise.resolve(finalResult).then(resolve)

@@ -24,28 +24,41 @@ import {
   getTodaySummary,
 } from './service'
 
-// Helper to create a chainable mock that resolves to data
+// Helper to create a chainable mock that supports all Supabase patterns
 function createChain(finalData: unknown = null, finalError: unknown = null) {
-  // Create a thenable chain that can be awaited or chained
-  const chain: Record<string, unknown> = {
-    data: finalData,
-    error: finalError,
-    // Allow await on the chain directly
-    then: (resolve: (value: { data: unknown; error: unknown }) => void) => {
-      return Promise.resolve({ data: finalData, error: finalError }).then(resolve)
-    },
+  const result = { data: finalData, error: finalError }
+
+  const createNestedChain = (): Record<string, unknown> => {
+    const chain: Record<string, unknown> = {
+      // Allow await on the chain directly
+      then: (resolve: (value: typeof result) => void) => {
+        return Promise.resolve(result).then(resolve)
+      },
+    }
+
+    // All chainable methods return a new nested chain
+    const methods = ['select', 'insert', 'update', 'upsert', 'eq', 'neq', 'gte', 'lte', 'order', 'limit', 'is', 'in', 'contains']
+    methods.forEach((method) => {
+      chain[method] = vi.fn(() => createNestedChain())
+    })
+
+    // single() and maybeSingle() return a thenable that ALSO has .returns()
+    const terminalMethods = ['single', 'maybeSingle']
+    terminalMethods.forEach((method) => {
+      chain[method] = vi.fn(() => {
+        const terminalResult = Promise.resolve(result) as Promise<typeof result> & { returns: () => Promise<typeof result> }
+        terminalResult.returns = () => Promise.resolve(result)
+        return terminalResult
+      })
+    })
+
+    // .returns() on the chain itself (before terminal methods)
+    chain.returns = vi.fn(() => createNestedChain())
+
+    return chain
   }
 
-  // All chainable methods return the same chain
-  const methods = ['select', 'insert', 'update', 'upsert', 'eq', 'neq', 'gte', 'lte', 'order']
-  methods.forEach((method) => {
-    chain[method] = vi.fn().mockReturnValue(chain)
-  })
-
-  // single() returns a promise
-  chain.single = vi.fn().mockResolvedValue({ data: finalData, error: finalError })
-
-  return chain
+  return createNestedChain()
 }
 
 describe('time-tracking service', () => {
@@ -219,7 +232,8 @@ describe('time-tracking service', () => {
     })
 
     it('returns error when no active entry found', async () => {
-      mockFrom.mockReturnValueOnce(createChain(null, { message: 'Not found' }))
+      // Return null data with no error to simulate "not found"
+      mockFrom.mockReturnValueOnce(createChain(null, null))
 
       const result = await clockOut('staff-123')
 

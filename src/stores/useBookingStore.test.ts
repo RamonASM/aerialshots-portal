@@ -105,11 +105,11 @@ describe('useBookingStore', () => {
       const { result } = renderHook(() => useBookingStore())
 
       act(() => {
-        result.current.setStep(4)
+        result.current.setStep(3) // Max step is 3 (4 steps: 0-3)
         result.current.nextStep()
       })
 
-      expect(result.current.currentStep).toBe(4)
+      expect(result.current.currentStep).toBe(3)
     })
 
     it('should decrement step with prevStep', () => {
@@ -624,8 +624,8 @@ describe('useBookingProgress', () => {
       storeHook.result.current.setStep(2)
     })
 
-    // Step 2 = (2+1)/5 * 100 = 60%
-    expect(progressHook.result.current.progress).toBe(60)
+    // Step 2 = (2+1)/4 * 100 = 75% (4 steps: 0-3)
+    expect(progressHook.result.current.progress).toBe(75)
   })
 
   it('should identify first step', () => {
@@ -640,7 +640,7 @@ describe('useBookingProgress', () => {
     const progressHook = renderHook(() => useBookingProgress())
 
     act(() => {
-      storeHook.result.current.setStep(4)
+      storeHook.result.current.setStep(3) // Last step is 3 (4 steps: 0-3)
     })
 
     expect(progressHook.result.current.isLastStep).toBe(true)
@@ -706,34 +706,23 @@ describe('useCanProceed', () => {
     expect(canProceedHook.result.current).toBe(true)
   })
 
-  it('should return true for step 1 (addons are optional)', () => {
+  it('should return false for step 1 without address', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(1)
-    })
-
-    expect(canProceedHook.result.current).toBe(true)
-  })
-
-  it('should return false for step 2 without address', () => {
-    const storeHook = renderHook(() => useBookingStore())
-    const canProceedHook = renderHook(() => useCanProceed())
-
-    act(() => {
-      storeHook.result.current.setStep(2)
+      storeHook.result.current.setStep(1) // Step 1 is Property (needs address)
     })
 
     expect(canProceedHook.result.current).toBe(false)
   })
 
-  it('should return true for step 2 with complete address', () => {
+  it('should return true for step 1 with complete address', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(2)
+      storeHook.result.current.setStep(1) // Step 1 is Property
       storeHook.result.current.setPropertyAddress({
         formatted: '123 Main St, Orlando, FL 32801',
         street: '123 Main St',
@@ -749,46 +738,46 @@ describe('useCanProceed', () => {
     expect(canProceedHook.result.current).toBe(true)
   })
 
-  it('should return false for step 3 without schedule', () => {
+  it('should return false for step 2 without schedule', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(3)
+      storeHook.result.current.setStep(2) // Step 2 is Schedule
     })
 
     expect(canProceedHook.result.current).toBe(false)
   })
 
-  it('should return true for step 3 with schedule', () => {
+  it('should return true for step 2 with schedule', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(3)
+      storeHook.result.current.setStep(2) // Step 2 is Schedule
       storeHook.result.current.setSchedule('2024-01-15', '10:00')
     })
 
     expect(canProceedHook.result.current).toBe(true)
   })
 
-  it('should return false for step 4 without contact info', () => {
+  it('should return false for step 3 without contact info', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(4)
+      storeHook.result.current.setStep(3) // Step 3 is Payment/Contact
     })
 
     expect(canProceedHook.result.current).toBe(false)
   })
 
-  it('should return true for step 4 with complete contact info', () => {
+  it('should return true for step 3 with complete contact info', () => {
     const storeHook = renderHook(() => useBookingStore())
     const canProceedHook = renderHook(() => useCanProceed())
 
     act(() => {
-      storeHook.result.current.setStep(4)
+      storeHook.result.current.setStep(3) // Step 3 is Payment/Contact
       storeHook.result.current.updateFormData({
         contactName: 'John Doe',
         contactEmail: 'john@example.com',

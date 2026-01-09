@@ -16,6 +16,7 @@ const mockEq = vi.fn()
 const mockOrder = vi.fn()
 const mockRange = vi.fn()
 const mockSingle = vi.fn()
+const mockMaybeSingle = vi.fn()
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() =>
@@ -55,6 +56,7 @@ describe('Template API', () => {
     mockEq.mockReturnValue({
       eq: mockEq,
       single: mockSingle,
+      maybeSingle: mockMaybeSingle,
       order: mockOrder,
     })
 
@@ -69,6 +71,11 @@ describe('Template API', () => {
     })
 
     mockSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    })
+
+    mockMaybeSingle.mockResolvedValue({
       data: null,
       error: null,
     })
@@ -328,7 +335,8 @@ describe('Template API', () => {
 
     describe('Duplicate Prevention', () => {
       it('should reject duplicate slug+version', async () => {
-        mockSingle.mockResolvedValueOnce({
+        // First call: duplicate check with maybeSingle - returns existing record
+        mockMaybeSingle.mockResolvedValueOnce({
           data: { id: 'existing-id' },
           error: null,
         })
@@ -343,7 +351,9 @@ describe('Template API', () => {
       })
 
       it('should allow same slug with different version', async () => {
-        mockSingle.mockResolvedValueOnce({ data: null, error: null })
+        // First call: duplicate check with maybeSingle - no existing record
+        mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Second call: insert returns new record with single
         mockSingle.mockResolvedValueOnce({
           data: { id: 'new-id', slug: 'test-template', version: '2.0.0', name: 'Test', category: 'listing_marketing', status: 'draft', created_at: new Date().toISOString() },
           error: null,
@@ -370,7 +380,12 @@ describe('Template API', () => {
           created_at: new Date().toISOString(),
         }
 
-        mockSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Reset mocks to clear any leftover queue
+        mockMaybeSingle.mockReset()
+        mockSingle.mockReset()
+        // First call: duplicate check with maybeSingle
+        mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Second call: insert returns new record with single
         mockSingle.mockResolvedValueOnce({ data: createdTemplate, error: null })
 
         const request = createRequest('POST', { body: validTemplate })
@@ -428,7 +443,12 @@ describe('Template API', () => {
           isSystem: true,
         }
 
-        mockSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Reset mocks to clear any leftover queue
+        mockMaybeSingle.mockReset()
+        mockSingle.mockReset()
+        // First call: duplicate check with maybeSingle
+        mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Second call: insert returns new record with single
         mockSingle.mockResolvedValueOnce({
           data: {
             id: 'full-template-id',
@@ -451,11 +471,13 @@ describe('Template API', () => {
           vi.clearAllMocks()
 
           mockFrom.mockReturnValue({ select: mockSelect, insert: mockInsert })
-          mockSelect.mockReturnValue({ eq: mockEq, order: mockOrder, single: mockSingle })
+          mockSelect.mockReturnValue({ eq: mockEq, order: mockOrder, single: mockSingle, maybeSingle: mockMaybeSingle })
           mockInsert.mockReturnValue({ select: mockSelect })
-          mockEq.mockReturnValue({ eq: mockEq, single: mockSingle })
+          mockEq.mockReturnValue({ eq: mockEq, single: mockSingle, maybeSingle: mockMaybeSingle })
 
-          mockSingle.mockResolvedValueOnce({ data: null, error: null })
+          // First call: duplicate check with maybeSingle
+          mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
+          // Second call: insert returns new record with single
           mockSingle.mockResolvedValueOnce({
             data: { id: 'id', slug: 'test', version: '1.0.0', name: 'Test', category: 'listing_marketing', status: 'draft', created_at: new Date().toISOString() },
             error: null,
@@ -483,8 +505,11 @@ describe('Template API', () => {
         ['market_update', 'test-market-update'],
       ])('should accept category %s', async (category, slug) => {
         // Reset mocks for this test
+        mockMaybeSingle.mockReset()
         mockSingle.mockReset()
-        mockSingle.mockResolvedValueOnce({ data: null, error: null })
+        // First call: duplicate check with maybeSingle
+        mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
+        // Second call: insert returns new record
         mockSingle.mockResolvedValueOnce({
           data: { id: 'id', slug, version: '1.0.0', name: 'Test', category, status: 'draft', created_at: new Date().toISOString() },
           error: null,
@@ -502,9 +527,10 @@ describe('Template API', () => {
     describe('Database Errors', () => {
       it('should handle database insert error', async () => {
         // Reset and configure mocks
+        mockMaybeSingle.mockReset()
         mockSingle.mockReset()
-        // First call: check for existing (no duplicate)
-        mockSingle.mockResolvedValueOnce({ data: null, error: null })
+        // First call: duplicate check with maybeSingle (no duplicate)
+        mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null })
         // Second call: insert fails
         mockSingle.mockResolvedValueOnce({
           data: null,

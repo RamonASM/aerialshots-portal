@@ -12,24 +12,43 @@ vi.mock('@/lib/payments/stripe-connect', () => ({
   syncAccountStatus: mockSyncAccountStatus,
 }))
 
-// Import after mocks
-import { POST } from './route'
+// Mock Supabase admin with full table support
+const mockFrom = vi.fn((table: string) => {
+  if (table === 'processed_events') {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      insert: vi.fn(() => Promise.resolve({ error: null })),
+    }
+  }
+  if (table === 'staff') {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: { id: 'staff-123' }, error: null })),
+      update: vi.fn().mockReturnThis(),
+    }
+  }
+  if (table === 'partners') {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      update: vi.fn().mockReturnThis(),
+    }
+  }
+  return {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    update: vi.fn().mockReturnThis(),
+  }
+})
 
-// Mock Supabase admin
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({
-            data: { id: 'staff-123' },
-          }),
-        }),
-      }),
-      update: () => ({
-        eq: () => Promise.resolve({ error: null }),
-      }),
-    }),
+    from: mockFrom,
   }),
 }))
 
@@ -41,6 +60,9 @@ vi.mock('@/lib/logger', () => ({
     warn: vi.fn(),
   },
 }))
+
+// Import after mocks
+import { POST } from './route'
 
 function createMockRequest(body: string, signature: string): NextRequest {
   return new NextRequest('http://localhost/api/webhooks/stripe-connect', {
@@ -87,6 +109,7 @@ describe('Stripe Connect Webhook', () => {
   describe('account.updated event', () => {
     it('updates database when charges_enabled changes', async () => {
       mockVerifyConnectWebhook.mockReturnValue({
+        id: 'evt_123',
         type: 'account.updated',
         data: {
           object: {
@@ -116,6 +139,7 @@ describe('Stripe Connect Webhook', () => {
 
     it('updates database when payouts_enabled changes', async () => {
       mockVerifyConnectWebhook.mockReturnValue({
+        id: 'evt_456',
         type: 'account.updated',
         data: {
           object: {
@@ -147,6 +171,7 @@ describe('Stripe Connect Webhook', () => {
   describe('account.application.deauthorized event', () => {
     it('marks account as disconnected', async () => {
       mockVerifyConnectWebhook.mockReturnValue({
+        id: 'evt_789',
         type: 'account.application.deauthorized',
         data: {
           object: {
@@ -166,6 +191,7 @@ describe('Stripe Connect Webhook', () => {
   describe('Unhandled events', () => {
     it('returns 200 for unhandled event types', async () => {
       mockVerifyConnectWebhook.mockReturnValue({
+        id: 'evt_999',
         type: 'payment_intent.succeeded',
         data: { object: {} },
       })
@@ -182,6 +208,7 @@ describe('Stripe Connect Webhook', () => {
   describe('Error handling', () => {
     it('returns 500 on sync error', async () => {
       mockVerifyConnectWebhook.mockReturnValue({
+        id: 'evt_error',
         type: 'account.updated',
         data: {
           object: {

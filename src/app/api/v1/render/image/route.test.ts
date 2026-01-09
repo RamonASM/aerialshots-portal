@@ -4,7 +4,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
-import { POST, GET } from './route'
 
 // Test API secret
 const TEST_API_SECRET = 'test-secret-key-12345'
@@ -24,58 +23,62 @@ function createAuthRequest(url: string, body: object): NextRequest {
   })
 }
 
-// Mock Supabase
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({
-              data: {
-                id: 'template-123',
-                slug: 'just-listed',
-                version: '1.0.0',
-                name: 'Just Listed',
-                category: 'listing_marketing',
-                canvas: { width: 1080, height: 1350 },
-                layers: [],
-                status: 'published',
-              },
-              error: null,
-            })),
-            order: vi.fn(() => ({
-              limit: vi.fn(() => Promise.resolve({
-                data: [{
-                  id: 'template-123',
-                  slug: 'just-listed',
-                  version: '1.0.0',
-                  name: 'Just Listed',
-                  category: 'listing_marketing',
-                  canvas: { width: 1080, height: 1350 },
-                  layers: [],
-                  status: 'published',
-                }],
+// Mock rate limit
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn(() => Promise.resolve({ success: true, remaining: 100 })),
+  getRateLimitHeaders: vi.fn(() => ({})),
+  createRateLimitResponse: vi.fn(),
+  getIdentifier: vi.fn(() => 'test-identifier'),
+}))
+
+// Mock Supabase admin client
+const mockTemplateData = {
+  id: 'template-123',
+  slug: 'just-listed',
+  version: '1.0.0',
+  name: 'Just Listed',
+  category: 'listing_marketing',
+  canvas: { width: 1080, height: 1350 },
+  layers: [],
+  status: 'published',
+}
+
+const createChain = (data: unknown = null, error: unknown = null) => ({
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  order: vi.fn().mockReturnThis(),
+  limit: vi.fn(() => Promise.resolve({ data: data ? [data] : [], error })),
+  single: vi.fn(() => Promise.resolve({ data, error })),
+  maybeSingle: vi.fn(() => Promise.resolve({ data, error })),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+})
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: vi.fn((table: string) => {
+      if (table === 'render_templates') {
+        return createChain(mockTemplateData)
+      }
+      if (table === 'render_jobs') {
+        return {
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({
+                data: { id: 'job-123' },
                 error: null,
               })),
             })),
           })),
-        })),
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({
-            data: { id: 'job-123' },
-            error: null,
+          update: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null })),
           })),
-        })),
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null })),
-      })),
-    })),
+        }
+      }
+      return createChain()
+    }),
     rpc: vi.fn(() => ({
-      single: vi.fn(() => Promise.resolve({
+      maybeSingle: vi.fn(() => Promise.resolve({
         data: {
           canvas: { width: 1080, height: 1350 },
           layers: [],
@@ -91,17 +94,20 @@ vi.mock('@/lib/supabase/server', () => ({
         })),
       })),
     },
-  })),
+  }),
 }))
 
 // Mock render engine
 vi.mock('@/lib/render/engine', () => ({
   renderWithSatori: vi.fn(() => Promise.resolve({
-    buffer: Buffer.from('mock-image'),
+    imageBase64: Buffer.from('mock-image').toString('base64'),
     width: 1080,
     height: 1350,
   })),
 }))
+
+// Import after mocks
+import { POST, GET } from './route'
 
 describe('POST /api/v1/render/image', () => {
   beforeEach(() => {
