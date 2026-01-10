@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { getStaffAccess, hasRequiredRole } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { subDays } from 'date-fns'
 import {
   ArrowLeft,
@@ -13,27 +14,19 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
 export default async function QCRejectedPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
-  }
-
-  // Verify staff role
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name, role')
-    .eq('email', user.email!)
-    .eq('is_active', true)
-    .single()
+  // Check authentication via Clerk
+  const staff = await getStaffAccess()
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
+
+  // Verify QC or admin role
+  if (!hasRequiredRole(staff.role, ['qc'])) {
+    redirect('/sign-in/staff')
+  }
+
+  const supabase = createAdminClient()
 
   // Get rejected assets from the last 7 days
   const sevenDaysAgo = subDays(new Date(), 7)

@@ -157,14 +157,14 @@ Before marking ANY task complete, confirm:
 
 Custom agents in `.claude/agents/` for automated workflows:
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| `build-validator.md` | Runs build, lint, tests | After any code changes |
-| `code-architect.md` | Reviews architecture decisions | Before implementing features |
-| `code-simplifier.md` | Simplifies completed code | After feature completion |
-| `verify-app.md` | Tests app in browser/runtime | Before marking tasks complete |
-| `pr-reviewer.md` | Reviews code for PR | Before creating PRs |
-| `test-writer.md` | Writes tests for features | When adding new features |
+| Agent | Purpose | Trigger | Command |
+|-------|---------|---------|---------|
+| `build-validator.md` | Runs build, lint, tests | After any code changes | `/project:build-validator` |
+| `code-architect.md` | Reviews architecture decisions | Before new features | `/project:code-architect` |
+| `code-simplifier.md` | Simplifies completed code | After feature completion | `/project:code-simplifier` |
+| `verify-app.md` | Tests app in browser/runtime | Before marking done | `/project:verify-app` |
+| `pr-reviewer.md` | Reviews code for PR | Before creating PRs | `/project:pr-reviewer` |
+| `test-writer.md` | Writes tests for features | When adding features | `/project:test-writer` |
 
 ### Agent Workflow
 
@@ -176,6 +176,58 @@ Custom agents in `.claude/agents/` for automated workflows:
 5. Verify    → verify-app (test in browser)
 6. Review    → pr-reviewer (before PR)
 ```
+
+### Auto-Trigger Checkpoints
+
+**Claude should proactively suggest agents at these checkpoints:**
+
+| Checkpoint | Agent | Prompt to User |
+|------------|-------|----------------|
+| After editing 3+ files | `build-validator` | "Want me to run build validation?" |
+| Before implementing feature | `code-architect` | "Should I review the architecture first?" |
+| After completing feature | `code-simplifier` | "Feature done - want me to simplify?" |
+| After fixing UI bugs | `verify-app` | "Want me to verify this in the browser?" |
+| Before creating PR | `pr-reviewer` | "Ready for PR review?" |
+| New API route created | `test-writer` | "Should I write tests for this endpoint?" |
+
+### File Change Triggers
+
+When these file patterns are edited, Claude should remind the user:
+
+| Pattern | Reminder |
+|---------|----------|
+| `src/app/api/**/*.ts` | "API route changed - run tests and consider test-writer agent" |
+| `src/components/**/*.tsx` | "UI component changed - consider verify-app after completion" |
+| `src/lib/**/*.ts` | "Core library changed - run build-validator to check impact" |
+| `supabase/migrations/*.sql` | "Migration added - verify with `npx supabase db push`" |
+| `src/stores/*.ts` | "Store changed - check for hydration issues" |
+
+---
+
+## Proactive Reminders
+
+**Claude should remind the user at these points (without being asked):**
+
+### During Development
+- After 5+ file edits: "Consider committing this checkpoint before continuing"
+- After adding new API route: "Don't forget to add tests for this endpoint"
+- After editing auth logic: "Security-sensitive change - double-check the implementation"
+- After editing RLS policies: "Run tests to verify RLS is working correctly"
+
+### Before Completing Tasks
+- "Have you run `npm run build` to verify TypeScript?"
+- "Have you tested this manually in the browser?"
+- "Are there any edge cases we should handle?"
+
+### Before Creating PRs
+- "Run `/project:pr-reviewer` for code review"
+- "Ensure all tests pass with `npm run test`"
+- "Update CHANGELOG.md with changes"
+
+### End of Session
+- "Here's what was completed today: [summary]"
+- "Remaining items for next session: [list]"
+- "Consider creating a commit with: `git add -A && git commit -m 'description'`"
 
 ---
 
@@ -605,6 +657,14 @@ Before saying a task is "done":
 ## Recent Changes
 
 ### 2026-01-10
+- **Sprint 1 Complete**: Fixed authentication & navigation issues
+  - Fixed QC portal auth (4 pages) - now uses Clerk instead of old Supabase auth
+  - Created `/team/photographer/schedule` - weekly schedule view
+  - Created `/team/editor/settings` - editor profile with Stripe Connect
+  - Created `/team/qc/settings` - QC profile with compensation info
+  - Created `/team/photographer/job/[id]` - job detail page with HDR upload
+  - Added `PhotographerJobClient` component for HDR bracket uploads
+- Added agent triggers and proactive reminders to CLAUDE.md
 - Added Claude agents for workflow automation (build-validator, code-architect, code-simplifier, verify-app, pr-reviewer, test-writer)
 - Added Feedback Loop section to CLAUDE.md
 - Pushed test fixes and CLAUDE.md to origin/main

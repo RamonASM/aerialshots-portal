@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
+import { getStaffAccess, hasRequiredRole } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   CheckCircle,
   Clock,
@@ -18,26 +19,19 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 
 export default async function QCDashboard() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
-  }
-
-  // Get staff member
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('id, name')
-    .eq('email', user.email!)
-    .single()
+  // Check authentication via Clerk
+  const staff = await getStaffAccess()
 
   if (!staff) {
-    redirect('/staff-login')
+    redirect('/sign-in/staff')
   }
+
+  // Verify QC or admin role
+  if (!hasRequiredRole(staff.role, ['qc'])) {
+    redirect('/sign-in/staff')
+  }
+
+  const supabase = createAdminClient()
 
   // Get QC queue - listings ready for QC
   const { data: qcQueue } = await supabase

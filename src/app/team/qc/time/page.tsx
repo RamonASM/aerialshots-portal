@@ -1,18 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Clock, AlertCircle } from 'lucide-react'
+import { getStaffAccess, hasRequiredRole, type StaffAccess } from '@/lib/auth/server-access'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent } from '@/components/ui/card'
 import { TimeClock } from '@/components/team/TimeClock'
 
 /**
  * Check if staff has QC access
- * Supports: role = 'qc', 'qc_specialist', or 'admin'
+ * Uses hasRequiredRole helper which auto-includes admin/owner
  */
-function hasQCAccess(staff: { role: string | null }): boolean {
-  if (staff.role === 'admin') return true
-  if (staff.role === 'qc') return true
-  if (staff.role === 'qc_specialist') return true
-  return false
+function hasQCAccess(staff: StaffAccess): boolean {
+  return hasRequiredRole(staff.role, ['qc'])
 }
 
 /**
@@ -22,22 +20,26 @@ function hasQCAccess(staff: { role: string | null }): boolean {
  * Only accessible to staff with hourly payout type.
  */
 export default async function QCTimePage() {
-  const supabase = await createClient()
+  // Check authentication via Clerk
+  const staffAccess = await getStaffAccess()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/staff-login')
+  if (!staffAccess) {
+    redirect('/sign-in/staff')
   }
 
-  // Get staff member with time tracking info
+  // Check QC role access
+  if (!hasQCAccess(staffAccess)) {
+    redirect('/team/qc')
+  }
+
+  const supabase = createAdminClient()
+
+  // Get staff member with time tracking info (need payout_type and hourly_rate)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: staff } = await (supabase as any)
     .from('staff')
     .select('id, name, email, role, payout_type, hourly_rate')
-    .eq('email', user.email!)
+    .eq('id', staffAccess.id)
     .single() as { data: {
       id: string
       name: string
@@ -48,12 +50,7 @@ export default async function QCTimePage() {
     } | null }
 
   if (!staff) {
-    redirect('/staff-login')
-  }
-
-  // Check QC role access
-  if (!hasQCAccess(staff)) {
-    redirect('/team/qc')
+    redirect('/sign-in/staff')
   }
 
   // Time tracking is only for hourly workers
