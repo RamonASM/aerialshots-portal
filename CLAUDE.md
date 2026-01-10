@@ -595,7 +595,7 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 2 complete, ready for Sprint 3
+**Last Session:** Sprint 3 complete, ready for Sprint 4 (Testing & QA)
 
 ### Completed Sprints
 
@@ -609,33 +609,23 @@ Before saying a task is "done":
 - Airspace status persistence in booking flow
 - Stripe Connect webhook handlers expanded
 
-### Sprint 3 - Code Quality & TODOs
+**Sprint 3 - Code Quality & TODOs:** ✅ COMPLETE
+- Google Static Maps integration in SoldMap
+- Life Here API endpoint tests (25 tests)
+- Airspace status updates, marketing blast filters
 
-**Completed:**
-- ✅ `api/booking/airspace-qualify/route.ts` - Update listing with airspace status
-- ✅ `api/admin/marketing/blast/route.ts` - Filter type implementations (by_last_order, by_service, by_spend)
-- ✅ Fixed QCTimePage test for Clerk auth
+### Sprint 4 - Testing & QA (Next)
 
-**Remaining TODOs:**
+**Priority Tasks:**
+1. Create Clerk accounts for QC/Editor test users
+2. Browser test QC and Editor portal pages
+3. Test Stripe Connect payout flow end-to-end
+
+**Low Priority TODOs:**
 | File | TODO | Priority |
 |------|------|----------|
-| `components/analytics/SoldMap.tsx` | Integrate Google Maps | Medium |
-| `api/v1/location/*.ts` | Add endpoint-level tests | Medium |
 | `lib/integrations/cubicasa/client.ts` | Implement actual Cubicasa API call | Low |
 | `lib/agents/workflows/editor.ts` | Uncomment after migration | Low |
-
-**Testing Gaps:**
-- Create Clerk accounts for QC/Editor test users
-- Browser test QC and Editor portal pages
-- Test Stripe Connect payout flow end-to-end
-- Add Life Here API endpoint tests (10 endpoints)
-
-### Approach per CLAUDE.md Framework
-
-1. **Before each task:** Review existing code, state files to modify
-2. **After each change:** Run `npm run build` and `npm run test`
-3. **Verification:** Test manually in browser when applicable
-4. **Commits:** Small, verified changes with descriptive messages
 
 ---
 
@@ -651,7 +641,7 @@ Before saying a task is "done":
 | Team Portals | ✅ Complete | Photographer, videographer, QC, editor |
 | Stripe Connect | ✅ Complete | Staff/partner payouts ready |
 | Virtual Staging | ✅ Complete | Gemini AI integration |
-| All Tests | ✅ Passing | 2,939 tests (was 262 failures, now 0) |
+| All Tests | ✅ Passing | 2,962 tests (was 262 failures, now 0) |
 
 ### 🔧 Needs Attention
 
@@ -729,6 +719,18 @@ The Life Here API provides location-based lifestyle data for content enrichment.
 ---
 
 ## Recent Changes
+
+### 2026-01-10 (Sprint 3 Complete)
+- **Sprint 3 Final**:
+  - Integrated Google Static Maps into SoldMap component
+    - Uses `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` for API access
+    - Dark theme styling matching portal design
+    - CSS grid fallback when API unavailable
+  - Added Life Here API endpoint tests (25 new tests)
+    - `scores/route.test.ts` - 9 tests for profile-based scoring
+    - `dining/route.test.ts` - 9 tests for restaurant/cuisine data
+    - `commute/route.test.ts` - 7 tests for travel times
+- Build passing, 2962 tests passing
 
 ### 2026-01-10 (Sprint 3 - Code Quality)
 - **Sprint 3 Progress**:
