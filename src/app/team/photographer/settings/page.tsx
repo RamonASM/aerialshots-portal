@@ -49,12 +49,12 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
   // Get full staff member with payout info
   const supabase = createAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: staff } = await (supabase as any)
+  const { data: staff, error: staffError } = await (supabase as any)
     .from('staff')
     .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
     .eq('email', staffAccess.email)
     .eq('is_active', true)
-    .single() as { data: {
+    .maybeSingle() as { data: {
       id: string
       name: string
       email: string
@@ -64,8 +64,11 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
       certifications: string[] | null
       payout_type: string | null
       default_payout_percent: number | null
-    } | null }
+    } | null, error: unknown }
 
+  if (staffError) {
+    console.log('[PhotographerSettings] Staff query error:', staffError)
+  }
   if (!staff) {
     console.log('[PhotographerSettings] No staff record found for email:', staffAccess.email)
     redirect('/sign-in/staff')
