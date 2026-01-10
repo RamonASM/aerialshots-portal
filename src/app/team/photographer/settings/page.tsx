@@ -39,8 +39,10 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
 
   // Check authentication via Clerk (or Supabase fallback)
   const staffAccess = await getStaffAccess()
+  console.log('[PhotographerSettings] staffAccess:', JSON.stringify(staffAccess, null, 2))
 
   if (!staffAccess || !hasPhotographerAccess(staffAccess.role)) {
+    console.log('[PhotographerSettings] Access denied - redirecting to sign-in')
     redirect('/sign-in/staff')
   }
 
@@ -65,8 +67,10 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
     } | null }
 
   if (!staff) {
+    console.log('[PhotographerSettings] No staff record found for email:', staffAccess.email)
     redirect('/sign-in/staff')
   }
+  console.log('[PhotographerSettings] Staff found:', staff.name, staff.email)
 
   const displayRole = staff.role || 'photographer'
   const skills = staff.skills || []
