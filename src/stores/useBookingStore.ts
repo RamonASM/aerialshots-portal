@@ -63,6 +63,7 @@ export interface ExtendedBookingFormData extends BookingFormData {
   // Airspace check
   airspaceStatus?: 'clear' | 'laanc_required' | 'restricted' | 'unknown'
   airspaceWarnings?: string[]
+  airspaceCheckId?: string
 
   // Weather info
   weatherForecast?: {
@@ -181,7 +182,7 @@ interface BookingActions {
   setLoyaltyPoints: (points: number, value: number) => void
 
   // Airspace & Weather
-  setAirspaceStatus: (status: 'clear' | 'laanc_required' | 'restricted' | 'unknown', warnings?: string[]) => void
+  setAirspaceStatus: (status: 'clear' | 'laanc_required' | 'restricted' | 'unknown', warnings?: string[], checkId?: string) => void
   setWeatherForecast: (forecast: ExtendedBookingFormData['weatherForecast']) => void
   setTravelFee: (fee: number, distance: number, duration: number) => void
 
@@ -459,9 +460,10 @@ export const useBookingStore = create<BookingState & BookingActions>()(
       },
 
       // Airspace & Weather
-      setAirspaceStatus: (status, warnings) => set((state) => {
+      setAirspaceStatus: (status, warnings, checkId) => set((state) => {
         state.formData.airspaceStatus = status
         state.formData.airspaceWarnings = warnings
+        state.formData.airspaceCheckId = checkId
       }),
 
       setWeatherForecast: (forecast) => set((state) => {

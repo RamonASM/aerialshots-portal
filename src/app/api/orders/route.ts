@@ -48,6 +48,10 @@ export async function POST(request: NextRequest) {
 
       // Agent ID (if logged in)
       agentId,
+
+      // Airspace check (from booking flow)
+      airspaceCheckId,
+      airspaceStatus,
     } = body
 
     // Validate required fields
@@ -108,6 +112,31 @@ export async function POST(request: NextRequest) {
     }
 
     const { order, listing } = data
+
+    // Update order with airspace check if provided
+    if (airspaceCheckId || airspaceStatus) {
+      const updateData: Record<string, unknown> = {}
+      if (airspaceCheckId) {
+        updateData.airspace_check_id = airspaceCheckId
+      }
+      // Set drone_approved based on airspace status
+      if (airspaceStatus === 'clear') {
+        updateData.drone_approved = true
+      } else if (airspaceStatus === 'restricted') {
+        updateData.drone_approved = false
+      }
+      // Update the order with airspace info (don't fail order if this fails)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(supabase as any)
+        .from('orders')
+        .update(updateData)
+        .eq('id', order.id)
+        .then(({ error: updateError }: { error: Error | null }) => {
+          if (updateError) {
+            apiLogger.warn({ orderId: order.id, ...formatError(updateError) }, 'Failed to update order with airspace info')
+          }
+        })
+    }
 
     // Trigger new-listing workflow in background (don't block response)
     executeWorkflow('new-listing', {

@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
     if (cached) {
       return NextResponse.json({
         ...cached,
+        checkId: cached.id,
         cached: true,
       })
     }
@@ -73,7 +74,8 @@ export async function POST(request: NextRequest) {
       altitude: body.altitude,
     })
 
-    // Cache the result
+    // Cache the result and get the ID
+    let checkId: string | null = null
     try {
       const cacheData = {
         lat: roundedLat,
@@ -94,7 +96,15 @@ export async function POST(request: NextRequest) {
       }
       // Use insert with conflict handling as upsert may have type issues
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('airspace_checks').insert(cacheData)
+      const { data: inserted } = await (supabase as any)
+        .from('airspace_checks')
+        .insert(cacheData)
+        .select('id')
+        .single()
+
+      if (inserted?.id) {
+        checkId = inserted.id
+      }
     } catch (cacheError) {
       // Don't fail the request if caching fails (might be duplicate key)
       console.warn('Cache insert skipped:', cacheError)
@@ -102,6 +112,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...result,
+      checkId,
       cached: false,
     })
   } catch (error) {

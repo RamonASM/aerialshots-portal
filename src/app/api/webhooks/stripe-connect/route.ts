@@ -10,6 +10,8 @@ import { webhookLogger } from '@/lib/logger'
  * Events handled:
  * - account.updated: Sync account status when charges/payouts enabled changes
  * - account.application.deauthorized: Mark account as disconnected
+ * - payout.failed: Log payout failures to connected accounts
+ * - transfer.reversed: Log when transfers are reversed (e.g., due to charge failure)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -159,6 +161,62 @@ export async function POST(request: NextRequest) {
           })
           .eq('stripe_connect_id', accountId)
 
+        break
+      }
+
+      case 'payout.failed': {
+        // Payout from connected account failed
+        const payout = event.data.object as {
+          id: string
+          amount: number
+          failure_message?: string
+          failure_code?: string
+        }
+        const accountId = event.account
+
+        webhookLogger.error(
+          {
+            payoutId: payout.id,
+            amount: payout.amount,
+            accountId,
+            failureMessage: payout.failure_message,
+            failureCode: payout.failure_code,
+          },
+          'Payout to connected account failed'
+        )
+
+        // Could add notification logic here (email staff/partner, etc.)
+        break
+      }
+
+      case 'transfer.reversed': {
+        // Transfer was reversed (often due to charge failure)
+        const transfer = event.data.object as {
+          id: string
+          amount: number
+          amount_reversed: number
+          destination: string
+          metadata?: {
+            order_id?: string
+            staff_id?: string
+            partner_id?: string
+          }
+        }
+
+        webhookLogger.warn(
+          {
+            transferId: transfer.id,
+            amount: transfer.amount,
+            amountReversed: transfer.amount_reversed,
+            destination: transfer.destination,
+            orderId: transfer.metadata?.order_id,
+            staffId: transfer.metadata?.staff_id,
+            partnerId: transfer.metadata?.partner_id,
+          },
+          'Transfer to connected account was reversed'
+        )
+
+        // Could add notification logic here (email admin, etc.)
         break
       }
 

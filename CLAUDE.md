@@ -617,12 +617,19 @@ Before saying a task is "done":
 | `/team/qc/*` | ✅ Correctly restricts access |
 | `/team/editor/*` | ✅ Correctly restricts access |
 
-**To Continue (Sprint 2):**
-- Airspace status persistence
-- QCImageViewer URL fallback
-- RunPod env documentation
-- Stripe Connect webhook setup
-- Test QC and Editor portals with appropriate user accounts
+**Sprint 2 - COMPLETE (2026-01-10 Afternoon):**
+- ✅ QCImageViewer URL fallback - Added `aryeo_url` fallback for legacy assets
+- ✅ Airspace status persistence - Integrated AirspaceCheck into booking flow
+  - Added AirspaceCheck component to Property step
+  - API now returns `checkId` for cached results
+  - Order creation links `airspace_check_id` and sets `drone_approved`
+- ✅ RunPod env documentation - Already documented in .env.example and PRODUCTION_CHECKLIST.md
+- ✅ Stripe Connect webhook expansion - Added handlers for:
+  - `payout.failed` - Log payout failures to connected accounts
+  - `transfer.reversed` - Log when transfers are reversed
+
+**Test Accounts Note:**
+QC and Editor portal testing was skipped because test staff accounts exist in Supabase but not in Clerk. Create Clerk accounts with matching emails to test these portals.
 
 ---
 
@@ -644,7 +651,7 @@ Before saying a task is "done":
 
 | Issue | Priority | Notes |
 |-------|----------|-------|
-| Stripe webhook expansion | Medium | Add more event handlers |
+| Create Clerk accounts for QC/Editor testers | Medium | Supabase records exist, need Clerk accounts |
 | Cubicasa integration | Low | Currently stub - manual floor plan upload works |
 | QuickBooks integration | Low | Not in active use |
 
@@ -688,6 +695,15 @@ Before saying a task is "done":
 ---
 
 ## Recent Changes
+
+### 2026-01-10 (Afternoon Session - Sprint 2)
+- **Sprint 2 Complete**:
+  - Fixed QCImageViewer URL fallback - added `aryeo_url` fallback for legacy assets
+  - Integrated AirspaceCheck into booking flow (Property step)
+  - API returns `checkId` for airspace cache, order creation links it via `airspace_check_id`
+  - Added Stripe Connect webhook handlers for `payout.failed` and `transfer.reversed`
+  - Verified RunPod env vars already documented
+- Build passing, 2931 tests passing
 
 ### 2026-01-10 (Evening Session)
 - **Sprint 1 Browser Testing Complete**:

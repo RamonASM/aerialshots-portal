@@ -25,6 +25,8 @@ import {
   HomeownerInfoForm,
   HomeownerNotificationPreview,
 } from '@/components/booking'
+import { AirspaceCheck } from '@/components/booking/AirspaceCheck'
+import type { AirspaceCheckResult } from '@/lib/integrations/faa/types'
 import { GooglePlacesAutocomplete } from '@/components/booking/GooglePlacesAutocomplete'
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar'
 import { PaymentStep } from '@/components/booking/PaymentStep'
@@ -53,6 +55,7 @@ function ListingBookingContent() {
     setNotifyHomeowner,
     setPropertyAddress,
     setSchedule,
+    setAirspaceStatus,
     initSession,
     recalculatePricing,
   } = useBookingStore()
@@ -89,6 +92,20 @@ function ListingBookingContent() {
   const handleBack = () => {
     prevStep()
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Handle airspace check result (extended with checkId from API)
+  const handleAirspaceResult = (result: AirspaceCheckResult & { checkId?: string }) => {
+    // Map the flight status to our store's airspace status
+    const statusMap: Record<string, 'clear' | 'laanc_required' | 'restricted' | 'unknown'> = {
+      clear: 'clear',
+      caution: 'laanc_required',
+      restricted: 'restricted',
+      prohibited: 'restricted',
+    }
+    const status = statusMap[result.status] || 'unknown'
+    const warnings = result.advisories || []
+    setAirspaceStatus(status, warnings, result.checkId)
   }
 
   // Handle order submission
@@ -196,6 +213,18 @@ function ListingBookingContent() {
                     })
                   }}
                 />
+
+                {/* Airspace Check - displays after address is selected */}
+                {formData.propertyLat && formData.propertyLng && (
+                  <div className="mt-4">
+                    <AirspaceCheck
+                      latitude={formData.propertyLat}
+                      longitude={formData.propertyLng}
+                      address={formData.propertyAddress}
+                      onResult={handleAirspaceResult}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Access Type */}
