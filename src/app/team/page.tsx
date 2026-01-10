@@ -67,7 +67,8 @@ export default async function TeamIndexPage() {
       case 'qc_specialist':
         redirect('/team/qc')
       case 'va':
-        redirect('/team/va')
+        // VA (video assistant) uses editor portal
+        redirect('/team/editor')
       case 'admin':
         // Admins go to admin panel
         redirect('/admin')
@@ -108,7 +109,8 @@ export default async function TeamIndexPage() {
         case 'qc':
           redirect('/team/qc')
         case 'va':
-          redirect('/team/va')
+          // VA (video assistant) uses editor portal
+          redirect('/team/editor')
         default:
           redirect('/team/photographer')
       }

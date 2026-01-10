@@ -1,6 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createConnectAccount, getAccountStatus, createLoginLink } from '@/lib/payments/stripe-connect'
+
+// Type for staff with Stripe Connect fields (columns added but types not regenerated)
+interface StaffWithConnect {
+  id: string
+  name: string
+  email: string
+  stripe_connect_id: string | null
+  stripe_connect_status: string | null
+  stripe_payouts_enabled: boolean
+  payout_type: string | null
+  default_payout_percent: number | null
+}
 
 /**
  * GET /api/connect/staff/account
@@ -8,21 +21,24 @@ import { createConnectAccount, getAccountStatus, createLoginLink } from '@/lib/p
  */
 export async function GET() {
   try {
-    const supabase = await createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anySupabase = supabase as any
-
-    // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser()
+    // Get authenticated user from Clerk
+    const user = await currentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff record
-    const { data: staff, error: staffError } = await anySupabase
+    const email = user.emailAddresses?.[0]?.emailAddress
+    if (!email) {
+      return NextResponse.json({ error: 'No email found' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+
+    // Get staff record - cast to StaffWithConnect since types aren't regenerated yet
+    const { data, error: staffError } = await supabase
       .from('staff')
       .select('id, name, email, stripe_connect_id, stripe_connect_status, stripe_payouts_enabled, payout_type, default_payout_percent')
-      .eq('email', user.email!)
+      .eq('email', email)
       .eq('is_active', true)
       .maybeSingle()
 
@@ -30,6 +46,8 @@ export async function GET() {
       console.error('[Connect] Staff lookup error:', staffError)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
+
+    const staff = data as StaffWithConnect | null
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
@@ -90,21 +108,24 @@ export async function GET() {
  */
 export async function POST() {
   try {
-    const supabase = await createClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anySupabase = supabase as any
-
-    // Get authenticated user
-    const { data: { user } } = await supabase.auth.getUser()
+    // Get authenticated user from Clerk
+    const user = await currentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get staff record
-    const { data: staff, error: staffError } = await anySupabase
+    const email = user.emailAddresses?.[0]?.emailAddress
+    if (!email) {
+      return NextResponse.json({ error: 'No email found' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+
+    // Get staff record - cast since types aren't regenerated yet
+    const { data, error: staffError } = await supabase
       .from('staff')
       .select('id, name, email, stripe_connect_id, payout_type')
-      .eq('email', user.email!)
+      .eq('email', email)
       .eq('is_active', true)
       .maybeSingle()
 
@@ -112,6 +133,8 @@ export async function POST() {
       console.error('[Connect] Staff lookup error:', staffError)
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
+
+    const staff = data as Pick<StaffWithConnect, 'id' | 'name' | 'email' | 'stripe_connect_id' | 'payout_type'> | null
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })

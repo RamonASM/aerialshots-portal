@@ -30,7 +30,8 @@ export default async function EditorSettingsPage({ searchParams }: PageProps) {
   // Check authentication via Clerk
   const staffAccess = await getStaffAccess()
 
-  if (!staffAccess || !hasRequiredRole(staffAccess.role, ['editor'])) {
+  // Check for editor role - accepts both 'editor' and 'va' (video assistant)
+  if (!staffAccess || !hasRequiredRole(staffAccess.role, ['editor', 'va'])) {
     redirect('/sign-in/staff')
   }
 

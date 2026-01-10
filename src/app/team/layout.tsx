@@ -51,9 +51,10 @@ const roleNavItems = {
     { href: '/team/qc/settings', label: 'Settings', icon: Settings },
   ],
   va: [
-    { href: '/team/va', label: 'Dashboard', icon: Home },
-    { href: '/team/va/tasks', label: 'Tasks', icon: CheckCircle },
-    { href: '/team/va/settings', label: 'Settings', icon: Settings },
+    // VA (video assistant) uses editor portal routes
+    { href: '/team/editor', label: 'Dashboard', icon: Home },
+    { href: '/team/editor/queue', label: 'Edit Queue', icon: Palette },
+    { href: '/team/editor/settings', label: 'Settings', icon: Settings },
   ],
 }
 

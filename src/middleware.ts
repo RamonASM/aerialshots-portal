@@ -249,12 +249,14 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
       if (pathname.startsWith('/team/videographer') && userRole !== 'videographer' && userRole !== 'admin') {
         return NextResponse.redirect(new URL('/team', request.url))
       }
+      // Editor routes - allow both 'editor' and 'va' (video assistant) roles
+      if (pathname.startsWith('/team/editor') && userRole !== 'editor' && userRole !== 'va' && userRole !== 'admin') {
+        return NextResponse.redirect(new URL('/team', request.url))
+      }
       if (pathname.startsWith('/team/qc') && userRole !== 'qc' && userRole !== 'admin') {
         return NextResponse.redirect(new URL('/team', request.url))
       }
-      if (pathname.startsWith('/team/va') && userRole !== 'va' && userRole !== 'admin') {
-        return NextResponse.redirect(new URL('/team', request.url))
-      }
+      // Note: /team/va routes no longer exist - va users are redirected to /team/editor
     }
 
     // Add pathname header for layout to use
