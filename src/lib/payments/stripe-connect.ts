@@ -107,9 +107,17 @@ export async function createConnectAccount(params: {
     }
   } catch (error) {
     console.error('[Stripe Connect] Error creating account:', error)
+    console.error('[Stripe Connect] APP_URL used:', APP_URL)
+    console.error('[Stripe Connect] Params:', { type, entityId, email, name, businessType })
+
+    // Extract more detailed error info from Stripe errors
+    const stripeError = error as { type?: string; code?: string; message?: string; param?: string }
+    const errorMessage = stripeError.message || 'Failed to create Connect account'
+    const errorDetails = stripeError.param ? ` (param: ${stripeError.param})` : ''
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create Connect account',
+      error: errorMessage + errorDetails,
     }
   }
 }
