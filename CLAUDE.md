@@ -614,12 +614,22 @@ Before saying a task is "done":
 - Life Here API endpoint tests (25 tests)
 - Airspace status updates, marketing blast filters
 
-### Sprint 4 - Testing & QA (Next)
+### Sprint 4 - Testing & QA (In Progress)
 
-**Priority Tasks:**
-1. Create Clerk accounts for QC/Editor test users
-2. Browser test QC and Editor portal pages
-3. Test Stripe Connect payout flow end-to-end
+**Completed:**
+- ✅ Created Clerk test accounts for QC/Editor/Photographer
+- ✅ Browser tested QC portal (Dashboard, Queue, Settings)
+- ✅ Verified role-based access control working
+
+**Test Accounts:**
+| Email | Role | Password |
+|-------|------|----------|
+| `ramon+qc@aerialshots.media` | QC | `AsmTest2026Portal!` |
+| `ramon+editor@aerialshots.media` | VA/Editor | `AsmTest2026Portal!` |
+| `ramon+photographer@aerialshots.media` | Photographer | `AsmTest2026Portal!` |
+
+**Remaining:**
+- Test Stripe Connect payout flow end-to-end
 
 **Low Priority TODOs:**
 | File | TODO | Priority |
