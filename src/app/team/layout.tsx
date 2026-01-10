@@ -11,10 +11,10 @@ import {
   Home,
   Calendar,
   Settings,
-  LogOut,
   Headphones,
   ArrowLeftRight,
 } from 'lucide-react'
+import { SignOutButton } from '@/components/auth/SignOutButton'
 import { AdminThemeProvider } from '@/components/admin/theme/ThemeProvider'
 import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detection'
 
@@ -305,15 +305,11 @@ export default async function TeamLayout({
                   )}
                 </div>
               </div>
-              <form action="/api/auth/signout" method="POST">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </button>
-              </form>
+              <SignOutButton
+                variant="ghost"
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors justify-start"
+                redirectUrl="/sign-in/staff"
+              />
             </div>
           </aside>
 

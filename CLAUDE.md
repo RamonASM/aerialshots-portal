@@ -595,12 +595,25 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 1 complete, ready for browser testing
+**Last Session:** Sprint 1 complete, Chrome browser testing setup in progress
+
+**Chrome Browser Testing Setup:**
+1. ✅ Claude Code version 2.1.3 (sufficient)
+2. ⏳ Install Chrome extension: https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn
+3. ⏳ Run `claude config set chrome_enabled true`
+4. ⏳ Restart Claude Code with `claude --chrome`
+5. ⏳ Run `/chrome` to verify connection and enable by default
 
 **To Continue:**
-1. Restart Claude Code with Chrome: `claude --chrome`
-2. Test production pages at `https://app.aerialshots.media`
-3. Or continue to Sprint 2 tasks below
+1. Complete Chrome extension setup (steps above)
+2. Test Sprint 1 pages at `https://app.aerialshots.media`:
+   - `/team/photographer/schedule` - Weekly schedule view
+   - `/team/photographer/job/[id]` - Job detail with HDR upload
+   - `/team/editor/settings` - Editor profile with Stripe Connect
+   - `/team/qc/settings` - QC profile with compensation info
+   - `/team/qc/queue` - QC queue (auth fixed)
+3. Fix any issues found during browser testing
+4. Then proceed to Sprint 2
 
 **Sprint 1 Completed:**
 - ✅ QC auth fixed (4 pages → Clerk)
@@ -610,7 +623,7 @@ Before saying a task is "done":
 - ✅ QC settings page created
 - ✅ CLAUDE.md agent triggers added
 
-**Sprint 2 Ready:**
+**Sprint 2 Ready (after browser testing):**
 - Airspace status persistence
 - QCImageViewer URL fallback
 - RunPod env documentation

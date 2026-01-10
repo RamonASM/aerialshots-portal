@@ -2,10 +2,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { LogOut, Camera, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Camera, Plus } from 'lucide-react'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
 import { MobileNav } from '@/components/dashboard/MobileNav'
+import { SignOutButton } from '@/components/auth/SignOutButton'
 
 // Force dynamic rendering - dashboard requires auth checks at runtime
 export const dynamic = 'force-dynamic'
@@ -105,14 +105,7 @@ export default async function DashboardLayout({
             <span className="hidden text-[13px] text-[#a1a1a6] md:block">
               {displayName}
             </span>
-            {!authBypassEnabled && (
-              <form action="/api/auth/signout" method="POST">
-                <Button variant="ghost" size="sm" type="submit">
-                  <LogOut className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline">Sign out</span>
-                </Button>
-              </form>
-            )}
+            {!authBypassEnabled && <SignOutButton />}
           </div>
         </div>
       </header>
