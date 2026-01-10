@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Check if Clerk is properly configured
@@ -203,7 +203,18 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
   // Type assertion for custom session claims with role metadata
   const publicMetadata = sessionClaims?.public_metadata as { role?: string } | undefined
   const userRole = publicMetadata?.role
-  const userEmail = sessionClaims?.email as string | undefined
+  let userEmail = sessionClaims?.email as string | undefined
+
+  // If email not in session claims, fetch from Clerk API (only for staff routes to minimize API calls)
+  if (!userEmail && isStaffRoute(request)) {
+    try {
+      const client = await clerkClient()
+      const user = await client.users.getUser(userId)
+      userEmail = user.emailAddresses?.[0]?.emailAddress
+    } catch (error) {
+      console.error('[Middleware] Error fetching user email:', error)
+    }
+  }
 
   // Staff routes require staff role
   if (isStaffRoute(request)) {
@@ -213,6 +224,8 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
       userRole === 'videographer' ||
       userRole === 'qc' ||
       userRole === 'partner' ||
+      userRole === 'editor' ||
+      userRole === 'va' ||
       userEmail?.toLowerCase().endsWith('@aerialshots.media')
 
     if (!isStaff) {
