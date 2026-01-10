@@ -61,6 +61,8 @@ export async function createConnectAccount(params: {
   try {
     const stripe = getStripe()
 
+    console.log('[Stripe Connect] Creating account for:', { email, name, businessType })
+
     // Create Express connected account
     const account = await stripe.accounts.create({
       type: 'express',
@@ -80,11 +82,19 @@ export async function createConnectAccount(params: {
       },
     })
 
+    console.log('[Stripe Connect] Account created:', account.id)
+
+    // Build URLs for onboarding
+    const refreshUrl = `${APP_URL}/api/connect/refresh?type=${type}&id=${entityId}`
+    const returnUrl = `${APP_URL}/api/connect/return?type=${type}&id=${entityId}`
+
+    console.log('[Stripe Connect] Creating account link with URLs:', { refreshUrl, returnUrl })
+
     // Generate onboarding link
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `${APP_URL}/api/connect/refresh?type=${type}&id=${entityId}`,
-      return_url: `${APP_URL}/api/connect/return?type=${type}&id=${entityId}`,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
       type: 'account_onboarding',
     })
 
