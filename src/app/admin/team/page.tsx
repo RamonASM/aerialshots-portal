@@ -207,8 +207,8 @@ export default async function TeamOverviewPage() {
     {
       role: 'va' as PartnerRole,
       title: 'VA Dashboard',
-      description: 'Task management and communications',
-      href: '/team/va',
+      description: 'Editor queue and task management',
+      href: '/team/editor', // VA uses editor portal
       icon: Headphones,
       color: 'bg-amber-500',
     },

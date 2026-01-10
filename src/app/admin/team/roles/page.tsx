@@ -59,8 +59,8 @@ const roleConfig = {
     label: 'Virtual Assistant',
     icon: Headphones,
     color: 'bg-amber-500',
-    dashboard: '/team/va',
-    description: 'Access VA task management and communications',
+    dashboard: '/team/editor', // VA uses editor portal
+    description: 'Access editor queue and task management',
   },
 }
 
