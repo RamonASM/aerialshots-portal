@@ -619,14 +619,16 @@ Before saying a task is "done":
 **Remaining TODOs:**
 | File | TODO | Priority |
 |------|------|----------|
+| `components/analytics/SoldMap.tsx` | Integrate Google Maps | Medium |
+| `api/v1/location/*.ts` | Add endpoint-level tests | Medium |
 | `lib/integrations/cubicasa/client.ts` | Implement actual Cubicasa API call | Low |
 | `lib/agents/workflows/editor.ts` | Uncomment after migration | Low |
-| `components/analytics/SoldMap.tsx` | Integrate Google Maps | Medium |
 
 **Testing Gaps:**
 - Create Clerk accounts for QC/Editor test users
 - Browser test QC and Editor portal pages
 - Test Stripe Connect payout flow end-to-end
+- Add Life Here API endpoint tests (10 endpoints)
 
 ### Approach per CLAUDE.md Framework
 
@@ -695,6 +697,34 @@ Before saying a task is "done":
 | Stripe Connect | `/api/webhooks/stripe-connect` | Payout events |
 | Cubicasa | `/api/webhooks/cubicasa` | Floor plan delivery |
 | Zillow 3D | `/api/webhooks/zillow-3d` | 3D tour completion |
+
+## Life Here API
+
+The Life Here API provides location-based lifestyle data for content enrichment. It's a proprietary Central Florida-focused scoring system.
+
+**Base URL:** `/api/v1/location`
+
+| Endpoint | Purpose | Status |
+|----------|---------|--------|
+| `/scores` | Life Here Score (0-100) by lifestyle profile | ✅ Complete |
+| `/dining` | Restaurants, cuisines, ratings | ✅ Complete |
+| `/commute` | Drive times to airports, beaches, downtown | ✅ Complete |
+| `/events` | Local events and activities | ✅ Complete |
+| `/attractions` | Theme parks, beaches, museums | ✅ Complete |
+| `/essentials` | Schools, healthcare, grocery | ✅ Complete |
+| `/lifestyle` | Gyms, parks, recreation | ✅ Complete |
+| `/overview` | Neighborhood summary | ✅ Complete |
+| `/news` | Local news integration | ✅ Complete |
+| `/movies` | Nearby movie theaters | ✅ Complete |
+
+**Features:**
+- API key authentication (`X-ASM-Secret`)
+- Rate limiting per endpoint
+- Location-based caching (30 min TTL)
+- Circuit breaker for resilience
+- 5 lifestyle profiles: `balanced`, `family`, `professional`, `active`, `foodie`
+
+**Testing Gap:** API endpoints lack dedicated test files (skill-level tests exist)
 
 ---
 

@@ -6,8 +6,9 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { MapPin, Home, DollarSign, Calendar } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import Image from 'next/image'
+import { MapPin, Home, DollarSign } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SoldProperty {
@@ -40,12 +41,14 @@ export function SoldMap({
   const [mapLoaded, setMapLoaded] = useState(false)
 
   // Calculate map center from properties
-  const center = calculateCenter(properties)
-  const zoom = calculateZoom(properties)
+  const center = useMemo(() => calculateCenter(properties), [properties])
+  const zoom = useMemo(() => calculateZoom(properties), [properties])
 
-  // For MVP, show a static map with markers
-  // TODO: Integrate with Google Maps or Mapbox for full interactivity
-  const staticMapUrl = generateStaticMapUrl(properties, center, zoom, brandColor)
+  // Generate static map URL (memoized to avoid recalculation)
+  const staticMapUrl = useMemo(
+    () => generateStaticMapUrl(properties, center, zoom, brandColor),
+    [properties, center, zoom, brandColor]
+  )
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -54,6 +57,7 @@ export function SoldMap({
         {/* Map Container */}
         <div className="relative h-[400px]">
           {staticMapUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={staticMapUrl}
               alt="Map of sold properties"
@@ -236,10 +240,12 @@ function PropertyCard({
       <div className="flex items-start justify-between">
         <div className="flex gap-4">
           {property.imageUrl && (
-            <img
+            <Image
               src={property.imageUrl}
               alt={property.address}
-              className="h-20 w-28 rounded-lg object-cover"
+              width={112}
+              height={80}
+              className="rounded-lg object-cover"
             />
           )}
           <div>
@@ -344,8 +350,45 @@ function generateStaticMapUrl(
   zoom: number,
   brandColor: string
 ): string | null {
-  // This would generate a Google Static Maps URL
-  // For now, return null to use CSS fallback
-  // TODO: Implement with actual Google Maps API key
-  return null
+  // Use Google Static Maps API (uses same key as Places API)
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+  if (!apiKey || properties.length === 0) {
+    return null
+  }
+
+  // Convert brand color from hex to Google Maps format (0xRRGGBB)
+  const markerColor = brandColor.replace('#', '0x')
+
+  // Build markers string (limit to 15 markers due to URL length)
+  const markersToShow = properties.slice(0, 15)
+  const markers = markersToShow
+    .map((p) => `${p.lat},${p.lng}`)
+    .join('|')
+
+  // Build URL with dark map style
+  const baseUrl = 'https://maps.googleapis.com/maps/api/staticmap'
+  const params = new URLSearchParams({
+    center: `${center.lat},${center.lng}`,
+    zoom: zoom.toString(),
+    size: '800x400',
+    scale: '2', // Retina display
+    maptype: 'roadmap',
+    key: apiKey,
+  })
+
+  // Add dark style parameters
+  const darkStyles = [
+    'feature:all|element:geometry|color:0x212121',
+    'feature:all|element:labels.text.fill|color:0x757575',
+    'feature:all|element:labels.text.stroke|color:0x212121',
+    'feature:water|element:geometry|color:0x000000',
+    'feature:road|element:geometry|color:0x3c3c3c',
+    'feature:poi|element:geometry|color:0x1c1c1e',
+  ]
+  darkStyles.forEach((style) => params.append('style', style))
+
+  // Add markers with custom color
+  params.append('markers', `color:${markerColor}|size:small|${markers}`)
+
+  return `${baseUrl}?${params.toString()}`
 }
