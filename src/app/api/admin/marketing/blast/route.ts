@@ -96,10 +96,79 @@ export async function POST(request: NextRequest) {
         .not('email', 'is', null)
 
       if (filter) {
-        if (filter.type === 'manual' && filter.params?.agent_ids) {
-          query = query.in('id', filter.params.agent_ids)
+        switch (filter.type) {
+          case 'manual':
+            if (filter.params?.agent_ids) {
+              query = query.in('id', filter.params.agent_ids)
+            }
+            break
+
+          case 'by_last_order':
+            if (filter.params?.days_since_order) {
+              // Get agents who have ordered within the specified days
+              const cutoffDate = new Date()
+              cutoffDate.setDate(cutoffDate.getDate() - filter.params.days_since_order)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: recentAgents } = await (supabase as any)
+                .from('orders')
+                .select('agent_id')
+                .gte('created_at', cutoffDate.toISOString())
+                .not('agent_id', 'is', null) as { data: { agent_id: string }[] | null }
+              const agentIds = [...new Set((recentAgents || []).map((o) => o.agent_id))] as string[]
+              if (agentIds.length > 0) {
+                query = query.in('id', agentIds)
+              } else {
+                // No matching agents, return empty
+                query = query.eq('id', '00000000-0000-0000-0000-000000000000')
+              }
+            }
+            break
+
+          case 'by_service':
+            if (filter.params?.service_types && filter.params.service_types.length > 0) {
+              // Get agents who have ordered specific service types
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: serviceAgents } = await (supabase as any)
+                .from('orders')
+                .select('agent_id')
+                .in('service_type', filter.params.service_types)
+                .not('agent_id', 'is', null) as { data: { agent_id: string }[] | null }
+              const serviceAgentIds = [...new Set((serviceAgents || []).map((o) => o.agent_id))] as string[]
+              if (serviceAgentIds.length > 0) {
+                query = query.in('id', serviceAgentIds)
+              } else {
+                query = query.eq('id', '00000000-0000-0000-0000-000000000000')
+              }
+            }
+            break
+
+          case 'by_spend': {
+            // Get agents based on total spend
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: spendData } = await (supabase as any)
+              .rpc('get_agent_total_spend') as { data: { agent_id: string; total_spend: number }[] | null }
+            if (spendData) {
+              const spendAgentIds = spendData
+                .filter((s) => {
+                  if (filter.params?.min_spend && s.total_spend < filter.params.min_spend * 100) return false
+                  if (filter.params?.max_spend && s.total_spend > filter.params.max_spend * 100) return false
+                  return true
+                })
+                .map((s) => s.agent_id)
+              if (spendAgentIds.length > 0) {
+                query = query.in('id', spendAgentIds)
+              } else {
+                query = query.eq('id', '00000000-0000-0000-0000-000000000000')
+              }
+            }
+            break
+          }
+
+          case 'all':
+          default:
+            // No filter needed, get all agents
+            break
         }
-        // TODO: Add other filter types (by_last_order, by_service, by_spend)
       }
 
       const { data: agents, error: agentsError } = await query

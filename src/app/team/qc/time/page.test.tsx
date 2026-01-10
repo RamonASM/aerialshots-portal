@@ -8,23 +8,36 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock Supabase
-const mockGetUser = vi.fn()
-const mockSelect = vi.fn()
-const mockEq = vi.fn()
-const mockSingle = vi.fn()
-const mockFrom = vi.fn(() => ({
-  select: mockSelect,
+// Mock staff data function
+const mockStaffData = vi.fn()
+
+// Create a chainable mock that returns the configured staff data
+const createMockChain = () => ({
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: () => mockStaffData(),
+  maybeSingle: () => mockStaffData(),
+  order: vi.fn().mockReturnThis(),
+})
+
+const mockFrom = vi.fn(() => createMockChain())
+
+// Mock Supabase admin client
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: mockFrom,
+  }),
 }))
 
-mockSelect.mockReturnValue({ eq: mockEq })
-mockEq.mockReturnValue({ eq: mockEq, single: mockSingle })
-
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({
-    auth: { getUser: mockGetUser },
-    from: mockFrom,
-  })),
+// Mock auth middleware
+const mockGetStaffAccess = vi.fn()
+vi.mock('@/lib/auth/server-access', () => ({
+  getStaffAccess: () => mockGetStaffAccess(),
+  hasRequiredRole: (role: string, allowedRoles: string[]) => {
+    // Auto-include admin and owner
+    const fullAllowed = [...allowedRoles, 'admin', 'owner']
+    return fullAllowed.includes(role)
+  },
 }))
 
 // Mock TimeClock component
@@ -44,53 +57,17 @@ describe('QCTimePage', () => {
 
   describe('Authentication', () => {
     it('redirects to login if not authenticated', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null } })
+      mockGetStaffAccess.mockResolvedValue(null)
 
-      await expect(QCTimePage()).rejects.toThrow('REDIRECT:/staff-login')
-    })
-
-    it('redirects if user is not found in staff table', async () => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'unknown@example.com' } },
-      })
-      mockSingle.mockResolvedValue({ data: null })
-
-      await expect(QCTimePage()).rejects.toThrow('REDIRECT:/staff-login')
+      await expect(QCTimePage()).rejects.toThrow('REDIRECT:/sign-in/staff')
     })
 
     it('redirects if user does not have QC role', async () => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'photo@example.com' } },
-      })
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'staff-123',
-          name: 'John Photographer',
-          email: 'photo@example.com',
-          role: 'photographer', // Not QC
-          team_role: null,
-          payout_type: '1099',
-          hourly_rate: null,
-        },
-      })
-
-      await expect(QCTimePage()).rejects.toThrow('REDIRECT:/team/qc')
-    })
-
-    it('redirects if payout_type is not hourly', async () => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'qc@example.com' } },
-      })
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'staff-123',
-          name: 'John QC',
-          email: 'qc@example.com',
-          role: 'qc',
-          team_role: null,
-          payout_type: '1099', // Not hourly
-          hourly_rate: null,
-        },
+      mockGetStaffAccess.mockResolvedValue({
+        id: 'staff-123',
+        email: 'photo@example.com',
+        role: 'photographer', // Not QC
+        authUserId: 'auth-123',
       })
 
       await expect(QCTimePage()).rejects.toThrow('REDIRECT:/team/qc')
@@ -99,22 +76,23 @@ describe('QCTimePage', () => {
 
   describe('Rendering', () => {
     beforeEach(() => {
-      mockGetUser.mockResolvedValue({
-        data: { user: { email: 'qc@example.com' } },
+      mockGetStaffAccess.mockResolvedValue({
+        id: 'staff-123',
+        email: 'qc@example.com',
+        role: 'qc',
+        authUserId: 'auth-123',
       })
     })
 
-    it('renders TimeClock component for QC staff with hourly payout', async () => {
-      mockSingle.mockResolvedValue({
+    it('renders TimeClock component for QC staff', async () => {
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'staff-123',
           name: 'John QC',
           email: 'qc@example.com',
           role: 'qc',
-          team_role: null,
-          payout_type: 'hourly',
-          hourly_rate: 5.50,
         },
+        error: null,
       })
 
       const page = await QCTimePage()
@@ -123,36 +101,21 @@ describe('QCTimePage', () => {
       expect(screen.getByTestId('time-clock')).toBeInTheDocument()
     })
 
-    it('renders warning when hourly_rate is not configured', async () => {
-      mockSingle.mockResolvedValue({
-        data: {
-          id: 'staff-123',
-          name: 'John QC',
-          email: 'qc@example.com',
-          role: 'qc',
-          team_role: null,
-          payout_type: 'hourly',
-          hourly_rate: null, // Not configured
-        },
-      })
-
-      const page = await QCTimePage()
-      render(page)
-
-      expect(screen.getByText(/hourly rate not configured/i)).toBeInTheDocument()
-    })
-
     it('allows admin access to time tracking', async () => {
-      mockSingle.mockResolvedValue({
+      mockGetStaffAccess.mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+        authUserId: 'auth-456',
+      })
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'admin-123',
           name: 'Admin User',
           email: 'admin@example.com',
           role: 'admin',
-          team_role: null,
-          payout_type: 'hourly',
-          hourly_rate: 10.00,
         },
+        error: null,
       })
 
       const page = await QCTimePage()
@@ -162,22 +125,29 @@ describe('QCTimePage', () => {
     })
 
     it('renders page title and description', async () => {
-      mockSingle.mockResolvedValue({
+      mockStaffData.mockResolvedValue({
         data: {
           id: 'staff-123',
           name: 'John QC',
           email: 'qc@example.com',
           role: 'qc',
-          team_role: null,
-          payout_type: 'hourly',
-          hourly_rate: 5.50,
         },
+        error: null,
       })
 
       const page = await QCTimePage()
       render(page)
 
       expect(screen.getByRole('heading', { name: /time tracking/i })).toBeInTheDocument()
+    })
+
+    it('redirects to login if staff record not found', async () => {
+      mockStaffData.mockResolvedValue({
+        data: null,
+        error: null,
+      })
+
+      await expect(QCTimePage()).rejects.toThrow('REDIRECT:/sign-in/staff')
     })
   })
 })

@@ -595,41 +595,45 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 1 browser testing complete, team portal fixes deployed
+**Last Session:** Sprint 2 complete, ready for Sprint 3
 
-**Sprint 1 Browser Testing - COMPLETE:**
-- ✅ Chrome MCP extension connected and working
-- ✅ Staff sign-in flow fixed (was redirecting to agent dashboard)
-- ✅ Created `/team/page.tsx` for role-based redirects
-- ✅ Fixed middleware email detection using clerkClient API
-- ✅ Fixed all settings pages (removed non-existent `payout_type`, `hourly_rate` columns)
-- ✅ Test staff accounts created in Supabase
-- ✅ Photographer dashboard, schedule, settings pages all working
-- ✅ Role-based access control verified (QC/Editor pages correctly redirect photographers)
+### Completed Sprints
 
-**Pages Tested:**
-| Page | Status |
-|------|--------|
-| `/team` redirect | ✅ Working |
-| `/team/photographer` | ✅ Working |
-| `/team/photographer/schedule` | ✅ Working |
-| `/team/photographer/settings` | ✅ Working |
-| `/team/qc/*` | ✅ Correctly restricts access |
-| `/team/editor/*` | ✅ Correctly restricts access |
+**Sprint 1 - Team Portal Fixes:** ✅ COMPLETE
+- Staff sign-in flow, role-based redirects, settings pages fixed
+- Photographer dashboard/schedule/settings working
+- Test staff accounts created in Supabase
 
-**Sprint 2 - COMPLETE (2026-01-10 Afternoon):**
-- ✅ QCImageViewer URL fallback - Added `aryeo_url` fallback for legacy assets
-- ✅ Airspace status persistence - Integrated AirspaceCheck into booking flow
-  - Added AirspaceCheck component to Property step
-  - API now returns `checkId` for cached results
-  - Order creation links `airspace_check_id` and sets `drone_approved`
-- ✅ RunPod env documentation - Already documented in .env.example and PRODUCTION_CHECKLIST.md
-- ✅ Stripe Connect webhook expansion - Added handlers for:
-  - `payout.failed` - Log payout failures to connected accounts
-  - `transfer.reversed` - Log when transfers are reversed
+**Sprint 2 - Integration & Webhooks:** ✅ COMPLETE
+- QCImageViewer URL fallback with `aryeo_url`
+- Airspace status persistence in booking flow
+- Stripe Connect webhook handlers expanded
 
-**Test Accounts Note:**
-QC and Editor portal testing was skipped because test staff accounts exist in Supabase but not in Clerk. Create Clerk accounts with matching emails to test these portals.
+### Sprint 3 - Code Quality & TODOs
+
+**Completed:**
+- ✅ `api/booking/airspace-qualify/route.ts` - Update listing with airspace status
+- ✅ `api/admin/marketing/blast/route.ts` - Filter type implementations (by_last_order, by_service, by_spend)
+- ✅ Fixed QCTimePage test for Clerk auth
+
+**Remaining TODOs:**
+| File | TODO | Priority |
+|------|------|----------|
+| `lib/integrations/cubicasa/client.ts` | Implement actual Cubicasa API call | Low |
+| `lib/agents/workflows/editor.ts` | Uncomment after migration | Low |
+| `components/analytics/SoldMap.tsx` | Integrate Google Maps | Medium |
+
+**Testing Gaps:**
+- Create Clerk accounts for QC/Editor test users
+- Browser test QC and Editor portal pages
+- Test Stripe Connect payout flow end-to-end
+
+### Approach per CLAUDE.md Framework
+
+1. **Before each task:** Review existing code, state files to modify
+2. **After each change:** Run `npm run build` and `npm run test`
+3. **Verification:** Test manually in browser when applicable
+4. **Commits:** Small, verified changes with descriptive messages
 
 ---
 
@@ -695,6 +699,16 @@ QC and Editor portal testing was skipped because test staff accounts exist in Su
 ---
 
 ## Recent Changes
+
+### 2026-01-10 (Sprint 3 - Code Quality)
+- **Sprint 3 Progress**:
+  - Implemented airspace status update on listings (`airspace-qualify` route)
+    - Updates `airspace_status` and `airspace_checked_at` when listingId provided
+    - Works for both cached and fresh airspace checks
+  - Implemented marketing blast filter types (`by_last_order`, `by_service`, `by_spend`)
+    - Filters agents by recent order date, service types, or total spend
+  - Fixed QCTimePage test for Clerk auth (was using old Supabase auth mocks)
+- Build passing, 2937 tests passing
 
 ### 2026-01-10 (Afternoon Session - Sprint 2)
 - **Sprint 2 Complete**:

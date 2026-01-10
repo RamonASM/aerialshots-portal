@@ -62,6 +62,22 @@ export async function POST(request: NextRequest) {
         ? JSON.parse(cached.restrictions)
         : cached.restrictions || []
 
+      // Update listing with cached airspace status if listingId was provided
+      if (listingId && listingId !== 'booking-check') {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
+            .from('listings')
+            .update({
+              airspace_status: cached.status || 'unknown',
+              airspace_checked_at: cached.checked_at,
+            })
+            .eq('id', listingId)
+        } catch (listingError) {
+          console.warn('[Airspace Qualify] Failed to update listing from cache:', listingError)
+        }
+      }
+
       return NextResponse.json({
         success: true,
         cached: true,
@@ -121,9 +137,28 @@ export async function POST(request: NextRequest) {
       console.warn('[Airspace Qualify] Cache error:', cacheError)
     }
 
-    // TODO: Update listing with airspace status after Phase 1 migration is applied
-    // This will set airspace_status = 'approved' | 'pending' | 'restricted'
-    // and airspace_checked_at = qualification.checked_at
+    // Update listing with airspace status if listingId was provided
+    if (listingId && listingId !== 'booking-check') {
+      try {
+        // Map qualification to status
+        const airspaceStatus = qualification.qualified
+          ? 'clear'
+          : qualification.requires_authorization
+            ? 'caution'
+            : 'restricted'
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
+          .from('listings')
+          .update({
+            airspace_status: airspaceStatus,
+            airspace_checked_at: qualification.checked_at,
+          })
+          .eq('id', listingId)
+      } catch (listingError) {
+        console.warn('[Airspace Qualify] Failed to update listing:', listingError)
+      }
+    }
 
     return NextResponse.json({
       success: true,
