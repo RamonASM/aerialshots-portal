@@ -64,6 +64,28 @@ export default async function DashboardPage() {
     redirect('/sign-in?error=db_error')
   }
 
+  // Check if user is staff first - staff should use team portal, not agent dashboard
+  const { data: staffMember } = await supabase
+    .from('staff')
+    .select('id, role')
+    .eq('email', userEmail)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (staffMember) {
+    // Redirect staff to their appropriate team portal based on role
+    const roleToPath: Record<string, string> = {
+      photographer: '/team/photographer',
+      videographer: '/team/videographer',
+      qc: '/team/qc',
+      editor: '/team/editor',
+      va: '/team/editor',
+      admin: '/admin',
+    }
+    const teamPath = roleToPath[staffMember.role] || '/team/photographer'
+    redirect(teamPath)
+  }
+
   // Get agent with stats
   const { data: agent, error: agentError } = await supabase
     .from('agents')
@@ -77,7 +99,7 @@ export default async function DashboardPage() {
   }
 
   if (!agent) {
-    // Create agent record if it doesn't exist
+    // Only create agent record for non-staff users
     const slug = userEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
     const { data: newAgent, error } = await supabase
       .from('agents')
