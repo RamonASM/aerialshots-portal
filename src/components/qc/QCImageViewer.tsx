@@ -33,8 +33,9 @@ interface MediaAsset {
 }
 
 // Helper to get the best URL for an asset
+// Falls back to aryeo_url for legacy assets that haven't been migrated
 function getAssetUrl(asset: MediaAsset): string {
-  return asset.media_url || ''
+  return asset.media_url || asset.aryeo_url || ''
 }
 
 interface QCImageViewerProps {
