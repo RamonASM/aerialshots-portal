@@ -2,6 +2,63 @@
 
 All notable changes to the ASM Portal are documented here.
 
+## [Unreleased] - 2026-01-10
+
+### Completed - Sprint 1: Authentication & Navigation Fixes
+
+Fixed critical authentication issues and created missing team portal pages.
+
+#### QC Portal Auth Fixed
+All QC pages now use Clerk authentication (`getStaffAccess()`) instead of old Supabase auth.
+
+| File | Change |
+|------|--------|
+| `src/app/team/qc/page.tsx` | Clerk auth, redirect to `/sign-in/staff` |
+| `src/app/team/qc/queue/page.tsx` | Clerk auth, redirect to `/sign-in/staff` |
+| `src/app/team/qc/rejected/page.tsx` | Clerk auth, redirect to `/sign-in/staff` |
+| `src/app/team/qc/time/page.tsx` | Clerk auth, redirect to `/sign-in/staff` |
+
+#### New Team Portal Pages Created
+
+| Page | Path | Purpose |
+|------|------|---------|
+| Photographer Schedule | `/team/photographer/schedule` | Weekly schedule view with job cards |
+| Photographer Job Detail | `/team/photographer/job/[id]` | Job detail with HDR bracket upload |
+| Editor Settings | `/team/editor/settings` | Profile, Stripe Connect, skills |
+| QC Settings | `/team/qc/settings` | Profile, compensation info, time tracking link |
+
+#### New Components
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `PhotographerJobClient` | `src/components/team/PhotographerJobClient.tsx` | Client component for HDR bracket upload on photographer job pages |
+
+#### CLAUDE.md Updates
+- Added agent trigger checkpoints table
+- Added file change triggers for proactive reminders
+- Added "Proactive Reminders" section for development workflow
+- Updated agent table with slash commands
+
+### Next Up - Sprint 2: Core Features
+
+| Priority | Task | Notes |
+|----------|------|-------|
+| 🟡 High | Airspace status persistence | Save qualification results to database |
+| 🟡 High | QCImageViewer URL fallback | Add `aryeo_url` fallback like QCReviewClient |
+| 🟠 Medium | RunPod env setup | Document HDR processing configuration |
+| 🟠 Medium | Stripe Connect webhook | Register `/api/webhooks/stripe-connect` |
+
+### Testing - Chrome Extension Setup
+
+To test production pages with Claude Chrome extension:
+```bash
+claude config set chrome.enabled true
+claude --chrome
+```
+Then test: `https://app.aerialshots.media/team/photographer/schedule`
+
+---
+
 ## [Unreleased] - 2026-01-04
 
 ### Added - Stripe Product Catalog

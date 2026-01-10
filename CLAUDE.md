@@ -593,6 +593,31 @@ Before saying a task is "done":
 
 ---
 
+## Resume Point (2026-01-10)
+
+**Last Session:** Sprint 1 complete, ready for browser testing
+
+**To Continue:**
+1. Restart Claude Code with Chrome: `claude --chrome`
+2. Test production pages at `https://app.aerialshots.media`
+3. Or continue to Sprint 2 tasks below
+
+**Sprint 1 Completed:**
+- ✅ QC auth fixed (4 pages → Clerk)
+- ✅ Photographer schedule page created
+- ✅ Photographer job detail with HDR upload
+- ✅ Editor settings page created
+- ✅ QC settings page created
+- ✅ CLAUDE.md agent triggers added
+
+**Sprint 2 Ready:**
+- Airspace status persistence
+- QCImageViewer URL fallback
+- RunPod env documentation
+- Stripe Connect webhook setup
+
+---
+
 ## Current Status (2026-01-10)
 
 ### ✅ Completed
