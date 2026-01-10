@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Clock, AlertCircle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { getStaffAccess, hasRequiredRole, type StaffAccess } from '@/lib/auth/server-access'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,32 +34,22 @@ export default async function QCTimePage() {
 
   const supabase = createAdminClient()
 
-  // Get staff member with time tracking info (need payout_type and hourly_rate)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: staff } = await (supabase as any)
+  // Get staff member
+  const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, email, role, payout_type, hourly_rate')
+    .select('id, name, email, role')
     .eq('email', staffAccess.email)
     .eq('is_active', true)
-    .single() as { data: {
+    .maybeSingle() as { data: {
       id: string
       name: string
       email: string
       role: string | null
-      payout_type: string | null
-      hourly_rate: number | null
     } | null }
 
   if (!staff) {
     redirect('/sign-in/staff')
   }
-
-  // Time tracking is only for hourly workers
-  if (staff.payout_type !== 'hourly') {
-    redirect('/team/qc')
-  }
-
-  const hasHourlyRate = !!staff.hourly_rate
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
@@ -68,21 +58,6 @@ export default async function QCTimePage() {
         <h1 className="text-2xl font-bold text-white">Time Tracking</h1>
         <p className="mt-1 text-zinc-400">Track your work hours for QC tasks</p>
       </div>
-
-      {/* Hourly Rate Warning */}
-      {!hasHourlyRate && (
-        <Card className="border-amber-500/20 bg-amber-500/5">
-          <CardContent className="flex items-center gap-3 py-4">
-            <AlertCircle className="h-5 w-5 text-amber-500" />
-            <div>
-              <p className="font-medium text-amber-400">Hourly Rate Not Configured</p>
-              <p className="text-sm text-amber-400/80">
-                Please contact an administrator to set your hourly rate before tracking time.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Time Clock Component */}
       <TimeClock />

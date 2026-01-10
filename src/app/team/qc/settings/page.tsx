@@ -28,15 +28,14 @@ export default async function QCSettingsPage() {
     redirect('/sign-in/staff')
   }
 
-  // Get full staff member with payout info
+  // Get full staff member
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: staff } = await (supabase as any)
+  const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, email, phone, role, skills, certifications, payout_type, hourly_rate')
+    .select('id, name, email, phone, role, skills, certifications')
     .eq('email', staffAccess.email)
     .eq('is_active', true)
-    .single() as { data: {
+    .maybeSingle() as { data: {
       id: string
       name: string
       email: string
@@ -44,8 +43,6 @@ export default async function QCSettingsPage() {
       role: string | null
       skills: string[] | null
       certifications: string[] | null
-      payout_type: string | null
-      hourly_rate: number | null
     } | null }
 
   if (!staff) {
@@ -55,7 +52,6 @@ export default async function QCSettingsPage() {
   const displayRole = staff.role || 'qc'
   const skills = staff.skills || []
   const certifications = staff.certifications || []
-  const isHourly = staff.payout_type === 'hourly'
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
@@ -119,39 +115,21 @@ export default async function QCSettingsPage() {
               </div>
               <div>
                 <p className="font-medium text-white">Pay Type</p>
-                <p className="text-sm text-zinc-400">
-                  {isHourly ? 'Hourly' : 'Per Job'}
-                </p>
+                <p className="text-sm text-zinc-400">Per Job</p>
               </div>
             </div>
-            {isHourly && staff.hourly_rate && (
-              <div className="text-right">
-                <p className="text-2xl font-bold text-green-400">
-                  ${staff.hourly_rate.toFixed(2)}
-                </p>
-                <p className="text-xs text-zinc-500">per hour</p>
-              </div>
-            )}
           </div>
 
-          {isHourly && (
-            <a
-              href="/team/qc/time"
-              className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4 transition-colors hover:bg-cyan-500/10"
-            >
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-cyan-400" />
-                <span className="font-medium text-cyan-400">Track Time</span>
-              </div>
-              <span className="text-sm text-cyan-400">Clock in/out</span>
-            </a>
-          )}
-
-          {!isHourly && (
-            <p className="text-sm text-zinc-500">
-              Your compensation is based on job completion. Contact admin for rate details.
-            </p>
-          )}
+          <a
+            href="/team/qc/time"
+            className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4 transition-colors hover:bg-cyan-500/10"
+          >
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-cyan-400" />
+              <span className="font-medium text-cyan-400">Track Time</span>
+            </div>
+            <span className="text-sm text-cyan-400">Clock in/out</span>
+          </a>
         </CardContent>
       </Card>
 

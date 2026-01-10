@@ -48,27 +48,28 @@ export default async function PhotographerSettingsPage({ searchParams }: PagePro
 
   // Get full staff member with payout info
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: staff, error: staffError } = await (supabase as any)
+
+  // Get staff record by email
+  const { data: staffData, error: staffError } = await supabase
     .from('staff')
-    .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
+    .select('id, name, email, phone, role, skills, certifications')
     .eq('email', staffAccess.email)
     .eq('is_active', true)
-    .maybeSingle() as { data: {
-      id: string
-      name: string
-      email: string
-      phone: string | null
-      role: string | null
-      skills: string[] | null
-      certifications: string[] | null
-      payout_type: string | null
-      default_payout_percent: number | null
-    } | null, error: unknown }
+    .maybeSingle()
 
   if (staffError) {
     console.log('[PhotographerSettings] Staff query error:', staffError)
   }
+
+  const staff = staffData as {
+    id: string
+    name: string
+    email: string
+    phone: string | null
+    role: string | null
+    skills: string[] | null
+    certifications: string[] | null
+  } | null
   if (!staff) {
     console.log('[PhotographerSettings] No staff record found for email:', staffAccess.email)
     redirect('/sign-in/staff')

@@ -34,15 +34,14 @@ export default async function EditorSettingsPage({ searchParams }: PageProps) {
     redirect('/sign-in/staff')
   }
 
-  // Get full staff member with payout info
+  // Get full staff member
   const supabase = createAdminClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: staff } = await (supabase as any)
+  const { data: staff } = await supabase
     .from('staff')
-    .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
+    .select('id, name, email, phone, role, skills, certifications')
     .eq('email', staffAccess.email)
     .eq('is_active', true)
-    .single() as { data: {
+    .maybeSingle() as { data: {
       id: string
       name: string
       email: string
@@ -50,8 +49,6 @@ export default async function EditorSettingsPage({ searchParams }: PageProps) {
       role: string | null
       skills: string[] | null
       certifications: string[] | null
-      payout_type: string | null
-      default_payout_percent: number | null
     } | null }
 
   if (!staff) {
