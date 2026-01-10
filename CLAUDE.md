@@ -595,39 +595,34 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 1 complete, Chrome browser testing setup in progress
+**Last Session:** Sprint 1 browser testing complete, team portal fixes deployed
 
-**Chrome Browser Testing Setup:**
-1. ✅ Claude Code version 2.1.3 (sufficient)
-2. ⏳ Install Chrome extension: https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn
-3. ⏳ Run `claude config set chrome_enabled true`
-4. ⏳ Restart Claude Code with `claude --chrome`
-5. ⏳ Run `/chrome` to verify connection and enable by default
+**Sprint 1 Browser Testing - COMPLETE:**
+- ✅ Chrome MCP extension connected and working
+- ✅ Staff sign-in flow fixed (was redirecting to agent dashboard)
+- ✅ Created `/team/page.tsx` for role-based redirects
+- ✅ Fixed middleware email detection using clerkClient API
+- ✅ Fixed all settings pages (removed non-existent `payout_type`, `hourly_rate` columns)
+- ✅ Test staff accounts created in Supabase
+- ✅ Photographer dashboard, schedule, settings pages all working
+- ✅ Role-based access control verified (QC/Editor pages correctly redirect photographers)
 
-**To Continue:**
-1. Complete Chrome extension setup (steps above)
-2. Test Sprint 1 pages at `https://app.aerialshots.media`:
-   - `/team/photographer/schedule` - Weekly schedule view
-   - `/team/photographer/job/[id]` - Job detail with HDR upload
-   - `/team/editor/settings` - Editor profile with Stripe Connect
-   - `/team/qc/settings` - QC profile with compensation info
-   - `/team/qc/queue` - QC queue (auth fixed)
-3. Fix any issues found during browser testing
-4. Then proceed to Sprint 2
+**Pages Tested:**
+| Page | Status |
+|------|--------|
+| `/team` redirect | ✅ Working |
+| `/team/photographer` | ✅ Working |
+| `/team/photographer/schedule` | ✅ Working |
+| `/team/photographer/settings` | ✅ Working |
+| `/team/qc/*` | ✅ Correctly restricts access |
+| `/team/editor/*` | ✅ Correctly restricts access |
 
-**Sprint 1 Completed:**
-- ✅ QC auth fixed (4 pages → Clerk)
-- ✅ Photographer schedule page created
-- ✅ Photographer job detail with HDR upload
-- ✅ Editor settings page created
-- ✅ QC settings page created
-- ✅ CLAUDE.md agent triggers added
-
-**Sprint 2 Ready (after browser testing):**
+**To Continue (Sprint 2):**
 - Airspace status persistence
 - QCImageViewer URL fallback
 - RunPod env documentation
 - Stripe Connect webhook setup
+- Test QC and Editor portals with appropriate user accounts
 
 ---
 
@@ -694,7 +689,16 @@ Before saying a task is "done":
 
 ## Recent Changes
 
-### 2026-01-10
+### 2026-01-10 (Evening Session)
+- **Sprint 1 Browser Testing Complete**:
+  - Created `/team/page.tsx` for role-based redirects after sign-in
+  - Fixed middleware email detection using `clerkClient` API (sessionClaims doesn't include email)
+  - Fixed all team settings pages - removed non-existent columns (`payout_type`, `default_payout_percent`, `hourly_rate`)
+  - Created test staff accounts in Supabase (photographer, qc, editor)
+  - Verified photographer portal pages working: dashboard, schedule, settings
+  - Verified role-based access control working correctly
+
+### 2026-01-10 (Earlier)
 - **Sprint 1 Complete**: Fixed authentication & navigation issues
   - Fixed QC portal auth (4 pages) - now uses Clerk instead of old Supabase auth
   - Created `/team/photographer/schedule` - weekly schedule view
