@@ -40,7 +40,8 @@ export default async function EditorSettingsPage({ searchParams }: PageProps) {
   const { data: staff } = await (supabase as any)
     .from('staff')
     .select('id, name, email, phone, role, skills, certifications, payout_type, default_payout_percent')
-    .eq('id', staffAccess.id)
+    .eq('email', staffAccess.email)
+    .eq('is_active', true)
     .single() as { data: {
       id: string
       name: string
