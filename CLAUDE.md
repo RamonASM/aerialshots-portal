@@ -153,6 +153,64 @@ Before marking ANY task complete, confirm:
 
 ---
 
+## Claude Agents
+
+Custom agents in `.claude/agents/` for automated workflows:
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `build-validator.md` | Runs build, lint, tests | After any code changes |
+| `code-architect.md` | Reviews architecture decisions | Before implementing features |
+| `code-simplifier.md` | Simplifies completed code | After feature completion |
+| `verify-app.md` | Tests app in browser/runtime | Before marking tasks complete |
+| `pr-reviewer.md` | Reviews code for PR | Before creating PRs |
+| `test-writer.md` | Writes tests for features | When adding new features |
+
+### Agent Workflow
+
+```
+1. Plan      → code-architect (review approach)
+2. Implement → (write code)
+3. Validate  → build-validator (run checks)
+4. Simplify  → code-simplifier (reduce complexity)
+5. Verify    → verify-app (test in browser)
+6. Review    → pr-reviewer (before PR)
+```
+
+---
+
+## Feedback Loop
+
+**The most important thing: Give Claude a way to verify its work.**
+
+### Verification Methods
+
+| Type | Method | When |
+|------|--------|------|
+| **Build** | `npm run build` | After every change |
+| **Tests** | `npm run test` | After every change |
+| **Lint** | `npm run lint` | Before commits |
+| **Browser** | Check console + network | UI changes |
+| **API** | curl or test endpoint | API changes |
+
+### Feedback Signals to Provide
+
+When something doesn't work, tell Claude:
+- **Error messages** - Copy exact output
+- **Console errors** - From browser DevTools
+- **Network failures** - Status codes, response bodies
+- **Screenshots** - For UI issues
+- **Expected vs Actual** - What should happen vs what happened
+
+### Improving Quality
+
+1. **Always verify** - Never assume code works
+2. **Report actual output** - Not what you expect
+3. **One fix at a time** - Don't stack changes on broken code
+4. **Commit working code** - Small, verified commits
+
+---
+
 ## Key Commands
 
 ```bash
@@ -547,6 +605,8 @@ Before saying a task is "done":
 ## Recent Changes
 
 ### 2026-01-10
+- Added Claude agents for workflow automation (build-validator, code-architect, code-simplifier, verify-app, pr-reviewer, test-writer)
+- Added Feedback Loop section to CLAUDE.md
 - Pushed test fixes and CLAUDE.md to origin/main
 - Verified marketing redesign live at app.aerialshots.media
 

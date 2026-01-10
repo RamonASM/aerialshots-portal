@@ -18,6 +18,11 @@ import {
 import { AdminThemeProvider } from '@/components/admin/theme/ThemeProvider'
 import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detection'
 
+// Auth bypass for development
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
+
 // Team role navigation items
 const roleNavItems = {
   photographer: [
@@ -85,19 +90,27 @@ export default async function TeamLayout({
 }: {
   children: React.ReactNode
 }) {
-  let user
-  try {
-    user = await currentUser()
-  } catch (error) {
-    console.error('Clerk currentUser() error in team layout:', error)
-    redirect('/sign-in/staff?error=clerk_error')
-  }
+  let userEmail: string
 
-  if (!user?.emailAddresses?.[0]?.emailAddress) {
-    redirect('/sign-in/staff')
-  }
+  if (authBypassEnabled) {
+    // Use bypass identity
+    console.log('[Team Page] Auth bypass enabled - creating temporary partner data')
+    userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
+  } else {
+    let user
+    try {
+      user = await currentUser()
+    } catch (error) {
+      console.error('Clerk currentUser() error in team layout:', error)
+      redirect('/sign-in/staff?error=clerk_error')
+    }
 
-  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+    if (!user?.emailAddresses?.[0]?.emailAddress) {
+      redirect('/sign-in/staff')
+    }
+
+    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+  }
 
   // Get current pathname from headers
   const headersList = await headers()

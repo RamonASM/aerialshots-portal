@@ -2,23 +2,43 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, LucideIcon } from 'lucide-react'
+import {
+  Home,
+  User,
+  Building,
+  Users,
+  Gift,
+  Award,
+  Sparkles,
+  BookOpen,
+  Settings,
+  ShoppingCart,
+  ChevronRight,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-interface NavItem {
-  name: string
-  href: string
-  icon: LucideIcon
-  badge?: string
-}
+// Navigation defined inside client component to avoid serialization issues
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Orders', href: '/dashboard/orders', icon: ShoppingCart },
+  { name: 'Listings', href: '/dashboard/listings', icon: Building },
+  { name: 'Leads', href: '/dashboard/leads', icon: Users, badge: 'leads' as const },
+  { name: 'AI Tools', href: '/dashboard/ai-tools', icon: Sparkles },
+  { name: 'Storywork', href: '/dashboard/storywork', icon: BookOpen },
+  { name: 'Referrals', href: '/dashboard/referrals', icon: Gift },
+  { name: 'Rewards', href: '/dashboard/rewards', icon: Award },
+]
+
+const secondaryNav = [
+  { name: 'Profile', href: '/dashboard/profile', icon: User },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+]
 
 interface DashboardNavProps {
-  navigation: NavItem[]
-  secondaryNav: NavItem[]
   badges: Record<string, number>
 }
 
-export function DashboardNav({ navigation, secondaryNav, badges }: DashboardNavProps) {
+export function DashboardNav({ badges }: DashboardNavProps) {
   const pathname = usePathname()
 
   const isActive = (href: string) => {

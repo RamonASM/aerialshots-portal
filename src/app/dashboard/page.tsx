@@ -20,20 +20,41 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
+// Check if auth bypass is enabled
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
+
 export default async function DashboardPage() {
-  let user
-  try {
-    user = await currentUser()
-  } catch (error) {
-    console.error('Clerk currentUser() error:', error)
-    redirect('/sign-in?error=clerk_error')
-  }
+  let userEmail: string
+  let clerkUserId: string | null = null
+  let firstName: string | null = null
+  let lastName: string | null = null
 
-  if (!user?.emailAddresses?.[0]?.emailAddress) {
-    redirect('/sign-in')
-  }
+  if (authBypassEnabled) {
+    // Use bypass identity
+    userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
+    clerkUserId = process.env.AUTH_BYPASS_ID || 'bypass-user'
+    firstName = 'Bypass'
+    lastName = 'User'
+  } else {
+    let user
+    try {
+      user = await currentUser()
+    } catch (error) {
+      console.error('Clerk currentUser() error:', error)
+      redirect('/sign-in?error=clerk_error')
+    }
 
-  const userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+    if (!user?.emailAddresses?.[0]?.emailAddress) {
+      redirect('/sign-in')
+    }
+
+    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+    clerkUserId = user.id
+    firstName = user.firstName
+    lastName = user.lastName
+  }
 
   let supabase
   try {
@@ -62,9 +83,9 @@ export default async function DashboardPage() {
       .from('agents')
       .insert({
         email: userEmail,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || userEmail.split('@')[0],
+        name: `${firstName || ''} ${lastName || ''}`.trim() || userEmail.split('@')[0],
         slug: `${slug}-${Date.now().toString(36)}`,
-        clerk_user_id: user.id,
+        clerk_user_id: clerkUserId,
       })
       .select()
       .single()
