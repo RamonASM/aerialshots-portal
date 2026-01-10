@@ -595,7 +595,7 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 3 complete, ready for Sprint 4 (Testing & QA)
+**Last Session:** Sprint 4 (Testing & QA) complete - Stripe Connect needs env var
 
 ### Completed Sprints
 
@@ -614,24 +614,29 @@ Before saying a task is "done":
 - Life Here API endpoint tests (25 tests)
 - Airspace status updates, marketing blast filters
 
-### Sprint 4 - Testing & QA (In Progress)
+**Sprint 4 - Testing & QA:** ✅ COMPLETE
+- Created Clerk test accounts for QC/Editor/Photographer
+- Browser tested QC portal (Dashboard, Queue, Settings)
+- Browser tested Editor portal (Settings, Stripe Connect card)
+- Fixed VA role routing to use /team/editor instead of /team/va
+- Updated Connect API to use Clerk auth instead of Supabase auth
+- **Issue Found:** `STRIPE_SECRET_KEY` not set in Vercel production
 
-**Completed:**
-- ✅ Created Clerk test accounts for QC/Editor/Photographer
-- ✅ Browser tested QC portal (Dashboard, Queue, Settings)
-- ✅ Verified role-based access control working
-
-**Test Accounts:**
+### Test Accounts
 | Email | Role | Password |
 |-------|------|----------|
 | `ramon+qc@aerialshots.media` | QC | `AsmTest2026Portal!` |
 | `ramon+editor@aerialshots.media` | VA/Editor | `AsmTest2026Portal!` |
 | `ramon+photographer@aerialshots.media` | Photographer | `AsmTest2026Portal!` |
 
-**Remaining:**
-- Test Stripe Connect payout flow end-to-end
+### Action Required
+**Add `STRIPE_SECRET_KEY` to Vercel environment variables:**
+1. Go to Vercel Dashboard → aerialshots-portal → Settings → Environment Variables
+2. Add `STRIPE_SECRET_KEY` with the Stripe secret key value
+3. Redeploy to apply changes
+4. Re-test Stripe Connect flow on Editor Settings page
 
-**Low Priority TODOs:**
+### Low Priority TODOs
 | File | TODO | Priority |
 |------|------|----------|
 | `lib/integrations/cubicasa/client.ts` | Implement actual Cubicasa API call | Low |
@@ -657,7 +662,7 @@ Before saying a task is "done":
 
 | Issue | Priority | Notes |
 |-------|----------|-------|
-| Create Clerk accounts for QC/Editor testers | Medium | Supabase records exist, need Clerk accounts |
+| Add STRIPE_SECRET_KEY to Vercel | High | Required for Stripe Connect payouts |
 | Cubicasa integration | Low | Currently stub - manual floor plan upload works |
 | QuickBooks integration | Low | Not in active use |
 
