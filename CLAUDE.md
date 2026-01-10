@@ -79,16 +79,79 @@ ASM Portal is a Next.js 16 application for Aerial Shots Media, providing:
 **Blog:** `https://blog.aerialshots.media` (separate Next.js app at `~/aerialshots-blog-frontend`)
 **AI Agent Backend:** `~/asm-agent-backend` (Express.js API for AI booking agents)
 
+---
+
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router, Turbopack)
-- **Database:** Supabase (PostgreSQL + Auth + Storage)
-- **Styling:** Tailwind CSS + shadcn/ui components
-- **AI:** Anthropic Claude API, Google Gemini for content/image generation
-- **State Management:** Zustand with persistence + Immer
-- **Payments:** Stripe Elements + Stripe Connect
-- **Testing:** Vitest (2,939 tests passing)
-- **Integrations:** 28+ services
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| **Framework** | Next.js 16 (App Router) | Turbopack enabled |
+| **Language** | TypeScript | Strict mode |
+| **UI Components** | shadcn/ui + Radix | Custom dark theme |
+| **Styling** | Tailwind CSS | Design system in globals.css |
+| **Database** | Supabase PostgreSQL | RLS policies, connection pooling |
+| **Auth** | Clerk | Role-based (agent, staff, partner, seller) |
+| **State Management** | Zustand + Immer | SSR-safe persistence |
+| **Payments** | Stripe Elements + Connect | Webhooks, team payouts |
+| **AI/ML** | Claude API, Gemini, OpenAI Whisper | Content, vision, transcription |
+| **File Storage** | Supabase Storage | Media assets, staging, cache |
+| **Email** | Resend | Transactional emails |
+| **SMS** | Twilio | Notifications |
+| **Testing** | Vitest | 2,939 tests passing |
+| **Deployment** | Vercel | Preview + Production |
+| **Monitoring** | Vercel Analytics | Performance tracking |
+
+### Tech Stack Quick Reference
+
+```
+Frontend:     Next.js 16 + shadcn/ui + Tailwind CSS
+Backend:      Next.js API Routes + Supabase PostgreSQL
+Auth:         Clerk → Webhook sync → staff/agents/partners tables
+Data Flow:    Zustand (client) ↔ API Routes ↔ Supabase (RLS)
+Deployment:   Vercel → Edge Network → Serverless Functions
+```
+
+---
+
+## Development Workflow
+
+**Always use `npm`, not `yarn` or `pnpm`.**
+
+```sh
+# 1. Make changes
+
+# 2. Typecheck (fast feedback)
+npm run build
+
+# 3. Run tests
+npm run test                          # Full suite
+npm run test -- -t "test name"        # Single test
+
+# 4. Lint before committing
+npm run lint                          # All files
+
+# 5. Build verification
+npm run build
+```
+
+### Verification Gates
+
+Before marking ANY task complete, confirm:
+
+1. **Build Gate**: `npm run build` completes with zero errors
+2. **Lint Gate**: `npm run lint` passes
+3. **Test Gate**: `npm run test` passes
+4. **Runtime Gate**: Feature actually works when tested manually
+
+### When Verification Fails
+
+1. Stop immediately - do not add more code on top of broken code
+2. Identify the specific failure point
+3. Fix that single issue
+4. Re-run verification
+5. Only proceed when green
+
+---
 
 ## Key Commands
 
@@ -99,6 +162,8 @@ npm run lint         # ESLint
 npm run test         # Run all tests (2,939 passing)
 npx supabase db push # Apply migrations (requires linked project)
 ```
+
+---
 
 ## Directory Structure
 
@@ -114,81 +179,48 @@ src/
 │   ├── team/              # Team portals (photographer, videographer, QC, editor)
 │   └── portal/            # Client media delivery
 ├── components/            # React components by domain
+│   ├── ui/               # Base UI components (shadcn)
+│   └── [feature]/        # Feature-specific components
 ├── stores/                # Zustand stores
 ├── lib/                   # Business logic, integrations, utilities
+│   ├── ai/               # AI agents and prompts
+│   ├── auth/             # Authentication utilities
+│   ├── supabase/         # Database clients
+│   ├── integrations/     # External service clients
+│   └── utils/            # General utilities
 └── supabase/
     └── migrations/        # SQL migrations (79 files)
 ```
 
 ---
 
-## Authentication System
+## Authentication
 
-The portal uses **Clerk** for all authentication:
+Uses **Clerk** for authentication. User roles: `agent`, `seller`, `photographer`, `videographer`, `qc`, `admin`, `partner`
 
-**Sign-In Pages:**
-- `/sign-in` - Agent portal
-- `/sign-in/seller` - Homeowner portal
-- `/sign-in/staff` - Team portal (photographer, videographer, QC, admin)
-- `/sign-in/partner` - Partner portal
-
-**User Roles:** `agent`, `seller`, `photographer`, `videographer`, `qc`, `admin`, `partner`
-
-**Helper Functions:**
-```typescript
-import { getCurrentUser, requireAuth, requireRole } from '@/lib/auth/clerk'
-
-const user = await getCurrentUser()
-const user = await requireAuth()
-const user = await requireRole(['admin', 'photographer'])
-```
-
-**Staff Access Pattern:**
-```typescript
-import { getStaffAccess } from '@/lib/auth/server-access'
-
-const access = await getStaffAccess()
-if (!access) redirect('/sign-in/staff')
-// access.staff contains staff record with role, is_active, etc.
-```
+**Sign-In Pages:** `/sign-in`, `/sign-in/seller`, `/sign-in/staff`, `/sign-in/partner`
 
 ---
 
-## Current Status (2026-01-09)
+## Database Operations
 
-### ✅ Completed
+### Supabase Client Patterns
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Authentication (Clerk) | ✅ Complete | All sign-in pages working |
-| Booking Flow | ✅ Complete | 4-step wizard with Stripe |
-| Marketing Site | ✅ Complete | Luxury redesign with Revolut-style aesthetic |
-| Team Portals | ✅ Complete | Photographer, videographer, QC, editor |
-| Stripe Connect | ✅ Complete | Staff/partner payouts ready |
-| Virtual Staging | ✅ Complete | Gemini AI integration |
-| All Tests | ✅ Passing | 2,939 tests (was 262 failures, now 0) |
+```typescript
+// Server-side (API routes) - bypass RLS with service role
+import { createAdminClient } from '@/lib/supabase/admin';
+const supabase = createAdminClient();
 
-### 🔧 Needs Attention
+// Server-side (with user context) - respects RLS
+import { createClient } from '@/lib/supabase/server';
+const supabase = await createClient();
 
-| Issue | Priority | Notes |
-|-------|----------|-------|
-| Stripe webhook expansion | Medium | Add more event handlers (see `/docs/features/stripe-webhook-expansion.md`) |
-| Cubicasa integration | Low | Currently stub - manual floor plan upload works |
-| QuickBooks integration | Low | Not in active use |
+// Client-side - always respects RLS
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+const supabase = createBrowserSupabaseClient();
+```
 
-### 📊 Codebase Stats
-
-| Metric | Count |
-|--------|-------|
-| API Routes | 211 |
-| Test Files | 125 |
-| Tests Passing | 2,939 |
-| SQL Migrations | 79 |
-| Integrations | 28 |
-
----
-
-## Database Conventions
+### Database Conventions
 
 - All RLS policies use `auth_user_id` (not legacy `user_id`)
 - Staff access: Check `staff.auth_user_id = auth.uid() AND is_active = true`
@@ -199,11 +231,163 @@ if (!access) redirect('/sign-in/staff')
 
 ⚠️ **CRITICAL:** Before using Supabase MCP, verify you're connected to the correct project. Run `mcp__supabase__get_project_url` and confirm it returns `awoabqaszgeqdlvcevmd`.
 
+### Migration Naming
+
+Migrations go in `supabase/migrations/` with format: `YYYYMMDD_NNN_description.sql`
+
+---
+
+## API Patterns
+
+### Next.js API Routes (App Router)
+
+```typescript
+// app/api/resource/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Auth check
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Business logic
+    const data = await fetchData(userId);
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/resource error:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+```
+
+---
+
+## State Management
+
+### Zustand with SSR-Safe Persistence
+
+```typescript
+// stores/example.store.ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export const useExampleStore = create<ExampleStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      addItem: (item) => set((state) => ({ items: [...state.items, item] })),
+    }),
+    {
+      name: 'example-storage',
+      partialize: (state) => ({ items: state.items }),
+    }
+  )
+);
+```
+
+### Hydration Pattern (SSR)
+
+```typescript
+// Prevent hydration mismatch
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+if (!mounted) return <Skeleton />;
+```
+
+---
+
+## Code Standards
+
+### TypeScript
+
+- Prefer `type` over `interface`
+- **Never use `enum`** - use string literal unions instead
+- Explicit return types on exported functions
+- No `any` - use `unknown` and narrow with type guards
+
+```typescript
+// Bad
+enum Status { Active, Inactive }
+
+// Good
+type Status = 'active' | 'inactive'
+```
+
+### Error Handling
+
+- Always handle errors explicitly
+- No empty catch blocks
+- Log errors with context
+
+```typescript
+// Bad
+try { await doThing() } catch (e) {}
+
+// Good
+try {
+  await doThing()
+} catch (error) {
+  console.error('Failed to do thing:', { error, context: relevantData })
+  throw error
+}
+```
+
+---
+
+## Testing Patterns
+
+Tests use Vitest with these common mock patterns:
+
+### Supabase Admin Client Mock
+
+```typescript
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: vi.fn((table) => createChain(mockData)),
+  }),
+}))
+```
+
+### Chainable Query Mock
+
+```typescript
+const createChain = (data: unknown, error: unknown = null) => ({
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  order: vi.fn().mockReturnThis(),
+  single: () => Promise.resolve({ data, error }),
+  maybeSingle: () => Promise.resolve({ data, error }),
+})
+```
+
+### Rate Limit Mock
+
+```typescript
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn(() => Promise.resolve({ success: true })),
+  getRateLimitHeaders: vi.fn(() => ({})),
+  getIdentifier: vi.fn(() => 'test-id'),
+}))
+```
+
+### Test Commands
+
+```sh
+npm run test                          # Full suite
+npm run test -- path/to/file.test.ts  # Specific file
+npm run test -- -t "booking"          # Pattern match
+npm run test -- --coverage            # With coverage
+```
+
 ---
 
 ## Environment Variables
 
 Required in `.env.local`:
+
 ```bash
 # Core
 NEXT_PUBLIC_SUPABASE_URL=
@@ -239,21 +423,23 @@ RUNPOD_API_KEY=
 
 ## MCP Servers
 
-| MCP Server | Purpose |
-|------------|---------|
-| **Clerk** | User management, authentication |
-| **Supabase** | Database queries, migrations |
-| **Stripe** | Payment management, products |
-| **GitHub** | Repository management |
-| **Vercel** | Deployment management |
-| **Filesystem** | Local file operations |
+| MCP Server | Purpose | Key Tools |
+|------------|---------|-----------|
+| **Clerk** | User management | `getUser`, `updateUser`, `createOrganization` |
+| **Supabase** | Database queries | `list_tables`, `execute_sql`, `apply_migration` |
+| **Stripe** | Payments | `list_customers`, `create_product`, `list_subscriptions` |
+| **GitHub** | Repository | `create_pull_request`, `list_issues`, `push_files` |
+| **Vercel** | Deployment | `deploy_to_vercel`, `list_deployments`, `get_deployment_build_logs` |
+| **Filesystem** | Local files | `read_file`, `write_file`, `search_files` |
 
 ---
 
 ## Design System
 
 ### Portal Theme (Dashboard, Admin, Team)
+
 Apple-inspired dark theme with blue accents:
+
 ```css
 --bg-primary: #000000;
 --bg-secondary: #0a0a0a;
@@ -264,7 +450,9 @@ Apple-inspired dark theme with blue accents:
 ```
 
 ### Marketing Site Theme
+
 Luxury black/white aesthetic:
+
 ```css
 --cta-primary: #ff4533;     /* Orange-red CTAs */
 --link: #09f;               /* Cyan links */
@@ -272,6 +460,7 @@ Luxury black/white aesthetic:
 ```
 
 ### Component Patterns
+
 - Cards: `rounded-xl border border-white/[0.08] bg-[#1c1c1e]`
 - Glass: `bg-[#1c1c1e]/72 backdrop-blur-xl`
 - Buttons: Min height 44px for touch targets
@@ -279,42 +468,87 @@ Luxury black/white aesthetic:
 
 ---
 
-## Testing Patterns
+## Task Completion Checklist
 
-Tests use Vitest with these common mock patterns:
+Before saying a task is "done":
 
-### Supabase Admin Client Mock
-```typescript
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: () => ({
-    from: vi.fn((table) => createChain(mockData)),
-  }),
-}))
-```
+- [ ] Code compiles: `npm run build` passes
+- [ ] Lint passes: `npm run lint` passes
+- [ ] Tests pass: `npm run test` passes
+- [ ] Feature works: Manually verified in browser/runtime
+- [ ] No console errors in browser
+- [ ] No errors in server logs
 
-### Chainable Query Mock
-```typescript
-const createChain = (data: unknown, error: unknown = null) => ({
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  single: () => Promise.resolve({ data, error }),
-  maybeSingle: () => Promise.resolve({ data, error }),
-})
-```
+**If any checkbox fails, the task is not complete.**
 
-### Rate Limit Mock
-```typescript
-vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimit: vi.fn(() => Promise.resolve({ success: true })),
-  getRateLimitHeaders: vi.fn(() => ({})),
-  getIdentifier: vi.fn(() => 'test-id'),
-}))
-```
+---
+
+## Current Status (2026-01-10)
+
+### ✅ Completed
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Authentication (Clerk) | ✅ Complete | All sign-in pages working |
+| Booking Flow | ✅ Complete | 4-step wizard with Stripe |
+| Marketing Site | ✅ Complete | Luxury redesign with Revolut-style aesthetic |
+| Team Portals | ✅ Complete | Photographer, videographer, QC, editor |
+| Stripe Connect | ✅ Complete | Staff/partner payouts ready |
+| Virtual Staging | ✅ Complete | Gemini AI integration |
+| All Tests | ✅ Passing | 2,939 tests (was 262 failures, now 0) |
+
+### 🔧 Needs Attention
+
+| Issue | Priority | Notes |
+|-------|----------|-------|
+| Stripe webhook expansion | Medium | Add more event handlers |
+| Cubicasa integration | Low | Currently stub - manual floor plan upload works |
+| QuickBooks integration | Low | Not in active use |
+
+### 📊 Codebase Stats
+
+| Metric | Count |
+|--------|-------|
+| API Routes | 211 |
+| Test Files | 125 |
+| Tests Passing | 2,939 |
+| SQL Migrations | 79 |
+| Integrations | 28 |
+
+---
+
+## External Services
+
+| Service | Purpose | Env Variable |
+|---------|---------|--------------|
+| Clerk | Authentication | `CLERK_SECRET_KEY` |
+| Supabase | Database + Storage | `SUPABASE_SERVICE_ROLE_KEY` |
+| Stripe | Payments + Connect | `STRIPE_SECRET_KEY` |
+| Resend | Transactional email | `RESEND_API_KEY` |
+| Twilio | SMS notifications | `TWILIO_AUTH_TOKEN` |
+| Google Places | Address autocomplete | `GOOGLE_PLACES_API_KEY` |
+| RunPod | HDR processing | `RUNPOD_API_KEY` |
+| Anthropic | AI content | `ANTHROPIC_API_KEY` |
+| Google AI | Vision + staging | `GOOGLE_AI_API_KEY` |
+| OpenAI | Whisper transcription | `OPENAI_API_KEY` |
+
+## Webhook Endpoints
+
+| Provider | Endpoint | Purpose |
+|----------|----------|---------|
+| Clerk | `/api/webhooks/clerk` | User sync to database |
+| Stripe | `/api/stripe/webhook` | Payment events |
+| Stripe Connect | `/api/webhooks/stripe-connect` | Payout events |
+| Cubicasa | `/api/webhooks/cubicasa` | Floor plan delivery |
+| Zillow 3D | `/api/webhooks/zillow-3d` | 3D tour completion |
 
 ---
 
 ## Recent Changes
+
+### 2026-01-10
+- Pushed test fixes and CLAUDE.md to origin/main
+- Verified marketing redesign live at app.aerialshots.media
 
 ### 2026-01-09
 - Fixed all test failures (262 → 0)
