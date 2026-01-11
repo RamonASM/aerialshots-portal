@@ -11,6 +11,29 @@ const authBypassEnabled =
   process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
   process.env.AUTH_BYPASS === 'true'
 
+// Simple in-memory cache for user data to reduce Clerk API calls
+// Key: userId, Value: { email, role, expiresAt }
+const userCache = new Map<string, { email: string; role: string | null; expiresAt: number }>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+function getCachedUser(userId: string): { email: string; role: string | null } | null {
+  const cached = userCache.get(userId)
+  if (cached && cached.expiresAt > Date.now()) {
+    return { email: cached.email, role: cached.role }
+  }
+  // Clean up expired entry
+  if (cached) userCache.delete(userId)
+  return null
+}
+
+function setCachedUser(userId: string, email: string, role: string | null): void {
+  userCache.set(userId, {
+    email,
+    role,
+    expiresAt: Date.now() + CACHE_TTL,
+  })
+}
+
 // Public routes that don't require authentication
 const publicRoutes = [
   '/',
@@ -202,24 +225,45 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
   // User is authenticated - check role-based access
   // Type assertion for custom session claims with role metadata
   const publicMetadata = sessionClaims?.public_metadata as { role?: string } | undefined
-  const userRole = publicMetadata?.role
+  let userRole = publicMetadata?.role
   let userEmail = sessionClaims?.email as string | undefined
 
-  // If email not in session claims, fetch from Clerk API (only for staff routes to minimize API calls)
-  // Note: Skip API call if we've been rate limited recently to prevent redirect loops
+  // Check cache first before making API calls
+  const cachedUser = getCachedUser(userId)
+  if (cachedUser) {
+    userEmail = userEmail || cachedUser.email
+    userRole = userRole || cachedUser.role || undefined
+  }
+
+  // If email not in session claims or cache, fetch from Clerk API (only for staff routes)
   if (!userEmail && isStaffRoute(request)) {
     try {
       const client = await clerkClient()
       const user = await client.users.getUser(userId)
       userEmail = user.emailAddresses?.[0]?.emailAddress
+      const fetchedRole = (user.publicMetadata?.role as string) || null
+
+      // Cache the result for future requests
+      if (userEmail) {
+        setCachedUser(userId, userEmail, fetchedRole)
+        userRole = userRole || fetchedRole || undefined
+      }
     } catch (error) {
       // Check if this is a rate limit error
       const errorObj = error as { status?: number; message?: string }
       if (errorObj.status === 429 || errorObj.message?.includes('Too many requests')) {
-        console.warn('[Middleware] Clerk rate limited - allowing access without email verification')
-        // On rate limit, assume aerialshots.media domain for staff routes to prevent redirect loops
-        // The actual role check will happen in the page components
-        userEmail = 'rate-limited@aerialshots.media'
+        console.warn('[Middleware] Clerk rate limited - checking cache')
+        // On rate limit, try to use cached data even if stale
+        const staleCache = userCache.get(userId)
+        if (staleCache) {
+          console.log('[Middleware] Using stale cache for rate-limited request')
+          userEmail = staleCache.email
+          userRole = userRole || staleCache.role || undefined
+        } else {
+          // No cache - assume aerialshots.media domain for staff routes to prevent redirect loops
+          console.warn('[Middleware] No cache available - using fallback')
+          userEmail = 'rate-limited@aerialshots.media'
+        }
       } else {
         console.error('[Middleware] Error fetching user email:', error)
       }

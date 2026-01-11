@@ -310,6 +310,30 @@ Uses **Clerk** for authentication. User roles: `agent`, `seller`, `photographer`
 
 **Sign-In Pages:** `/sign-in`, `/sign-in/seller`, `/sign-in/staff`, `/sign-in/partner`
 
+### Clerk Rate Limiting
+
+Clerk has strict API rate limits. The codebase handles this with:
+
+1. **Middleware Caching** (`src/middleware.ts`):
+   - In-memory cache (5 min TTL) for user data
+   - Stale-while-revalidate pattern on rate limit
+   - Falls back to cached data when rate limited
+
+2. **Layout Retry Logic** (`src/app/team/layout.tsx`):
+   - Automatic retry with exponential backoff
+   - Falls back to `x-user-email` header from middleware
+   - Can look up user by `auth_user_id` in database
+
+3. **Cache Utility** (`src/lib/auth/clerk-cache.ts`):
+   - Reusable caching functions for Clerk API calls
+   - Cookie-based persistence option
+
+**When Rate Limited:**
+- Middleware passes `x-user-email` header for layouts
+- Layouts retry 2x with 1s/2s delays
+- Falls back to database lookup by `auth_user_id`
+- Session cookie check as last resort
+
 ---
 
 ## Database Operations
@@ -593,9 +617,9 @@ Before saying a task is "done":
 
 ---
 
-## Resume Point (2026-01-10)
+## Resume Point (2026-01-11)
 
-**Last Session:** Sprint 4 complete. Stripe Connect requires platform onboarding.
+**Last Session:** Sprint 5 in progress - Marketing fixes & Clerk rate limiting solution.
 
 ### Completed Sprints
 
@@ -616,14 +640,16 @@ Before saying a task is "done":
 
 **Sprint 4 - Testing & QA:** ✅ COMPLETE
 - Created Clerk test accounts for QC/Editor/Photographer
-- Browser tested QC portal (Dashboard, Queue, Settings)
-- Browser tested Editor portal (Settings, Stripe Connect card)
-- Fixed VA role routing to use /team/editor instead of /team/va
-- Updated Connect API to use Clerk auth instead of Supabase auth
-- Added `STRIPE_SECRET_KEY` to Vercel production
-- Downgraded Stripe SDK from v20 to v17.5.0 for API compatibility
-- Consolidated Stripe instances (removed duplicate in split-payment.ts)
-- **Blocker:** Stripe Connect requires platform onboarding (see Action Required)
+- Browser tested QC/Editor portals
+- Fixed VA role routing, Connect API auth
+- Stripe SDK compatibility fixed
+
+**Sprint 5 - Marketing & Auth Fixes:** 🔄 IN PROGRESS
+- ✅ Google Places API: Server-side proxy (`/api/places/autocomplete`) - no client-side API key needed
+- ✅ Homepage portfolio images: Now using Unsplash placeholders
+- ✅ Portfolio/About stats: Marketing defaults when DB empty
+- ✅ Team member filtering: Excludes test/demo accounts
+- ✅ Clerk rate limiting: Middleware caching + retry logic + DB fallback
 
 ### Test Accounts
 | Email | Role | Password |
@@ -639,7 +665,12 @@ Before saying a task is "done":
 3. Once activated, Stripe Connect API will work
 4. Re-test "Set Up Payouts" button on `/team/editor/settings`
 
-This is a one-time setup - all Stripe Connect functionality (staff payouts, partner payouts) will work after completion.
+**Pending Portal Testing:**
+Once Clerk rate limits reset, test authenticated portals:
+- Partners Portal (`/admin/team`)
+- Agent Portal (`/dashboard`)
+- Seller Portal
+- ASM Team Portal (Photographer, Editor, QC)
 
 ### Low Priority TODOs
 | File | TODO | Priority |

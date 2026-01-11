@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import {
@@ -22,6 +23,9 @@ import { getEffectiveRoles, type PartnerRole } from '@/lib/partners/role-detecti
 const authBypassEnabled =
   process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
   process.env.AUTH_BYPASS === 'true'
+
+// Retry delay for rate limited requests (in ms)
+const RATE_LIMIT_RETRY_DELAY = 1000
 
 // Team role navigation items
 const roleNavItems = {
@@ -86,63 +90,137 @@ function extractRoleFromPath(pathname: string): string | null {
   return null
 }
 
+/**
+ * Helper to get user with retry on rate limit
+ */
+async function getUserWithRetry(maxRetries = 2): Promise<{
+  email: string | null
+  name: string | null
+  fromHeader: boolean
+}> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const user = await currentUser()
+      if (user) {
+        return {
+          email: user.emailAddresses?.[0]?.emailAddress?.toLowerCase() || null,
+          name: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+          fromHeader: false,
+        }
+      }
+      return { email: null, name: null, fromHeader: false }
+    } catch (error) {
+      const errorObj = error as { status?: number; message?: string; toString?: () => string }
+      const errorString = errorObj.toString?.() || errorObj.message || ''
+      const isRateLimited =
+        errorObj.status === 429 ||
+        errorString.includes('Too Many Requests') ||
+        errorString.toLowerCase().includes('rate')
+
+      if (isRateLimited && attempt < maxRetries) {
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_RETRY_DELAY * (attempt + 1)))
+        continue
+      }
+
+      if (isRateLimited) {
+        console.warn('[Team Layout] Clerk rate limited after retries - checking headers')
+        // Try to get email from middleware header
+        const headersList = await headers()
+        const middlewareEmail = headersList.get('x-user-email')
+
+        if (middlewareEmail) {
+          return { email: middlewareEmail.toLowerCase(), name: null, fromHeader: true }
+        }
+
+        // Check if there's a valid session via auth()
+        try {
+          const { userId } = await auth()
+          if (userId) {
+            // User is authenticated but we can't get details
+            // Use a placeholder that will be looked up in the database
+            console.log('[Team Layout] Using auth() fallback - user authenticated as:', userId)
+            return { email: `clerk:${userId}`, name: null, fromHeader: true }
+          }
+        } catch {
+          // auth() also rate limited, but user might still be logged in
+        }
+
+        // Last resort - check for session cookie
+        const cookieHeader = headersList.get('cookie') || ''
+        if (cookieHeader.includes('__session') || cookieHeader.includes('__client')) {
+          return { email: 'session-fallback@aerialshots.media', name: null, fromHeader: true }
+        }
+      }
+
+      throw error // Re-throw non-rate-limit errors
+    }
+  }
+  return { email: null, name: null, fromHeader: false }
+}
+
 export default async function TeamLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   let userEmail = ''
+  let userName: string | null = null
 
   if (authBypassEnabled) {
     // Use bypass identity
     console.log('[Team Page] Auth bypass enabled - creating temporary partner data')
     userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
   } else {
-    let user
     try {
-      user = await currentUser()
-    } catch (error) {
-      // Check if this is a rate limit error
-      const errorObj = error as { status?: number; message?: string; toString?: () => string }
-      const errorString = errorObj.toString?.() || ''
-      const isRateLimited =
-        errorObj.status === 429 ||
-        errorString.includes('Too Many Requests') ||
-        errorString.includes('rate')
+      const { email, name, fromHeader } = await getUserWithRetry()
 
-      if (isRateLimited) {
-        console.warn('[Team Layout] Clerk rate limited - checking for middleware-passed email')
-        // On rate limit, try to get email from header set by middleware
-        // The middleware has already validated authentication and passes the email
-        const headersList = await headers()
-        const middlewareEmail = headersList.get('x-user-email')
-        const cookieHeader = headersList.get('cookie') || ''
+      if (email) {
+        // Handle special clerk:userId format from rate limit fallback
+        if (email.startsWith('clerk:')) {
+          // We have a userId but no email - look up in database by auth_user_id
+          const userId = email.replace('clerk:', '')
+          const supabase = createAdminClient()
 
-        if (middlewareEmail) {
-          console.log('[Team Layout] Rate limited - using email from middleware:', middlewareEmail)
-          userEmail = middlewareEmail.toLowerCase()
-        } else if (cookieHeader.includes('__session') || cookieHeader.includes('__client')) {
-          // Session exists but no email header - use aerialshots.media domain fallback
-          // This allows access, and the staff/partner lookup will handle authorization
-          console.log('[Team Layout] Rate limited with session - using domain fallback')
-          userEmail = 'rate-limited-session@aerialshots.media'
+          // Try to find staff by auth_user_id
+          const { data: staff } = await supabase
+            .from('staff')
+            .select('email')
+            .eq('auth_user_id', userId)
+            .eq('is_active', true)
+            .maybeSingle()
+
+          if (staff?.email) {
+            userEmail = staff.email.toLowerCase()
+          } else {
+            // Try partners
+            const { data: partner } = await supabase
+              .from('partners')
+              .select('email')
+              .eq('auth_user_id', userId)
+              .maybeSingle()
+
+            if (partner?.email) {
+              userEmail = partner.email.toLowerCase()
+            } else {
+              // User exists in Clerk but not in our database
+              redirect('/sign-in/staff?error=not_authorized')
+            }
+          }
         } else {
-          console.error('Clerk currentUser() error in team layout (no session):', error)
-          redirect('/sign-in/staff?error=clerk_error')
+          userEmail = email
+          userName = name
+        }
+
+        if (fromHeader) {
+          console.log('[Team Layout] Using email from fallback:', userEmail)
         }
       } else {
-        console.error('Clerk currentUser() error in team layout:', error)
-        redirect('/sign-in/staff?error=clerk_error')
+        redirect('/sign-in/staff')
       }
-    }
-
-    // userEmail may have been set in the rate-limit fallback above
-    if (user?.emailAddresses?.[0]?.emailAddress) {
-      userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
-    }
-    // If no email from user or rate-limit fallback, redirect
-    if (!userEmail) {
-      redirect('/sign-in/staff')
+    } catch (error) {
+      console.error('[Team Layout] Auth error:', error)
+      redirect('/sign-in/staff?error=auth_error')
     }
   }
 
