@@ -99,23 +99,44 @@ export default async function TeamIndexPage() {
         const userId = email.replace('clerk:', '')
         const supabase = createAdminClient()
 
-        // Try to find staff by auth_user_id
-        const { data: staff } = await supabase
+        // Try to find staff by clerk_user_id first (text column for Clerk IDs)
+        let { data: staff } = await supabase
           .from('staff')
           .select('email, role')
-          .eq('auth_user_id', userId)
+          .eq('clerk_user_id', userId)
           .eq('is_active', true)
           .maybeSingle()
+
+        // Fallback to auth_user_id (UUID column) if not found
+        if (!staff) {
+          const { data: staffByAuth } = await supabase
+            .from('staff')
+            .select('email, role')
+            .eq('auth_user_id', userId)
+            .eq('is_active', true)
+            .maybeSingle()
+          staff = staffByAuth
+        }
 
         if (staff?.email) {
           userEmail = staff.email.toLowerCase()
         } else {
-          // Try partners
-          const { data: partner } = await supabase
+          // Try partners by clerk_user_id first
+          let { data: partner } = await supabase
             .from('partners')
             .select('email')
-            .eq('auth_user_id', userId)
+            .eq('clerk_user_id', userId)
             .maybeSingle()
+
+          // Fallback to auth_user_id if not found
+          if (!partner) {
+            const { data: partnerByAuth } = await supabase
+              .from('partners')
+              .select('email')
+              .eq('auth_user_id', userId)
+              .maybeSingle()
+            partner = partnerByAuth
+          }
 
           if (partner?.email) {
             userEmail = partner.email.toLowerCase()
