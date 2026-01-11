@@ -100,7 +100,7 @@ export default function SellerSignInPage() {
           routing="path"
           path="/sign-in/seller"
           signUpUrl="/sign-up/seller"
-          forceRedirectUrl="/dashboard/seller"
+          forceRedirectUrl="/seller/dashboard"
         />
 
         {/* Info box */}
