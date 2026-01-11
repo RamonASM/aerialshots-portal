@@ -9,7 +9,7 @@ import { useScrollReveal } from '@/lib/hooks/use-scroll-reveal'
 const portfolioItems = [
   {
     id: 1,
-    image: '/portfolio/luxury-lakefront.jpg',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
     title: 'Lakefront Estate',
     location: 'Lake Nona, FL',
     sqft: '5,200',
@@ -18,7 +18,7 @@ const portfolioItems = [
   },
   {
     id: 2,
-    image: '/portfolio/modern-villa.jpg',
+    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80',
     title: 'Modern Villa',
     location: 'Windermere, FL',
     sqft: '4,100',
@@ -27,7 +27,7 @@ const portfolioItems = [
   },
   {
     id: 3,
-    image: '/portfolio/downtown-penthouse.jpg',
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80',
     title: 'Downtown Penthouse',
     location: 'Orlando, FL',
     sqft: '2,800',
@@ -36,7 +36,7 @@ const portfolioItems = [
   },
   {
     id: 4,
-    image: '/portfolio/golf-course-home.jpg',
+    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80',
     title: 'Golf Course Estate',
     location: 'Dr. Phillips, FL',
     sqft: '6,500',
@@ -45,7 +45,7 @@ const portfolioItems = [
   },
   {
     id: 5,
-    image: '/portfolio/waterfront-condo.jpg',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80',
     title: 'Waterfront Condo',
     location: 'Winter Park, FL',
     sqft: '1,800',
@@ -54,7 +54,7 @@ const portfolioItems = [
   },
   {
     id: 6,
-    image: '/portfolio/suburban-luxury.jpg',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80',
     title: 'Suburban Luxury',
     location: 'Celebration, FL',
     sqft: '3,400',

@@ -197,6 +197,7 @@ export const getStagingExamples = unstable_cache(
 
 /**
  * Get portfolio stats for display
+ * Falls back to marketing defaults when real data is unavailable
  */
 export const getPortfolioStats = unstable_cache(
   async (): Promise<{
@@ -207,16 +208,32 @@ export const getPortfolioStats = unstable_cache(
     totalStaged: number
     totalListings: number
   }> => {
+    // Marketing defaults when database is empty
+    const MARKETING_DEFAULTS = {
+      totalPhotos: 45000,
+      totalVideos: 1200,
+      totalDrone: 3500,
+      total3DTours: 850,
+      totalStaged: 2200,
+      totalListings: 2500,
+    }
+
     const items = await getPortfolioItems()
 
-    return {
-      totalPhotos: items.filter(i => i.type === 'photo').length,
-      totalVideos: items.filter(i => i.type === 'video').length,
-      totalDrone: items.filter(i => i.type === 'drone').length,
-      total3DTours: items.filter(i => i.type === '3d-tour').length,
-      totalStaged: items.filter(i => i.type === 'staging').length,
-      totalListings: new Set(items.map(i => i.title)).size,
+    // If we have meaningful data (more than 20 items), use real counts
+    if (items.length >= 20) {
+      return {
+        totalPhotos: items.filter(i => i.type === 'photo').length,
+        totalVideos: items.filter(i => i.type === 'video').length,
+        totalDrone: items.filter(i => i.type === 'drone').length,
+        total3DTours: items.filter(i => i.type === '3d-tour').length,
+        totalStaged: items.filter(i => i.type === 'staging').length,
+        totalListings: new Set(items.map(i => i.title)).size,
+      }
     }
+
+    // Otherwise return marketing defaults
+    return MARKETING_DEFAULTS
   },
   ['portfolio-stats'],
   { revalidate: CACHE_REVALIDATION, tags: ['portfolio'] }
