@@ -595,7 +595,7 @@ Before saying a task is "done":
 
 ## Resume Point (2026-01-10)
 
-**Last Session:** Sprint 4 (Testing & QA) complete - Stripe Connect needs env var
+**Last Session:** Sprint 4 complete. Stripe Connect requires platform onboarding.
 
 ### Completed Sprints
 
@@ -620,7 +620,10 @@ Before saying a task is "done":
 - Browser tested Editor portal (Settings, Stripe Connect card)
 - Fixed VA role routing to use /team/editor instead of /team/va
 - Updated Connect API to use Clerk auth instead of Supabase auth
-- **Issue Found:** `STRIPE_SECRET_KEY` not set in Vercel production
+- Added `STRIPE_SECRET_KEY` to Vercel production
+- Downgraded Stripe SDK from v20 to v17.5.0 for API compatibility
+- Consolidated Stripe instances (removed duplicate in split-payment.ts)
+- **Blocker:** Stripe Connect requires platform onboarding (see Action Required)
 
 ### Test Accounts
 | Email | Role | Password |
@@ -630,11 +633,13 @@ Before saying a task is "done":
 | `ramon+photographer@aerialshots.media` | Photographer | `AsmTest2026Portal!` |
 
 ### Action Required
-**Add `STRIPE_SECRET_KEY` to Vercel environment variables:**
-1. Go to Vercel Dashboard → aerialshots-portal → Settings → Environment Variables
-2. Add `STRIPE_SECRET_KEY` with the Stripe secret key value
-3. Redeploy to apply changes
-4. Re-test Stripe Connect flow on Editor Settings page
+**Complete Stripe Connect Platform Onboarding:**
+1. Go to https://dashboard.stripe.com/account/onboarding
+2. Complete business verification and platform setup
+3. Once activated, Stripe Connect API will work
+4. Re-test "Set Up Payouts" button on `/team/editor/settings`
+
+This is a one-time setup - all Stripe Connect functionality (staff payouts, partner payouts) will work after completion.
 
 ### Low Priority TODOs
 | File | TODO | Priority |
@@ -662,7 +667,7 @@ Before saying a task is "done":
 
 | Issue | Priority | Notes |
 |-------|----------|-------|
-| Add STRIPE_SECRET_KEY to Vercel | High | Required for Stripe Connect payouts |
+| Stripe Connect platform onboarding | High | Complete at dashboard.stripe.com/account/onboarding |
 | Cubicasa integration | Low | Currently stub - manual floor plan upload works |
 | QuickBooks integration | Low | Not in active use |
 
