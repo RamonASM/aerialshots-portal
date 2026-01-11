@@ -29,6 +29,7 @@ import {
   UsersRound,
   Sparkles,
   Shield,
+  Clock,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -156,6 +157,14 @@ export const navigationGroups: NavGroup[] = [
         icon: Calendar,
         description: 'Team availability windows',
         badge: 'new',
+      },
+      {
+        name: 'Time Off',
+        href: '/admin/team/time-off',
+        icon: Clock,
+        description: 'Review time off requests',
+        badge: 'count',
+        badgeKey: 'pending_time_off',
       },
     ],
   },
@@ -409,6 +418,8 @@ export function getPathLabel(segment: string): string {
     stashdr: 'StashDR',
     // Partner Roles
     roles: 'My Roles',
+    // Time Off Management
+    'time-off': 'Time Off',
   }
   return labels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
 }

@@ -14,6 +14,7 @@ import {
   Settings,
   Headphones,
   ArrowLeftRight,
+  Clock,
 } from 'lucide-react'
 import { SignOutButton } from '@/components/auth/SignOutButton'
 import { AdminThemeProvider } from '@/components/admin/theme/ThemeProvider'
@@ -32,11 +33,13 @@ const roleNavItems = {
   photographer: [
     { href: '/team/photographer', label: 'Dashboard', icon: Home },
     { href: '/team/photographer/schedule', label: 'Schedule', icon: Calendar },
+    { href: '/team/photographer/availability', label: 'Availability', icon: Clock },
     { href: '/team/photographer/settings', label: 'Settings', icon: Settings },
   ],
   videographer: [
     { href: '/team/videographer', label: 'Dashboard', icon: Home },
     { href: '/team/videographer/schedule', label: 'Schedule', icon: Calendar },
+    { href: '/team/videographer/availability', label: 'Availability', icon: Clock },
     { href: '/team/videographer/settings', label: 'Settings', icon: Settings },
   ],
   editor: [
