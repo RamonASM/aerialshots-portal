@@ -1,22 +1,10 @@
 'use client'
 
-/// <reference types="@types/google.maps" />
-
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-// Extend Window interface for Google Maps
-declare global {
-  interface Window {
-    google?: {
-      maps: typeof google.maps
-    }
-    initGooglePlaces?: () => void
-  }
-}
 
 export interface PlaceResult {
   formatted: string
@@ -27,6 +15,13 @@ export interface PlaceResult {
   lat: number
   lng: number
   placeId: string
+}
+
+interface Prediction {
+  description: string
+  placeId: string
+  mainText: string
+  secondaryText: string
 }
 
 interface GooglePlacesAutocompleteProps {
@@ -40,87 +35,9 @@ interface GooglePlacesAutocompleteProps {
   restrictToState?: string // e.g., 'FL' to restrict to Florida
 }
 
-const GOOGLE_MAPS_SCRIPT_ID = 'google-maps-script'
-
-// Check if Google Maps is loaded
-function isGoogleMapsLoaded(): boolean {
-  return typeof window !== 'undefined' && !!window.google?.maps?.places
-}
-
-// Load Google Maps script
-function loadGoogleMapsScript(apiKey: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (isGoogleMapsLoaded()) {
-      resolve()
-      return
-    }
-
-    // Check if script is already loading
-    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID)
-    if (existingScript) {
-      // Wait for it to load
-      const checkLoaded = setInterval(() => {
-        if (isGoogleMapsLoaded()) {
-          clearInterval(checkLoaded)
-          resolve()
-        }
-      }, 100)
-      return
-    }
-
-    // Create callback function
-    window.initGooglePlaces = () => {
-      resolve()
-    }
-
-    // Create script element
-    const script = document.createElement('script')
-    script.id = GOOGLE_MAPS_SCRIPT_ID
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGooglePlaces`
-    script.async = true
-    script.defer = true
-    script.onerror = () => reject(new Error('Failed to load Google Maps'))
-
-    document.head.appendChild(script)
-  })
-}
-
-// Parse address components from Google Places result
-function parseAddressComponents(
-  place: google.maps.places.PlaceResult
-): Omit<PlaceResult, 'lat' | 'lng'> {
-  const components = place.address_components || []
-  const result = {
-    formatted: place.formatted_address || '',
-    street: '',
-    city: '',
-    state: '',
-    zip: '',
-    placeId: place.place_id || '',
-  }
-
-  let streetNumber = ''
-  let streetName = ''
-
-  for (const component of components) {
-    const types = component.types
-
-    if (types.includes('street_number')) {
-      streetNumber = component.long_name
-    } else if (types.includes('route')) {
-      streetName = component.long_name
-    } else if (types.includes('locality') || types.includes('sublocality')) {
-      result.city = component.long_name
-    } else if (types.includes('administrative_area_level_1')) {
-      result.state = component.short_name
-    } else if (types.includes('postal_code')) {
-      result.zip = component.long_name
-    }
-  }
-
-  result.street = streetNumber ? `${streetNumber} ${streetName}` : streetName
-
-  return result
+// Generate a session token for billing optimization
+function generateSessionToken(): string {
+  return crypto.randomUUID()
 }
 
 export function GooglePlacesAutocomplete({
@@ -131,102 +48,187 @@ export function GooglePlacesAutocomplete({
   error,
   disabled,
   className,
-  restrictToState = 'FL',
 }: GooglePlacesAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const sessionTokenRef = useRef<string>(generateSessionToken())
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const [isLoading, setIsLoading] = useState(false)
   const [inputValue, setInputValue] = useState(value || '')
   const [isSelected, setIsSelected] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [predictions, setPredictions] = useState<Prediction[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
 
-  // Initialize Google Places autocomplete
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
-
-    if (!apiKey) {
-      setLoadError('Google Places API key not configured')
-      setIsLoading(false)
+  // Fetch autocomplete predictions from our server-side API
+  const fetchPredictions = useCallback(async (input: string) => {
+    if (input.length < 3) {
+      setPredictions([])
       return
     }
 
-    let mounted = true
+    setIsLoading(true)
+    setLoadError(null)
 
-    loadGoogleMapsScript(apiKey)
-      .then(() => {
-        if (!mounted || !inputRef.current) return
+    try {
+      const params = new URLSearchParams({
+        input,
+        sessiontoken: sessionTokenRef.current,
+      })
 
-        // Create autocomplete instance
-        const autocomplete = new window.google!.maps.places.Autocomplete(
-          inputRef.current,
-          {
-            types: ['address'],
-            componentRestrictions: restrictToState
-              ? { country: 'us' }
-              : undefined,
-            fields: [
-              'address_components',
-              'formatted_address',
-              'geometry',
-              'place_id',
-            ],
-          }
-        )
+      const response = await fetch(`/api/places/autocomplete?${params}`)
+      const data = await response.json()
 
-        // Add state bias if specified
-        if (restrictToState) {
-          // Bias towards Florida
-          const floridaBounds = new window.google!.maps.LatLngBounds(
-            { lat: 24.396308, lng: -87.634896 }, // SW Florida
-            { lat: 31.000968, lng: -79.974307 } // NE Florida
-          )
-          autocomplete.setBounds(floridaBounds)
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch predictions')
+      }
 
-        // Handle place selection
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace()
+      setPredictions(data.predictions || [])
+      setShowDropdown(data.predictions?.length > 0)
+    } catch (err) {
+      console.error('[Places] Fetch error:', err)
+      setLoadError(err instanceof Error ? err.message : 'Failed to search addresses')
+      setPredictions([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
-          if (!place.geometry?.location) {
-            setIsSelected(false)
-            return
-          }
+  // Fetch place details when a prediction is selected
+  const fetchPlaceDetails = useCallback(
+    async (placeId: string) => {
+      setIsLoading(true)
+      setLoadError(null)
 
-          const parsed = parseAddressComponents(place)
-          const result: PlaceResult = {
-            ...parsed,
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          }
-
-          setInputValue(parsed.formatted)
-          setIsSelected(true)
-          onSelect(result)
+      try {
+        const params = new URLSearchParams({
+          placeId,
+          sessiontoken: sessionTokenRef.current,
         })
 
-        autocompleteRef.current = autocomplete
-        setIsLoading(false)
-      })
-      .catch((err) => {
-        if (mounted) {
-          setLoadError(err.message)
-          setIsLoading(false)
+        const response = await fetch(`/api/places/autocomplete?${params}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch place details')
         }
-      })
 
-    return () => {
-      mounted = false
-    }
-  }, [onSelect, restrictToState])
+        // Generate new session token after completing a session
+        sessionTokenRef.current = generateSessionToken()
 
-  // Handle input change
+        const result: PlaceResult = {
+          formatted: data.formatted,
+          street: data.street,
+          city: data.city,
+          state: data.state,
+          zip: data.zip,
+          lat: data.lat,
+          lng: data.lng,
+          placeId: data.placeId,
+        }
+
+        setInputValue(result.formatted)
+        setIsSelected(true)
+        setPredictions([])
+        setShowDropdown(false)
+        onSelect(result)
+      } catch (err) {
+        console.error('[Places] Details error:', err)
+        setLoadError(err instanceof Error ? err.message : 'Failed to get address details')
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [onSelect]
+  )
+
+  // Handle input change with debounce
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value)
+      const newValue = e.target.value
+      setInputValue(newValue)
       setIsSelected(false)
+      setHighlightedIndex(-1)
+
+      // Debounce the API call
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+
+      debounceRef.current = setTimeout(() => {
+        fetchPredictions(newValue)
+      }, 300)
     },
-    []
+    [fetchPredictions]
   )
+
+  // Handle prediction selection
+  const handleSelectPrediction = useCallback(
+    (prediction: Prediction) => {
+      setInputValue(prediction.description)
+      fetchPlaceDetails(prediction.placeId)
+    },
+    [fetchPlaceDetails]
+  )
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!showDropdown || predictions.length === 0) return
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          setHighlightedIndex((prev) =>
+            prev < predictions.length - 1 ? prev + 1 : prev
+          )
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : prev))
+          break
+        case 'Enter':
+          e.preventDefault()
+          if (highlightedIndex >= 0 && highlightedIndex < predictions.length) {
+            handleSelectPrediction(predictions[highlightedIndex])
+          }
+          break
+        case 'Escape':
+          setShowDropdown(false)
+          setHighlightedIndex(-1)
+          break
+      }
+    },
+    [showDropdown, predictions, highlightedIndex, handleSelectPrediction]
+  )
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Clean up debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [])
 
   // Status icon
   const StatusIcon = () => {
@@ -261,8 +263,14 @@ export function GooglePlacesAutocomplete({
           type="text"
           value={inputValue}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (predictions.length > 0) {
+              setShowDropdown(true)
+            }
+          }}
           placeholder={placeholder}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           className={cn(
             'pl-10 pr-4',
             error && 'border-destructive focus-visible:ring-destructive',
@@ -270,6 +278,35 @@ export function GooglePlacesAutocomplete({
           )}
           autoComplete="off"
         />
+
+        {/* Predictions dropdown */}
+        {showDropdown && predictions.length > 0 && (
+          <div
+            ref={dropdownRef}
+            className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-border bg-popover shadow-lg"
+          >
+            {predictions.map((prediction, index) => (
+              <button
+                key={prediction.placeId}
+                type="button"
+                className={cn(
+                  'flex w-full flex-col items-start px-3 py-2 text-left text-sm transition-colors',
+                  'hover:bg-accent focus:bg-accent focus:outline-none',
+                  index === highlightedIndex && 'bg-accent'
+                )}
+                onClick={() => handleSelectPrediction(prediction)}
+                onMouseEnter={() => setHighlightedIndex(index)}
+              >
+                <span className="font-medium text-foreground">
+                  {prediction.mainText}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {prediction.secondaryText}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {(error || loadError) && (
