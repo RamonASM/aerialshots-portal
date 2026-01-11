@@ -97,28 +97,34 @@ export default async function TeamIndexPage() {
       // Handle special clerk:userId format from rate limit fallback
       if (email.startsWith('clerk:')) {
         const userId = email.replace('clerk:', '')
+        console.log('[Team Page] Looking up user by clerk_user_id:', userId)
         const supabase = createAdminClient()
 
         // Try to find staff by clerk_user_id first (text column for Clerk IDs)
-        let { data: staff } = await supabase
+        let { data: staff, error: staffError } = await supabase
           .from('staff')
           .select('email, role')
           .eq('clerk_user_id', userId)
           .eq('is_active', true)
           .maybeSingle()
 
+        console.log('[Team Page] Staff lookup result:', { staff, staffError })
+
         // Fallback to auth_user_id (UUID column) if not found
         if (!staff) {
-          const { data: staffByAuth } = await supabase
+          console.log('[Team Page] No staff by clerk_user_id, trying auth_user_id')
+          const { data: staffByAuth, error: authError } = await supabase
             .from('staff')
             .select('email, role')
             .eq('auth_user_id', userId)
             .eq('is_active', true)
             .maybeSingle()
+          console.log('[Team Page] Staff by auth_user_id result:', { staffByAuth, authError })
           staff = staffByAuth
         }
 
         if (staff?.email) {
+          console.log('[Team Page] Found staff email:', staff.email)
           userEmail = staff.email.toLowerCase()
         } else {
           // Try partners by clerk_user_id first
@@ -152,6 +158,10 @@ export default async function TeamIndexPage() {
         console.log('[Team Page] Using email from fallback:', userEmail)
       }
     } catch (error) {
+      // Re-throw Next.js redirect errors (they use a special error type)
+      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+        throw error
+      }
       console.error('Clerk currentUser() error in team page:', error)
       redirect('/sign-in/staff?error=clerk_error')
     }
