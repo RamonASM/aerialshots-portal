@@ -64,7 +64,7 @@ export default function NewStoryPage() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/login')
+        router.push('/sign-in')
         return
       }
 

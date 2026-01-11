@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   Calendar,
   Clock,
@@ -14,6 +15,11 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/pricing/config'
 import { toDollars } from '@/lib/payments/stripe'
+
+// Auth bypass for development
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
 
 // Status badge colors
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
@@ -46,23 +52,30 @@ function formatScheduledDate(dateStr: string | null) {
 }
 
 export default async function OrdersPage() {
-  const supabase = await createClient()
+  // Get user email - either from bypass or Clerk
+  let userEmail: string
 
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/login')
+  if (authBypassEnabled) {
+    userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
+  } else {
+    const user = await currentUser()
+    if (!user?.emailAddresses?.[0]?.emailAddress) {
+      redirect('/sign-in')
+    }
+    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
   }
 
-  // Get agent
+  const supabase = createAdminClient()
+
+  // Get agent by email
   const { data: agent } = await supabase
     .from('agents')
     .select('id, name')
-    .eq('email', user.email!)
-    .single()
+    .eq('email', userEmail)
+    .maybeSingle()
 
   if (!agent) {
-    redirect('/login')
+    redirect('/sign-in?error=no_agent')
   }
 
   // Get orders for this agent

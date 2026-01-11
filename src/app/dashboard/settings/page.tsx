@@ -1,8 +1,13 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { InstagramSettings } from './InstagramSettings'
 import type { Metadata } from 'next'
+
+// Auth bypass for development
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
 
 export const metadata: Metadata = {
   title: 'Settings | Dashboard | Aerial Shots Media',
@@ -17,7 +22,7 @@ async function getAgentWithConnections(email: string) {
     .from('agents')
     .select('id, name, email')
     .eq('email', email)
-    .single()
+    .maybeSingle()
 
   if (agentError || !agent) {
     return null
@@ -42,17 +47,23 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ success?: string; error?: string; username?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get user email - either from bypass or Clerk
+  let userEmail: string
 
-  if (!user?.email) {
-    redirect('/login')
+  if (authBypassEnabled) {
+    userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
+  } else {
+    const user = await currentUser()
+    if (!user?.emailAddresses?.[0]?.emailAddress) {
+      redirect('/sign-in')
+    }
+    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
   }
 
-  const data = await getAgentWithConnections(user.email)
+  const data = await getAgentWithConnections(userEmail)
 
   if (!data) {
-    redirect('/login')
+    redirect('/sign-in?error=no_agent')
   }
 
   const params = await searchParams

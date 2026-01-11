@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import Link from 'next/link'
-import { Mail, Loader2, CheckCircle, AlertCircle, Info, Camera, ArrowLeft } from 'lucide-react'
+import { Mail, Loader2, CheckCircle, AlertCircle, Camera, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -200,17 +200,6 @@ function LoginForm() {
             <p className="mt-2 text-[15px] text-[#a1a1a6]">
               Sign in to access your media and listings
             </p>
-          </div>
-
-          {/* Aryeo Hint */}
-          <div className="flex items-start gap-3 rounded-xl bg-[#0077ff]/10 border border-[#0077ff]/20 p-4 mb-6">
-            <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#0077ff]" />
-            <div className="text-[13px]">
-              <p className="font-medium text-[#3395ff]">Already use Aryeo?</p>
-              <p className="mt-1 text-[#636366]">
-                Use the same email to automatically link your account.
-              </p>
-            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

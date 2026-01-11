@@ -52,7 +52,7 @@ export default function BrandKitPage() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/login')
+        router.push('/sign-in')
         return
       }
 
@@ -63,7 +63,7 @@ export default function BrandKitPage() {
         .single()
 
       if (!agent) {
-        router.push('/login')
+        router.push('/sign-in')
         return
       }
 
@@ -111,7 +111,7 @@ export default function BrandKitPage() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/login')
+        router.push('/sign-in')
         return
       }
 

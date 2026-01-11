@@ -6,9 +6,15 @@
 
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getAgentLoyaltySummary, getPointsHistory, getLoyaltyTiers } from '@/lib/loyalty/service'
 import { LoyaltyDashboardClient } from '@/components/dashboard/LoyaltyDashboardClient'
+
+// Auth bypass for development
+const authBypassEnabled =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === 'true' ||
+  process.env.AUTH_BYPASS === 'true'
 
 export const metadata = {
   title: 'Rewards | ASM Portal',
@@ -26,20 +32,28 @@ async function getLoyaltyData(agentId: string) {
 }
 
 export default async function LoyaltyPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get user email - either from bypass or Clerk
+  let userEmail: string
 
-  if (!user) {
-    redirect('/login')
+  if (authBypassEnabled) {
+    userEmail = process.env.AUTH_BYPASS_EMAIL || 'bypass@aerialshots.media'
+  } else {
+    const user = await currentUser()
+    if (!user?.emailAddresses?.[0]?.emailAddress) {
+      redirect('/sign-in')
+    }
+    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
   }
+
+  const supabase = createAdminClient()
 
   // Get agent ID from user
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: agent } = await (supabase as any)
     .from('agents')
     .select('id, name, email')
-    .eq('auth_user_id', user.id)
-    .single()
+    .eq('email', userEmail)
+    .maybeSingle()
 
   if (!agent) {
     // User exists but no agent profile - show empty state
