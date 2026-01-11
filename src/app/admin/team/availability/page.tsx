@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Calendar,
   ChevronLeft,
@@ -11,6 +12,8 @@ import {
   Clock,
   Camera,
   Video,
+  AlertCircle,
+  Palmtree,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -21,6 +24,12 @@ interface StaffMember {
   team_role: string | null
   max_daily_jobs: number
   is_active: boolean
+}
+
+interface TimeOffEntry {
+  staff_id: string
+  date: string
+  reason: string
 }
 
 interface Assignment {
@@ -61,6 +70,8 @@ function formatDate(date: Date): string {
 export default function TeamAvailabilityPage() {
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [timeOffDates, setTimeOffDates] = useState<TimeOffEntry[]>([])
+  const [pendingTimeOffCount, setPendingTimeOffCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
@@ -84,11 +95,12 @@ export default function TeamAvailabilityPage() {
         endDate.setDate(0)
       }
 
-      const [staffResponse, assignmentsResponse] = await Promise.all([
+      const [staffResponse, assignmentsResponse, timeOffResponse] = await Promise.all([
         fetch('/api/admin/team/staff'),
         fetch(
           `/api/admin/team/assignments?from=${formatDate(startDate)}&to=${formatDate(endDate)}`
         ),
+        fetch(`/api/admin/team/time-off?status=approved`),
       ])
 
       if (staffResponse.ok) {
@@ -106,6 +118,31 @@ export default function TeamAvailabilityPage() {
       if (assignmentsResponse.ok) {
         const data = await assignmentsResponse.json()
         setAssignments(data.assignments || [])
+      }
+
+      if (timeOffResponse.ok) {
+        const data = await timeOffResponse.json()
+        // Convert time off ranges to individual dates
+        const entries: TimeOffEntry[] = []
+        for (const request of data.data || []) {
+          const start = new Date(request.start_date)
+          const end = new Date(request.end_date)
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            entries.push({
+              staff_id: request.staff_id,
+              date: formatDate(d),
+              reason: request.reason,
+            })
+          }
+        }
+        setTimeOffDates(entries)
+      }
+
+      // Also fetch pending count
+      const pendingResponse = await fetch('/api/admin/team/time-off?status=pending')
+      if (pendingResponse.ok) {
+        const pendingData = await pendingResponse.json()
+        setPendingTimeOffCount((pendingData.data || []).length)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -173,10 +210,21 @@ export default function TeamAvailabilityPage() {
     return grouped
   }
 
+  // Check if staff has time off on a date
+  const getTimeOff = (staffId: string, date: string): TimeOffEntry | undefined => {
+    return timeOffDates.find((t) => t.staff_id === staffId && t.date === date)
+  }
+
   const getAvailabilityColor = (
     staffMember: StaffMember,
-    assignmentCount: number
+    assignmentCount: number,
+    hasTimeOff: boolean
   ): string => {
+    // Time off takes priority
+    if (hasTimeOff) {
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+    }
+
     const capacity = staffMember.max_daily_jobs || 6
     const ratio = assignmentCount / capacity
 
@@ -206,6 +254,19 @@ export default function TeamAvailabilityPage() {
 
   return (
     <div className="space-y-6 p-6">
+      {/* Pending Time Off Alert */}
+      {pendingTimeOffCount > 0 && (
+        <Link href="/admin/team/time-off">
+          <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors cursor-pointer">
+            <AlertCircle className="h-5 w-5 text-amber-400" />
+            <span className="text-sm text-amber-400">
+              {pendingTimeOffCount} time off request{pendingTimeOffCount !== 1 ? 's' : ''} pending review
+            </span>
+            <span className="text-amber-400/60 text-sm ml-auto">Click to review →</span>
+          </div>
+        </Link>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -213,10 +274,16 @@ export default function TeamAvailabilityPage() {
             Team Availability
           </h1>
           <p className="text-neutral-500 dark:text-neutral-400">
-            View photographer schedules and capacity
+            View photographer schedules, capacity, and time off
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/admin/team/time-off">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Palmtree className="h-4 w-4" />
+              Time Off
+            </Button>
+          </Link>
           <Button variant="outline" size="sm" onClick={goToToday}>
             Today
           </Button>
@@ -281,6 +348,10 @@ export default function TeamAvailabilityPage() {
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-red-500" />
           <span className="text-neutral-600 dark:text-neutral-400">At Capacity</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full bg-gray-400" />
+          <span className="text-neutral-600 dark:text-neutral-400">Time Off</span>
         </div>
       </div>
 
@@ -363,6 +434,7 @@ export default function TeamAvailabilityPage() {
                     const dateAssignments = getAssignmentsForDate(dateStr)
                     const staffAssignments = dateAssignments[staffMember.id] || []
                     const count = staffAssignments.length
+                    const timeOff = getTimeOff(staffMember.id, dateStr)
 
                     return (
                       <td
@@ -374,13 +446,24 @@ export default function TeamAvailabilityPage() {
                         <div
                           className={`mx-auto flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium ${getAvailabilityColor(
                             staffMember,
-                            count
+                            count,
+                            !!timeOff
                           )}`}
-                          title={`${count} / ${staffMember.max_daily_jobs} jobs`}
+                          title={timeOff ? `Time off: ${timeOff.reason}` : `${count} / ${staffMember.max_daily_jobs} jobs`}
                         >
-                          {count > 0 ? count : '-'}
+                          {timeOff ? (
+                            <Palmtree className="h-4 w-4" />
+                          ) : count > 0 ? (
+                            count
+                          ) : (
+                            '-'
+                          )}
                         </div>
-                        {staffAssignments.length > 0 && (
+                        {timeOff ? (
+                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 capitalize">
+                            {timeOff.reason}
+                          </div>
+                        ) : staffAssignments.length > 0 ? (
                           <div className="mt-1 space-y-1">
                             {staffAssignments.slice(0, 2).map((a) => (
                               <div
@@ -397,7 +480,7 @@ export default function TeamAvailabilityPage() {
                               </div>
                             )}
                           </div>
-                        )}
+                        ) : null}
                       </td>
                     )
                   })}
