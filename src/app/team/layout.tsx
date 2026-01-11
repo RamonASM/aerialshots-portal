@@ -91,7 +91,7 @@ export default async function TeamLayout({
 }: {
   children: React.ReactNode
 }) {
-  let userEmail: string
+  let userEmail = ''
 
   if (authBypassEnabled) {
     // Use bypass identity
@@ -102,15 +102,48 @@ export default async function TeamLayout({
     try {
       user = await currentUser()
     } catch (error) {
-      console.error('Clerk currentUser() error in team layout:', error)
-      redirect('/sign-in/staff?error=clerk_error')
+      // Check if this is a rate limit error
+      const errorObj = error as { status?: number; message?: string; toString?: () => string }
+      const errorString = errorObj.toString?.() || ''
+      const isRateLimited =
+        errorObj.status === 429 ||
+        errorString.includes('Too Many Requests') ||
+        errorString.includes('rate')
+
+      if (isRateLimited) {
+        console.warn('[Team Layout] Clerk rate limited - checking for middleware-passed email')
+        // On rate limit, try to get email from header set by middleware
+        // The middleware has already validated authentication and passes the email
+        const headersList = await headers()
+        const middlewareEmail = headersList.get('x-user-email')
+        const cookieHeader = headersList.get('cookie') || ''
+
+        if (middlewareEmail) {
+          console.log('[Team Layout] Rate limited - using email from middleware:', middlewareEmail)
+          userEmail = middlewareEmail.toLowerCase()
+        } else if (cookieHeader.includes('__session') || cookieHeader.includes('__client')) {
+          // Session exists but no email header - use aerialshots.media domain fallback
+          // This allows access, and the staff/partner lookup will handle authorization
+          console.log('[Team Layout] Rate limited with session - using domain fallback')
+          userEmail = 'rate-limited-session@aerialshots.media'
+        } else {
+          console.error('Clerk currentUser() error in team layout (no session):', error)
+          redirect('/sign-in/staff?error=clerk_error')
+        }
+      } else {
+        console.error('Clerk currentUser() error in team layout:', error)
+        redirect('/sign-in/staff?error=clerk_error')
+      }
     }
 
-    if (!user?.emailAddresses?.[0]?.emailAddress) {
+    // userEmail may have been set in the rate-limit fallback above
+    if (user?.emailAddresses?.[0]?.emailAddress) {
+      userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
+    }
+    // If no email from user or rate-limit fallback, redirect
+    if (!userEmail) {
       redirect('/sign-in/staff')
     }
-
-    userEmail = user.emailAddresses[0].emailAddress.toLowerCase()
   }
 
   // Get current pathname from headers

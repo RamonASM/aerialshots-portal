@@ -269,9 +269,13 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
       // Note: /team/va routes no longer exist - va users are redirected to /team/editor
     }
 
-    // Add pathname header for layout to use
+    // Add pathname and user email headers for layout to use
     const response = NextResponse.next()
     response.headers.set('x-pathname', pathname)
+    // Pass user email for rate-limit fallback in layouts
+    if (userEmail && !userEmail.startsWith('rate-limited')) {
+      response.headers.set('x-user-email', userEmail)
+    }
 
     // For partner accessing team routes, continue with pathname header
     if (isPartnerUser && pathname.startsWith('/team/')) {
