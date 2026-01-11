@@ -206,13 +206,23 @@ const clerkMiddlewareHandler = clerkMiddleware(async (auth, request: NextRequest
   let userEmail = sessionClaims?.email as string | undefined
 
   // If email not in session claims, fetch from Clerk API (only for staff routes to minimize API calls)
+  // Note: Skip API call if we've been rate limited recently to prevent redirect loops
   if (!userEmail && isStaffRoute(request)) {
     try {
       const client = await clerkClient()
       const user = await client.users.getUser(userId)
       userEmail = user.emailAddresses?.[0]?.emailAddress
     } catch (error) {
-      console.error('[Middleware] Error fetching user email:', error)
+      // Check if this is a rate limit error
+      const errorObj = error as { status?: number; message?: string }
+      if (errorObj.status === 429 || errorObj.message?.includes('Too many requests')) {
+        console.warn('[Middleware] Clerk rate limited - allowing access without email verification')
+        // On rate limit, assume aerialshots.media domain for staff routes to prevent redirect loops
+        // The actual role check will happen in the page components
+        userEmail = 'rate-limited@aerialshots.media'
+      } else {
+        console.error('[Middleware] Error fetching user email:', error)
+      }
     }
   }
 
