@@ -56,24 +56,40 @@ export default function StaffSignInPage() {
           </p>
         </div>
 
-        {/* Role indicators */}
+        {/* Role indicators - clickable to focus sign-in form */}
         <div className="flex flex-wrap justify-center gap-2 mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-purple-400 bg-purple-500/10 rounded-full border border-purple-500/20">
+          <button
+            type="button"
+            onClick={() => document.querySelector<HTMLInputElement>('input[name="identifier"]')?.focus()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-purple-400 bg-purple-500/10 rounded-full border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition-colors cursor-pointer"
+          >
             <Camera className="h-3.5 w-3.5" />
             Photographer
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-blue-400 bg-blue-500/10 rounded-full border border-blue-500/20">
+          </button>
+          <button
+            type="button"
+            onClick={() => document.querySelector<HTMLInputElement>('input[name="identifier"]')?.focus()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-blue-400 bg-blue-500/10 rounded-full border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-colors cursor-pointer"
+          >
             <Video className="h-3.5 w-3.5" />
             Videographer
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-green-400 bg-green-500/10 rounded-full border border-green-500/20">
+          </button>
+          <button
+            type="button"
+            onClick={() => document.querySelector<HTMLInputElement>('input[name="identifier"]')?.focus()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-green-400 bg-green-500/10 rounded-full border border-green-500/20 hover:bg-green-500/20 hover:border-green-500/40 transition-colors cursor-pointer"
+          >
             <CheckSquare className="h-3.5 w-3.5" />
             QC Specialist
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-amber-400 bg-amber-500/10 rounded-full border border-amber-500/20">
+          </button>
+          <button
+            type="button"
+            onClick={() => document.querySelector<HTMLInputElement>('input[name="identifier"]')?.focus()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] text-amber-400 bg-amber-500/10 rounded-full border border-amber-500/20 hover:bg-amber-500/20 hover:border-amber-500/40 transition-colors cursor-pointer"
+          >
             <Shield className="h-3.5 w-3.5" />
             Admin
-          </div>
+          </button>
         </div>
 
         {/* Clerk Sign-In Component */}
