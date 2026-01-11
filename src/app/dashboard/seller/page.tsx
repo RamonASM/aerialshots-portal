@@ -77,26 +77,39 @@ export default async function SellerDashboardPage() {
     )
   }
 
-  // Get all listings for this seller (either directly linked or through orders)
-  const { data: listings } = await supabase
-    .from('listings')
-    .select(`
-      id,
-      address,
-      city,
-      state,
-      zip,
-      status,
-      created_at,
-      delivery_token,
-      media_assets (
+  // Get all listings for this seller (via linked listing_id)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let listings: any[] = []
+
+  if (seller.listing_id) {
+    const { data: listingsData } = await supabase
+      .from('listings')
+      .select(`
         id,
-        type,
-        aryeo_url
-      )
-    `)
-    .or(`id.eq.${seller.listing_id},seller_email.eq.${userEmail}`)
-    .order('created_at', { ascending: false })
+        address,
+        city,
+        state,
+        zip,
+        status,
+        created_at
+      `)
+      .eq('id', seller.listing_id)
+
+    if (listingsData) {
+      // Get media assets for each listing
+      const listingIds = listingsData.map(l => l.id)
+      const { data: mediaData } = await supabase
+        .from('media_assets')
+        .select('id, listing_id, type, aryeo_url')
+        .in('listing_id', listingIds)
+
+      // Combine data
+      listings = listingsData.map(listing => ({
+        ...listing,
+        media_assets: mediaData?.filter(m => m.listing_id === listing.id) || []
+      }))
+    }
+  }
 
   // Update last accessed timestamp
   await supabase
@@ -188,10 +201,12 @@ export default async function SellerDashboardPage() {
                 const tourCount = mediaAssets?.filter(m => m.type === '3d_tour' || m.type === 'virtual_tour').length || 0
                 const thumbnailUrl = mediaAssets?.find(m => m.type === 'photo')?.aryeo_url
 
+                const hasMedia = photoCount > 0 || videoCount > 0 || tourCount > 0
+
                 return (
                   <Link
                     key={listing.id}
-                    href={listing.delivery_token ? `/delivery/${listing.delivery_token}` : '#'}
+                    href={`/portal/listing/${listing.id}`}
                     className="group rounded-xl bg-[#1c1c1e] border border-white/[0.08] overflow-hidden hover:border-green-500/50 transition-colors"
                   >
                     {/* Thumbnail */}
@@ -207,7 +222,7 @@ export default async function SellerDashboardPage() {
                           <Home className="h-8 w-8 text-[#636366]" />
                         </div>
                       )}
-                      {listing.delivery_token && (
+                      {hasMedia && (
                         <div className="absolute top-2 right-2 bg-green-500 text-white text-[11px] font-medium px-2 py-1 rounded-full">
                           Ready to view
                         </div>
